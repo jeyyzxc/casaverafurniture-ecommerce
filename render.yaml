@@ -1,0 +1,126 @@
+services:
+  # PostgreSQL Database (Persistent with Automatic Backups)
+  - type: pspg
+    name: casaverafurniture-db
+    plan: starter
+    databaseName: casaverafurniture
+    databaseUser: casaverafurniture_user
+    postgresMajorVersion: 18
+    # Data is automatically persisted and backed up by Render
+    # Backups are retained for 7 days on starter plan
+    # Database remains available even if service restarts
+
+  # Laravel Backend API
+  - type: web
+    name: casaverafurniture-backend
+    runtime: php
+    plan: starter
+    region: oregon
+    # PHP version - Laravel 12 requires PHP 8.2+
+    phpVersion: 8.2
+    # Health check endpoint
+    healthCheckPath: /up
+    buildCommand: |
+      cd backend
+      composer install --no-dev --optimize-autoloader
+      php artisan config:cache
+      php artisan route:cache
+      php artisan view:cache
+    startCommand: |
+      cd backend
+      php artisan migrate --force
+      php artisan optimize
+      php artisan serve --host=0.0.0.0 --port=$PORT
+    envVars:
+      - key: APP_NAME
+        value: CasaVeraFurniture
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: 'false'
+      - key: APP_URL
+        fromService:
+          type: web
+          name: casaverafurniture-backend
+          property: host
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: casaverafurniture-frontend
+          property: host
+      - key: SANCTUM_STATEFUL_DOMAINS
+        fromService:
+          type: web
+          name: casaverafurniture-frontend
+          property: host
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: casaverafurniture-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: casaverafurniture-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: casaverafurniture-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: casaverafurniture-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: casaverafurniture-db
+          property: password
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: BROADCAST_DRIVER
+        value: log
+      - key: LOG_CHANNEL
+        value: stack
+      - key: LOG_LEVEL
+        value: error
+      - key: APP_KEY
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        fromService:
+          type: web
+          name: casaverafurniture-backend
+          property: host
+        value: ${GOOGLE_REDIRECT_URI}/api/auth/google/callback
+
+  # Vue Frontend
+  - type: web
+    name: casaverafurniture-frontend
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: |
+      cd frontend
+      npm ci
+      npm run build
+    startCommand: |
+      cd frontend
+      npx serve -s dist -l $PORT --single
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: casaverafurniture-backend
+          property: host
+        value: ${VITE_API_URL}/api
+      - key: VITE_APP_NAME
+        value: CasaVera Furniture
+      - key: NODE_VERSION
+        value: 20.19.0

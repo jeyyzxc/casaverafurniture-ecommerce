@@ -1,0 +1,51 @@
+# Files to ignore when deploying to Render
+
+# Development files
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node modules (will be installed during build)
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Build artifacts (will be generated during build)
+frontend/dist/
+backend/vendor/
+backend/bootstrap/cache/*.php
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+
+# Git
+.git/
+.gitignore
+
+# Documentation (optional - remove if you want to include)
+*.md
+!README.md
+
+# Test files
+tests/
+phpunit.xml
+.phpunit.result.cache
+
+# Docker files (not needed for Render)
+docker-compose.yml
+Dockerfile*
+.dockerignore
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

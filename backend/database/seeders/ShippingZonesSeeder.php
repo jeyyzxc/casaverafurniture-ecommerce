@@ -1,0 +1,475 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+class ShippingZonesSeeder extends Seeder
+{
+    /**
+     * Seed shipping zones and rates.
+     */
+    public function run(): void
+    {
+        $now = Carbon::now();
+
+        // ===========================================
+        // SHIPPING ZONES
+        // ===========================================
+        $zones = [
+            [
+                'name' => 'Metro Manila',
+                'type' => 'local',
+                'description' => 'NCR - National Capital Region',
+                'regions' => json_encode(['Manila', 'Quezon City', 'Makati', 'Pasig', 'Taguig', 'Parañaque', 'Las Piñas', 'Muntinlupa', 'Marikina', 'Pasay', 'Caloocan', 'Malabon', 'Navotas', 'Valenzuela', 'San Juan', 'Mandaluyong', 'Pateros']),
+                'postal_codes' => json_encode(['1000-1899']),
+                'base_rate' => 150,
+                'free_shipping_threshold' => 5000,
+                'min_delivery_days' => 1,
+                'max_delivery_days' => 2,
+                'is_active' => true,
+                'display_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'name' => 'Luzon (Outside NCR)',
+                'type' => 'national',
+                'description' => 'Major provinces in Luzon',
+                'regions' => json_encode(['Bulacan', 'Pampanga', 'Cavite', 'Laguna', 'Rizal', 'Batangas', 'Quezon Province', 'Pangasinan', 'Nueva Ecija', 'Tarlac', 'Zambales', 'Bataan', 'Aurora', 'Benguet']),
+                'postal_codes' => null,
+                'base_rate' => 300,
+                'free_shipping_threshold' => 8000,
+                'min_delivery_days' => 2,
+                'max_delivery_days' => 4,
+                'is_active' => true,
+                'display_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'name' => 'Visayas',
+                'type' => 'national',
+                'description' => 'Visayas region',
+                'regions' => json_encode(['Cebu', 'Iloilo', 'Negros Occidental', 'Negros Oriental', 'Bohol', 'Leyte', 'Samar', 'Aklan', 'Capiz', 'Antique', 'Guimaras', 'Eastern Samar', 'Northern Samar', 'Southern Leyte', 'Biliran', 'Siquijor']),
+                'postal_codes' => null,
+                'base_rate' => 500,
+                'free_shipping_threshold' => 10000,
+                'min_delivery_days' => 4,
+                'max_delivery_days' => 7,
+                'is_active' => true,
+                'display_order' => 3,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'name' => 'Mindanao',
+                'type' => 'national',
+                'description' => 'Mindanao region',
+                'regions' => json_encode(['Davao del Sur', 'Davao del Norte', 'Davao Oriental', 'Davao Occidental', 'South Cotabato', 'General Santos', 'Zamboanga', 'Cagayan de Oro', 'Bukidnon', 'Misamis Oriental', 'Misamis Occidental', 'Lanao del Norte', 'Lanao del Sur', 'Sultan Kudarat', 'Sarangani', 'Agusan del Norte', 'Agusan del Sur', 'Surigao del Norte', 'Surigao del Sur', 'Cotabato']),
+                'postal_codes' => null,
+                'base_rate' => 600,
+                'free_shipping_threshold' => 12000,
+                'min_delivery_days' => 5,
+                'max_delivery_days' => 10,
+                'is_active' => true,
+                'display_order' => 4,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'name' => 'Metro Manila - Express',
+                'type' => 'local',
+                'description' => 'Same-day delivery within Metro Manila',
+                'regions' => json_encode(['Manila', 'Quezon City', 'Makati', 'Pasig', 'Taguig', 'Parañaque', 'Las Piñas', 'Muntinlupa', 'Marikina', 'Pasay', 'Caloocan', 'Malabon', 'Navotas', 'Valenzuela', 'San Juan', 'Mandaluyong', 'Pateros']),
+                'postal_codes' => json_encode(['1000-1899']),
+                'base_rate' => 350,
+                'free_shipping_threshold' => 10000,
+                'min_delivery_days' => 0,
+                'max_delivery_days' => 1,
+                'is_active' => true,
+                'display_order' => 5,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'name' => 'Cavite, Laguna, Rizal (CALABARZON)',
+                'type' => 'national',
+                'description' => 'Nearby provinces - Fast delivery',
+                'regions' => json_encode(['Cavite', 'Laguna', 'Rizal', 'Batangas', 'Quezon Province']),
+                'postal_codes' => null,
+                'base_rate' => 250,
+                'free_shipping_threshold' => 6000,
+                'min_delivery_days' => 1,
+                'max_delivery_days' => 3,
+                'is_active' => true,
+                'display_order' => 6,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'name' => 'Northern Luzon',
+                'type' => 'national',
+                'description' => 'Ilocos, Cordillera, Cagayan Valley regions',
+                'regions' => json_encode(['Ilocos Norte', 'Ilocos Sur', 'La Union', 'Pangasinan', 'Benguet', 'Baguio', 'Ifugao', 'Kalinga', 'Mountain Province', 'Abra', 'Apayao', 'Cagayan', 'Isabela', 'Nueva Vizcaya', 'Quirino', 'Batanes']),
+                'postal_codes' => null,
+                'base_rate' => 400,
+                'free_shipping_threshold' => 9000,
+                'min_delivery_days' => 3,
+                'max_delivery_days' => 6,
+                'is_active' => true,
+                'display_order' => 7,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'name' => 'Bicol Region',
+                'type' => 'national',
+                'description' => 'Bicol provinces',
+                'regions' => json_encode(['Albay', 'Camarines Norte', 'Camarines Sur', 'Catanduanes', 'Masbate', 'Sorsogon']),
+                'postal_codes' => null,
+                'base_rate' => 450,
+                'free_shipping_threshold' => 9500,
+                'min_delivery_days' => 3,
+                'max_delivery_days' => 7,
+                'is_active' => true,
+                'display_order' => 8,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'name' => 'Palawan & MIMAROPA',
+                'type' => 'national',
+                'description' => 'Island provinces',
+                'regions' => json_encode(['Palawan', 'Occidental Mindoro', 'Oriental Mindoro', 'Marinduque', 'Romblon']),
+                'postal_codes' => null,
+                'base_rate' => 550,
+                'free_shipping_threshold' => 11000,
+                'min_delivery_days' => 5,
+                'max_delivery_days' => 10,
+                'is_active' => true,
+                'display_order' => 9,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+        ];
+
+        // Insert zones only if they don't exist
+        foreach ($zones as $zone) {
+            DB::table('shipping_zones')->updateOrInsert(
+                ['name' => $zone['name']],
+                $zone
+            );
+        }
+
+        // ===========================================
+        // SHIPPING RATES (per zone)
+        // ===========================================
+        $metroManilaZone = DB::table('shipping_zones')->where('name', 'Metro Manila')->first();
+        $luzonZone = DB::table('shipping_zones')->where('name', 'Luzon (Outside NCR)')->first();
+        $visayasZone = DB::table('shipping_zones')->where('name', 'Visayas')->first();
+        $mindanaoZone = DB::table('shipping_zones')->where('name', 'Mindanao')->first();
+        $metroManilaExpressZone = DB::table('shipping_zones')->where('name', 'Metro Manila - Express')->first();
+        $calabarzonZone = DB::table('shipping_zones')->where('name', 'Cavite, Laguna, Rizal (CALABARZON)')->first();
+        $northernLuzonZone = DB::table('shipping_zones')->where('name', 'Northern Luzon')->first();
+        $bicolZone = DB::table('shipping_zones')->where('name', 'Bicol Region')->first();
+        $mimaropaZone = DB::table('shipping_zones')->where('name', 'Palawan & MIMAROPA')->first();
+
+        $rates = [
+            // Metro Manila rates
+            [
+                'shipping_zone_id' => $metroManilaZone->id,
+                'name' => 'Standard Delivery',
+                'description' => 'Regular delivery within 1-2 business days',
+                'rate_type' => 'flat',
+                'rate' => 150,
+                'per_kg_rate' => null,
+                'per_item_rate' => null,
+                'min_weight' => null,
+                'max_weight' => 50,
+                'min_order_amount' => null,
+                'max_order_amount' => null,
+                'min_delivery_days' => 1,
+                'max_delivery_days' => 2,
+                'is_active' => true,
+                'display_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'shipping_zone_id' => $metroManilaZone->id,
+                'name' => 'Express Delivery',
+                'description' => 'Same-day delivery for orders placed before 12PM',
+                'rate_type' => 'flat',
+                'rate' => 350,
+                'per_kg_rate' => null,
+                'per_item_rate' => null,
+                'min_weight' => null,
+                'max_weight' => 30,
+                'min_order_amount' => null,
+                'max_order_amount' => 50000,
+                'min_delivery_days' => 0,
+                'max_delivery_days' => 1,
+                'is_active' => true,
+                'display_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // Luzon rates
+            [
+                'shipping_zone_id' => $luzonZone->id,
+                'name' => 'Standard Delivery',
+                'description' => 'Regular delivery within 2-4 business days',
+                'rate_type' => 'flat',
+                'rate' => 300,
+                'per_kg_rate' => 15, // Additional ₱15 per kg after first 5kg
+                'per_item_rate' => null,
+                'min_weight' => null,
+                'max_weight' => 100,
+                'min_order_amount' => null,
+                'max_order_amount' => null,
+                'min_delivery_days' => 2,
+                'max_delivery_days' => 4,
+                'is_active' => true,
+                'display_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // Visayas rates
+            [
+                'shipping_zone_id' => $visayasZone->id,
+                'name' => 'Standard Delivery',
+                'description' => 'Regular delivery within 4-7 business days',
+                'rate_type' => 'flat',
+                'rate' => 500,
+                'per_kg_rate' => 20,
+                'per_item_rate' => null,
+                'min_weight' => null,
+                'max_weight' => 100,
+                'min_order_amount' => null,
+                'max_order_amount' => null,
+                'min_delivery_days' => 4,
+                'max_delivery_days' => 7,
+                'is_active' => true,
+                'display_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // Mindanao rates
+            [
+                'shipping_zone_id' => $mindanaoZone->id,
+                'name' => 'Standard Delivery',
+                'description' => 'Regular delivery within 5-10 business days',
+                'rate_type' => 'flat',
+                'rate' => 600,
+                'per_kg_rate' => 25,
+                'per_item_rate' => null,
+                'min_weight' => null,
+                'max_weight' => 100,
+                'min_order_amount' => null,
+                'max_order_amount' => null,
+                'min_delivery_days' => 5,
+                'max_delivery_days' => 10,
+                'is_active' => true,
+                'display_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // Metro Manila Express rates
+            [
+                'shipping_zone_id' => $metroManilaExpressZone->id,
+                'name' => 'Same-Day Delivery',
+                'description' => 'Same-day delivery for orders placed before 12PM',
+                'rate_type' => 'flat',
+                'rate' => 350,
+                'per_kg_rate' => null,
+                'per_item_rate' => null,
+                'min_weight' => null,
+                'max_weight' => 30,
+                'min_order_amount' => null,
+                'max_order_amount' => 50000,
+                'min_delivery_days' => 0,
+                'max_delivery_days' => 1,
+                'is_active' => true,
+                'display_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // CALABARZON rates
+            [
+                'shipping_zone_id' => $calabarzonZone->id,
+                'name' => 'Standard Delivery',
+                'description' => 'Regular delivery within 1-3 business days',
+                'rate_type' => 'flat',
+                'rate' => 250,
+                'per_kg_rate' => 10,
+                'per_item_rate' => null,
+                'min_weight' => null,
+                'max_weight' => 100,
+                'min_order_amount' => null,
+                'max_order_amount' => null,
+                'min_delivery_days' => 1,
+                'max_delivery_days' => 3,
+                'is_active' => true,
+                'display_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // Northern Luzon rates
+            [
+                'shipping_zone_id' => $northernLuzonZone->id,
+                'name' => 'Standard Delivery',
+                'description' => 'Regular delivery within 3-6 business days',
+                'rate_type' => 'flat',
+                'rate' => 400,
+                'per_kg_rate' => 18,
+                'per_item_rate' => null,
+                'min_weight' => null,
+                'max_weight' => 100,
+                'min_order_amount' => null,
+                'max_order_amount' => null,
+                'min_delivery_days' => 3,
+                'max_delivery_days' => 6,
+                'is_active' => true,
+                'display_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // Bicol Region rates
+            [
+                'shipping_zone_id' => $bicolZone->id,
+                'name' => 'Standard Delivery',
+                'description' => 'Regular delivery within 3-7 business days',
+                'rate_type' => 'flat',
+                'rate' => 450,
+                'per_kg_rate' => 20,
+                'per_item_rate' => null,
+                'min_weight' => null,
+                'max_weight' => 100,
+                'min_order_amount' => null,
+                'max_order_amount' => null,
+                'min_delivery_days' => 3,
+                'max_delivery_days' => 7,
+                'is_active' => true,
+                'display_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+
+            // MIMAROPA rates
+            [
+                'shipping_zone_id' => $mimaropaZone->id,
+                'name' => 'Standard Delivery',
+                'description' => 'Regular delivery within 5-10 business days',
+                'rate_type' => 'flat',
+                'rate' => 550,
+                'per_kg_rate' => 22,
+                'per_item_rate' => null,
+                'min_weight' => null,
+                'max_weight' => 100,
+                'min_order_amount' => null,
+                'max_order_amount' => null,
+                'min_delivery_days' => 5,
+                'max_delivery_days' => 10,
+                'is_active' => true,
+                'display_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+        ];
+
+        // Insert rates only if they don't exist
+        foreach ($rates as $rate) {
+            DB::table('shipping_rates')->updateOrInsert(
+                [
+                    'shipping_zone_id' => $rate['shipping_zone_id'],
+                    'name' => $rate['name']
+                ],
+                $rate
+            );
+        }
+
+        // ===========================================
+        // COURIERS
+        // ===========================================
+        $couriers = [
+            [
+                'name' => 'LBC Express',
+                'code' => 'lbc',
+                'logo' => '/images/couriers/lbc.png',
+                'tracking_url' => 'https://www.lbcexpress.com/track?tracking_no={tracking_number}',
+                'website' => 'https://www.lbcexpress.com',
+                'contact_phone' => '(02) 8858-5999',
+                'contact_email' => 'customercare@lbcexpress.com',
+                'has_api_integration' => false,
+                'api_config' => null,
+                'is_active' => true,
+                'display_order' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'name' => 'J&T Express',
+                'code' => 'jt',
+                'logo' => '/images/couriers/jt.png',
+                'tracking_url' => 'https://www.jtexpress.ph/track?billcode={tracking_number}',
+                'website' => 'https://www.jtexpress.ph',
+                'contact_phone' => '(02) 8295-8888',
+                'contact_email' => 'support@jtexpress.ph',
+                'has_api_integration' => false,
+                'api_config' => null,
+                'is_active' => true,
+                'display_order' => 2,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'name' => 'Grab Express',
+                'code' => 'grab',
+                'logo' => '/images/couriers/grab.png',
+                'tracking_url' => null,
+                'website' => 'https://www.grab.com',
+                'contact_phone' => null,
+                'contact_email' => null,
+                'has_api_integration' => false,
+                'api_config' => null,
+                'is_active' => true,
+                'display_order' => 3,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'name' => 'In-House Delivery',
+                'code' => 'inhouse',
+                'logo' => '/images/couriers/casavera.png',
+                'tracking_url' => null,
+                'website' => null,
+                'contact_phone' => '+63 912 345 6789',
+                'contact_email' => 'delivery@casavera.com',
+                'has_api_integration' => false,
+                'api_config' => null,
+                'is_active' => true,
+                'display_order' => 4,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+        ];
+
+        // Insert couriers only if they don't exist
+        foreach ($couriers as $courier) {
+            DB::table('couriers')->updateOrInsert(
+                ['code' => $courier['code']],
+                $courier
+            );
+        }
+    }
+}
