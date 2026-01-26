@@ -85,14 +85,6 @@ services:
         value: error
       - key: APP_KEY
         generateValue: true
-      - key: GOOGLE_CLIENT_ID
-        sync: false
-      - key: GOOGLE_CLIENT_SECRET
-        sync: false
-      - key: GOOGLE_REDIRECT_URI
-        sync: false
-        # Set this manually in Render Dashboard after deployment
-        # Format: https://your-backend-url.onrender.com/api/auth/google/callback
 
   # Vue Frontend
   - type: web
