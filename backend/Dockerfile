@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libzip-dev \
     postgresql-client \
+    libpq-dev \
     && docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -35,5 +36,5 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Expose port (Render will provide PORT env var)
 EXPOSE 8080
 
-# Start Laravel development server (Render provides PORT env var)
+# Start Laravel server (migrations and caching will be handled by Render's build/start commands)
 CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
