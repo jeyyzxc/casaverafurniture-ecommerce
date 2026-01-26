@@ -1,12 +1,12 @@
 databases:
   # PostgreSQL Database (Persistent with Automatic Backups)
   - name: casaverafurniture-db
-    plan: starter
+    plan: basic-256mb
     databaseName: casaverafurniture
     user: casaverafurniture_user
     postgresMajorVersion: "18"
     # Data is automatically persisted and backed up by Render
-    # Backups are retained for 7 days on starter plan
+    # Backups are retained for 7 days on basic-256mb plan
     # Database remains available even if service restarts
 
 services:
