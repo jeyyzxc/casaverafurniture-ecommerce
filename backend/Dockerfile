@@ -51,5 +51,31 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Expose port (Render will provide PORT env var)
 EXPOSE 8080
 
-# Start Laravel server (migrations and caching will be handled by Render's build/start commands)
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
+# Create startup script that checks requirements and runs migrations
+RUN echo '#!/bin/sh\n\
+set -e\n\
+echo "Starting Laravel application..."\n\
+echo "Port: ${PORT:-8080}"\n\
+\n\
+# Check if APP_KEY is set\n\
+if [ -z "$APP_KEY" ]; then\n\
+    echo "WARNING: APP_KEY is not set. Generating one..."\n\
+    php artisan key:generate --force || true\n\
+fi\n\
+\n\
+# Run migrations (only if not already run)\n\
+echo "Running database migrations..."\n\
+php artisan migrate --force || echo "Migration failed or already run"\n\
+\n\
+# Cache configuration for better performance\n\
+php artisan config:cache || true\n\
+php artisan route:cache || true\n\
+php artisan view:cache || true\n\
+\n\
+# Start Laravel server\n\
+echo "Starting server on port ${PORT:-8080}..."\n\
+exec php artisan serve --host=0.0.0.0 --port=${PORT:-8080}\n\
+' > /usr/local/bin/start.sh && chmod +x /usr/local/bin/start.sh
+
+# Start Laravel server
+CMD ["/usr/local/bin/start.sh"]
