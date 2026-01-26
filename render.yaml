@@ -1,36 +1,32 @@
-services:
+databases:
   # PostgreSQL Database (Persistent with Automatic Backups)
-  - type: pspg
-    name: casaverafurniture-db
+  - name: casaverafurniture-db
     plan: starter
     databaseName: casaverafurniture
     databaseUser: casaverafurniture_user
-    postgresMajorVersion: 18
+    postgresMajorVersion: "18"
     # Data is automatically persisted and backed up by Render
     # Backups are retained for 7 days on starter plan
     # Database remains available even if service restarts
 
+services:
   # Laravel Backend API
   - type: web
     name: casaverafurniture-backend
-    runtime: php
+    runtime: docker
     plan: starter
     region: oregon
-    # PHP version - Laravel 12 requires PHP 8.2+
-    phpVersion: 8.2
+    # PHP version is specified in Dockerfile (Laravel 12 requires PHP 8.2+)
     # Health check endpoint
     healthCheckPath: /up
-    buildCommand: |
-      cd backend
-      composer install --no-dev --optimize-autoloader
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    preDeployCommand: |
+      php artisan migrate --force
       php artisan config:cache
       php artisan route:cache
       php artisan view:cache
-    startCommand: |
-      cd backend
-      php artisan migrate --force
       php artisan optimize
-      php artisan serve --host=0.0.0.0 --port=$PORT
     envVars:
       - key: APP_NAME
         value: CasaVeraFurniture
@@ -98,7 +94,7 @@ services:
           type: web
           name: casaverafurniture-backend
           property: host
-        value: ${GOOGLE_REDIRECT_URI}/api/auth/google/callback
+        value: "${GOOGLE_REDIRECT_URI}/api/auth/google/callback"
 
   # Vue Frontend
   - type: web
