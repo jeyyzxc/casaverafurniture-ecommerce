@@ -67,6 +67,10 @@ fi\n\
 echo "Running database migrations..."\n\
 php artisan migrate --force || echo "Migration failed or already run"\n\
 \n\
+# Seed database if empty\n\
+echo "Running database seeders..."\n\
+php artisan db:seed --force || echo "Seeding skipped (data may already exist)"\n\
+\n\
 # Cache configuration for better performance\n\
 php artisan config:cache || true\n\
 php artisan route:cache || true\n\
