@@ -3,7 +3,7 @@ databases:
   - name: casaverafurniture-db
     plan: starter
     databaseName: casaverafurniture
-    databaseUser: casaverafurniture_user
+    user: casaverafurniture_user
     postgresMajorVersion: "18"
     # Data is automatically persisted and backed up by Render
     # Backups are retained for 7 days on starter plan
