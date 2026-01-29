@@ -207,11 +207,13 @@ class AuthController extends Controller
             ], 403)->cookie($cookie);
         }
 
-        // Revoke old refresh token (one-time use)
-        $tokenRecord->revoke();
-
-        // Generate new tokens
+        // Generate new tokens (shorter expiry for testing refresh flow: 15 mins for access, 15 days for refresh)
         $tokens = $admin->generateTokens('admin-token', ['admin'], 15);
+
+        // Revoke old refresh token (one-time use)
+        // Note: We do this AFTER generating new tokens to slightly reduce the race window,
+        // though generateTokens itself creates a record.
+        $tokenRecord->revoke();
 
         // Create new HTTP-only cookie for refresh token
         $refreshTokenCookie = cookie(

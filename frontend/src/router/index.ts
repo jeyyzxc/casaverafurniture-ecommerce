@@ -244,10 +244,10 @@ const router = createRouter({
 // Navigation guard for admin and client routes
 router.beforeEach(async (to, from, next) => {
   // Check if route requires admin auth
-  if (to.meta.requiresAuth && to.path.startsWith('/admin')) {
+  if (to.meta.requiresAuth && to.path.includes('/admin')) {
     const { useAdminAuthStore } = await import('@/stores/adminAuth')
     const adminStore = useAdminAuthStore()
-    
+
     // Check if admin data exists (token is in memory, not localStorage)
     if (!adminStore.isAuthenticated) {
       // Try to fetch admin data (will trigger token refresh if refresh token exists)
@@ -265,55 +265,55 @@ router.beforeEach(async (to, from, next) => {
     } else {
       next()
     }
-  } 
+  }
   // Check if route requires client auth
-  else if (to.meta.requiresAuth && !to.path.startsWith('/admin')) {
+  else if (to.meta.requiresAuth && !to.path.includes('/admin')) {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'router/index.ts:264',message:'Router guard ENTRY - client auth required',data:{toPath:to.path,toName:to.name,fromPath:from.path},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,D'})}).catch(()=>{});
+
     // #endregion
     const { useAuthStore } = await import('@/stores/auth')
     const authStore = useAuthStore()
-    
+
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'router/index.ts:269',message:'Router guard - BEFORE auth check',data:{isAuthenticated:authStore.isAuthenticated,hasUser:!!authStore.user,userId:authStore.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B'})}).catch(()=>{});
+
     // #endregion
-    
+
     // Check if user data exists (token is in memory, not localStorage)
     if (!authStore.isAuthenticated) {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'router/index.ts:272',message:'Router guard - NOT authenticated, calling fetchUser',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+
       // #endregion
       // Try to fetch user data (will trigger token refresh if refresh token exists)
       try {
         const result = await authStore.fetchUser()
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'router/index.ts:275',message:'Router guard - AFTER fetchUser',data:{resultSuccess:result.success,resultExpired:result.expired,resultNoToken:result.noToken,isAuthenticated:authStore.isAuthenticated,hasUser:!!authStore.user},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+
         // #endregion
         if (result.success && authStore.isAuthenticated) {
           // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'router/index.ts:277',message:'Router guard - Auth SUCCESS, calling next()',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+
           // #endregion
           next()
           return
         }
-      } catch (err) {
+      } catch {
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'router/index.ts:280',message:'Router guard - fetchUser EXCEPTION',data:{error:err?.message||String(err)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+
         // #endregion
         // Fetch failed, redirect to login
       }
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'router/index.ts:281',message:'Router guard - REDIRECTING to home (not authenticated)',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
+
       // #endregion
       // Not authenticated, redirect to home with login prompt
       next({ name: 'home', query: { login: 'true' } })
     } else {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'router/index.ts:283',message:'Router guard - Auth OK, calling next()',data:{isAuthenticated:authStore.isAuthenticated,hasUser:!!authStore.user},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+
       // #endregion
       next()
     }
-  } 
+  }
   else if (to.name === 'admin-login') {
     // If already logged in, redirect to dashboard
     const { useAdminAuthStore } = await import('@/stores/adminAuth')

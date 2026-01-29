@@ -1,14 +1,15 @@
 /**
  * Token Manager
- * Manages access tokens in memory (not localStorage for security)
+ * Manages access tokens with localStorage persistence for better UX on reload
  * Handles automatic token refresh using refresh tokens from HTTP-only cookies
  */
+import api from '@/services/api'
 
-// In-memory storage for access tokens (not persisted)
-let clientAccessToken: string | null = null
-let adminAccessToken: string | null = null
+// Initialize tokens from localStorage to persist across reloads
+let clientAccessToken: string | null = localStorage.getItem('client_access_token')
+let adminAccessToken: string | null = localStorage.getItem('admin_access_token')
 
-// Track refresh attempts to prevent loops (separate for client and admin)
+// Track refresh attempts to prevent loops
 let isRefreshingClient = false
 let isRefreshingAdmin = false
 let clientRefreshPromise: Promise<string | null> | null = null
@@ -33,6 +34,11 @@ export function getAdminAccessToken(): string | null {
  */
 export function setClientAccessToken(token: string | null): void {
   clientAccessToken = token
+  if (token) {
+    localStorage.setItem('client_access_token', token)
+  } else {
+    localStorage.removeItem('client_access_token')
+  }
 }
 
 /**
@@ -40,6 +46,11 @@ export function setClientAccessToken(token: string | null): void {
  */
 export function setAdminAccessToken(token: string | null): void {
   adminAccessToken = token
+  if (token) {
+    localStorage.setItem('admin_access_token', token)
+  } else {
+    localStorage.removeItem('admin_access_token')
+  }
 }
 
 /**
@@ -48,6 +59,8 @@ export function setAdminAccessToken(token: string | null): void {
 export function clearAllTokens(): void {
   clientAccessToken = null
   adminAccessToken = null
+  localStorage.removeItem('client_access_token')
+  localStorage.removeItem('admin_access_token')
 }
 
 /**
@@ -61,29 +74,21 @@ export async function refreshClientToken(): Promise<string | null> {
   isRefreshingClient = true
   clientRefreshPromise = (async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include', // Include HTTP-only cookies
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-      })
+      const response = await api.post('/auth/refresh')
 
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.data?.access_token) {
-          clientAccessToken = data.data.access_token
-          return clientAccessToken
-        }
+      if (response.data.success && response.data.data?.access_token) {
+        const newToken = response.data.data.access_token
+        setClientAccessToken(newToken)
+        console.log('[DEBUG_LOG] Client token successfully refreshed.')
+        return newToken
       }
 
-      // Refresh failed - clear client token only
-      clientAccessToken = null
+      console.warn('[DEBUG_LOG] Client token refresh failed.')
+      setClientAccessToken(null)
       return null
     } catch (error) {
       console.error('Client token refresh failed:', error)
-      clientAccessToken = null
+      setClientAccessToken(null)
       return null
     } finally {
       isRefreshingClient = false
@@ -105,29 +110,21 @@ export async function refreshAdminToken(): Promise<string | null> {
   isRefreshingAdmin = true
   adminRefreshPromise = (async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include', // Include HTTP-only cookies
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-      })
+      const response = await api.post('/admin/auth/refresh')
 
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.data?.access_token) {
-          adminAccessToken = data.data.access_token
-          return adminAccessToken
-        }
+      if (response.data.success && response.data.data?.access_token) {
+        const newToken = response.data.data.access_token
+        setAdminAccessToken(newToken)
+        console.log('[DEBUG_LOG] Admin token successfully refreshed.')
+        return newToken
       }
 
-      // Refresh failed - clear admin token only
-      adminAccessToken = null
+      console.warn('[DEBUG_LOG] Admin token refresh failed.')
+      setAdminAccessToken(null)
       return null
     } catch (error) {
       console.error('Admin token refresh failed:', error)
-      adminAccessToken = null
+      setAdminAccessToken(null)
       return null
     } finally {
       isRefreshingAdmin = false

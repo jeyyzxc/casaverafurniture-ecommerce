@@ -6,14 +6,14 @@
         <p class="page-subtitle">Manage homepage sections, banners, and page content.</p>
       </div>
       <div class="header-actions">
-        <button class="btn-primary" @click="showAddSectionModal = true">
+        <button class="btn-primary" @click="openAddSectionModal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
           Add Section
         </button>
-        <button class="btn-secondary" @click="showAddBannerModal = true">
+        <button class="btn-secondary" @click="openAddBannerModal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
             <line x1="3" y1="9" x2="21" y2="9"/>
@@ -43,7 +43,10 @@
       <!-- Homepage Sections -->
       <div class="content-section">
         <h2 class="section-title">Homepage Sections</h2>
-        <div class="cms-sections">
+        <div v-if="sections.length === 0" class="empty-state">
+          <p>No sections found. Add one to get started.</p>
+        </div>
+        <div v-else class="cms-sections">
           <div v-for="section in sections" :key="section.id" class="section-card">
             <div class="section-header">
               <div>
@@ -82,7 +85,10 @@
       <!-- Banners -->
       <div class="content-section">
         <h2 class="section-title">Banners</h2>
-        <div class="cms-sections">
+        <div v-if="banners.length === 0" class="empty-state">
+          <p>No banners found. Add one to get started.</p>
+        </div>
+        <div v-else class="cms-sections">
           <div v-for="banner in banners" :key="banner.id" class="section-card">
             <div class="section-header">
               <div>
@@ -331,21 +337,64 @@ const loadContent = async () => {
     if (sectionsResponse.data.success) {
       sections.value = sectionsResponse.data.data
     } else {
-      throw new Error(sectionsResponse.data.message || 'Failed to load sections')
+      // If endpoint returns 404 or error, handle gracefully
+      sections.value = []
+      console.warn('Sections endpoint might be missing or empty')
     }
 
     if (bannersResponse.data.success) {
       banners.value = bannersResponse.data.data
     } else {
-      throw new Error(bannersResponse.data.message || 'Failed to load banners')
+      banners.value = []
+      console.warn('Banners endpoint might be missing or empty')
     }
   } catch (err: any) {
     console.error('Failed to load content:', err)
-    error.value = err.response?.data?.message || err.message || 'Failed to load content. Please try again.'
-    showError('Failed to Load', error.value)
+    // Don't block the UI, just show empty state if API fails (e.g. 404)
+    sections.value = []
+    banners.value = []
+    // Only show error if it's not a 404 (which means backend not implemented yet)
+    if (err.response?.status !== 404) {
+       error.value = err.response?.data?.message || err.message || 'Failed to load content.'
+       showError('Failed to Load', error.value)
+    }
   } finally {
     isLoading.value = false
   }
+}
+
+const openAddSectionModal = () => {
+  editingSection.value = null
+  sectionForm.value = {
+    name: '',
+    type: 'custom',
+    title: '',
+    subtitle: '',
+    content: '',
+    display_order: 0,
+    is_visible: true,
+    background_color: '#ffffff',
+  }
+  showAddSectionModal.value = true
+}
+
+const openAddBannerModal = () => {
+  editingBanner.value = null
+  bannerForm.value = {
+    name: '',
+    position: 'home_hero',
+    title: '',
+    subtitle: '',
+    description: '',
+    desktop_image: '',
+    mobile_image: '',
+    alt_text: '',
+    link_url: '',
+    link_text: '',
+    display_order: 0,
+    is_visible: true,
+  }
+  showAddBannerModal.value = true
 }
 
 const editSection = (section: any) => {
@@ -385,35 +434,11 @@ const editBanner = (banner: any) => {
 const closeSectionModal = () => {
   showAddSectionModal.value = false
   editingSection.value = null
-  sectionForm.value = {
-    name: '',
-    type: 'custom',
-    title: '',
-    subtitle: '',
-    content: '',
-    display_order: 0,
-    is_visible: true,
-    background_color: '#ffffff',
-  }
 }
 
 const closeBannerModal = () => {
   showAddBannerModal.value = false
   editingBanner.value = null
-  bannerForm.value = {
-    name: '',
-    position: 'home_hero',
-    title: '',
-    subtitle: '',
-    description: '',
-    desktop_image: '',
-    mobile_image: '',
-    alt_text: '',
-    link_url: '',
-    link_text: '',
-    display_order: 0,
-    is_visible: true,
-  }
 }
 
 const saveSection = async () => {
@@ -660,6 +685,15 @@ onMounted(() => {
   font-weight: 700;
   color: var(--dark);
   margin: 0 0 1.5rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--gray);
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 2px dashed #e5e7eb;
 }
 
 .cms-sections {

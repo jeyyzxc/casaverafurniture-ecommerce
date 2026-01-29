@@ -37,7 +37,7 @@
         <!-- Transaction Summary -->
         <div class="transaction-summary rise-up-delay-1">
           <h3 class="summary-title">Transaction Summary</h3>
-          
+
           <!-- Customer Information -->
           <div class="summary-section rise-up-delay-2">
             <h4 class="section-heading">
@@ -140,8 +140,8 @@
                 </template>
                 <template v-if="orderDetails.latest_payment.payment_details.card_number">
                   <div class="info-item">
-                    <span class="info-label">Card Number (Last 4):</span>
-                    <span class="info-value">****{{ orderDetails.latest_payment.payment_details.card_number }}</span>
+                    <span class="info-label">Card Number:</span>
+                    <span class="info-value">{{ orderDetails.latest_payment.payment_details.card_number }}</span>
                   </div>
                 </template>
                 <template v-if="orderDetails.latest_payment.payment_details.card_holder_name">
@@ -276,7 +276,7 @@
               </svg>
             </button>
           </div>
-          
+
           <div class="modal-body">
             <div class="warning-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -370,7 +370,7 @@ const canCancel = (order: any) => {
 
 const loadOrderDetails = async () => {
   const orderNumber = route.params.orderNumber as string
-  
+
   if (!orderNumber) {
     error.value = 'Order number is required'
     isLoading.value = false
@@ -382,7 +382,7 @@ const loadOrderDetails = async () => {
 
   try {
     const response = await ordersApi.get(orderNumber)
-    
+
     if (response.data.success) {
       orderDetails.value = response.data.data
     } else {
@@ -404,7 +404,7 @@ const handleCancelOrder = async () => {
 
   try {
     const response = await ordersApi.cancel(orderDetails.value.order_number)
-    
+
     if (response.data.success) {
       showCancelModal.value = false
       success('Order Cancelled', `Order #${orderDetails.value.order_number} has been cancelled successfully.`)

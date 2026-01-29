@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 
 class RefreshToken extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'tokenable_type',
         'tokenable_id',
@@ -51,10 +54,21 @@ class RefreshToken extends Model
     public static function findToken(string $token): ?self
     {
         $tokenHash = hash('sha256', $token);
-        
-        return self::where('token_hash', $tokenHash)
+
+        $token = self::where('token_hash', $tokenHash)
             ->where('expires_at', '>', now())
             ->first();
+
+        // If not found, check if it was recently deleted (race condition handling)
+        // We allow a 10 second grace period for a token that was just exchanged
+        if (!$token) {
+            $token = self::onlyTrashed()
+                ->where('token_hash', $tokenHash)
+                ->where('deleted_at', '>', now()->subSeconds(10))
+                ->first();
+        }
+
+        return $token;
     }
 
     /**

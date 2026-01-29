@@ -6,10 +6,36 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import { useAuthStore } from './stores/auth'
+import { useAdminAuthStore } from './stores/adminAuth'
 
 const app = createApp(App)
+const pinia = createPinia()
 
-app.use(createPinia())
+app.use(pinia)
 app.use(router)
+
+// Initialize auth stores after pinia is installed
+const authStore = useAuthStore()
+const adminAuthStore = useAdminAuthStore()
+
+// We only fetch on initial load if we're on a non-admin/client-protected route
+// navigation guards will handle fetching on protected routes to avoid double calls
+const isProtectedRoute = router.currentRoute.value.meta?.requiresAuth
+const isAdminPath = window.location.pathname.includes('/admin')
+
+if (!isProtectedRoute) {
+  if (isAdminPath) {
+    console.log('[DEBUG_LOG] Initializing Admin Auth in main.ts');
+    adminAuthStore.init().then(() => {
+      if (adminAuthStore.isAuthenticated) {
+        adminAuthStore.fetchAdmin()
+      }
+    })
+  } else {
+    console.log('[DEBUG_LOG] Initializing Client Auth in main.ts');
+    authStore.fetchUser()
+  }
+}
 
 app.mount('#app')

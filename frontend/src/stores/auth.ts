@@ -80,7 +80,7 @@ export const useAuthStore = defineStore('auth', () => {
         if (accessToken) {
           setClientAccessToken(accessToken)
         }
-        
+
         user.value = response.data.data.user
         // Store user data in localStorage (but not tokens)
         localStorage.setItem('user', JSON.stringify(user.value))
@@ -101,7 +101,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(email: string, password: string, remember = false): Promise<{ success: boolean; message: string }> {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:102',message:'login ENTRY',data:{email},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+
     // #endregion
     isLoading.value = true
     error.value = null
@@ -109,27 +109,27 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await authApi.login(email, password, remember)
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:108',message:'login - AFTER API call',data:{success:response.data.success,hasAccessToken:!!response.data.data?.access_token,hasUser:!!response.data.data?.user},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+
       // #endregion
 
       if (response.data.success) {
         // Store access token in memory (not localStorage)
         const accessToken = response.data.data.access_token
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:113',message:'login - BEFORE setClientAccessToken',data:{hasAccessToken:!!accessToken,accessTokenLength:accessToken?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+
         // #endregion
         if (accessToken) {
           setClientAccessToken(accessToken)
           // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:116',message:'login - AFTER setClientAccessToken',data:{tokenInMemory:!!getClientAccessToken()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+
           // #endregion
         }
-        
+
         user.value = response.data.data.user
         // Store user data in localStorage (but not tokens)
         localStorage.setItem('user', JSON.stringify(user.value))
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:121',message:'login - SUCCESS',data:{userId:user.value?.id,isAuthenticated:!!user.value},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+
         // #endregion
 
         return { success: true, message: response.data.message || 'Login successful' }
@@ -138,7 +138,7 @@ export const useAuthStore = defineStore('auth', () => {
       return { success: false, message: response.data.message || 'Login failed' }
     } catch (err: unknown) {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:128',message:'login - EXCEPTION',data:{error:(err as Error)?.message||String(err)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+
       // #endregion
       const apiError = err as { response?: { data?: { message?: string } }; message?: string }
       const errorMessage = apiError.response?.data?.message || apiError.message || 'Invalid email or password'
@@ -165,7 +165,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function fetchUser(): Promise<AuthResult> {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:148',message:'fetchUser ENTRY',data:{hasUser:!!user.value,userId:user.value?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C,D'})}).catch(()=>{});
+
     // #endregion
     // Always return a proper AuthResult object
     const defaultResult: AuthResult = { success: false, expired: false, noToken: false }
@@ -173,67 +173,72 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       // Step 1: Check if we have a token in memory
       let token = getClientAccessToken()
-      
+
       // Step 2: If no token but user data exists, try to refresh the token first
       // This prevents 401 errors when the page is refreshed (tokens are in-memory only)
       if (!token && user.value) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:157',message:'fetchUser - No token, attempting refresh',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
         token = await refreshClientToken()
-        
+
         if (!token) {
-          // Token refresh failed - session expired
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:162',message:'fetchUser - Token refresh failed',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
-          clearAuthState()
-          return { success: false, expired: true, noToken: true }
+          // Token refresh failed.
+          // CHANGE: Don't clear auth state immediately.
+          // Let the API call proceed so the interceptor can handle the 401 standard flow.
+          // This prevents logging out due to network errors.
+          console.warn('[DEBUG_LOG] Client token refresh failed in fetchUser. Proceeding to trigger interceptor.')
         }
-        
+
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:168',message:'fetchUser - Token refresh succeeded',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+
         // #endregion
       }
-      
+
       // Step 3: If still no token, we can't make the API call
-      if (!token) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:173',message:'fetchUser - No token available',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
-        return { success: false, expired: false, noToken: true }
+      // Wait, if we want to trigger the interceptor, we SHOULD make the call even without a token?
+      // The interceptor adds the token if it exists. If not, it sends without token.
+      // Backend returns 401. Interceptor catches 401 and tries to refresh.
+      // So we should proceed.
+
+      // However, if we explicitly know we have no token and refresh failed, maybe we should stop?
+      // But refresh might have failed due to network.
+      // If we proceed, the API call will fail (network) or 401.
+
+      // Let's proceed to Step 4 regardless of token presence if we have user data.
+      // If we don't have user data, we are not logged in anyway.
+
+      if (!user.value) {
+         return { success: false, expired: false, noToken: true }
       }
-      
+
       // Step 4: Make the API call with the token (interceptor will add it to headers)
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:179',message:'fetchUser - BEFORE API call',data:{hasToken:!!token},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+
       // #endregion
       const response = await authApi.me()
-      
+
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:160',message:'fetchUser - AFTER API call',data:{responseSuccess:response.data.success,hasUserData:!!response.data.data?.user},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+
       // #endregion
-      
+
       if (response.data.success) {
         user.value = response.data.data.user
         localStorage.setItem('user', JSON.stringify(user.value))
         // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:165',message:'fetchUser - SUCCESS, user updated',data:{userId:user.value?.id,isAuthenticated:!!user.value},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+
         // #endregion
         return { success: true, expired: false }
       }
-      
+
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:169',message:'fetchUser - API returned failure',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+
       // #endregion
       return defaultResult
     } catch (err: unknown) {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stores/auth.ts:172',message:'fetchUser - EXCEPTION',data:{error:(err as Error)?.message||String(err),status:(err as any)?.response?.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+
       // #endregion
       // Token might be invalid - clear auth state without calling logout API
       const apiError = err as { response?: { status?: number; data?: { message?: string } }; config?: { _retry?: boolean } }
-      
+
       // If this is a 401 that was retried (token refresh attempted), it means refresh failed
       // Otherwise, if it's a 401 without retry, the interceptor should have handled it
       // Only clear auth state if it's a 401 that couldn't be resolved
@@ -250,8 +255,8 @@ export const useAuthStore = defineStore('auth', () => {
         // Return expired to indicate authentication failed
         return { success: false, expired: true }
       }
-      
-      // For other errors, don't clear auth state but return failure
+
+      // For other errors (e.g. network), don't clear auth state but return failure
       return defaultResult
     }
   }

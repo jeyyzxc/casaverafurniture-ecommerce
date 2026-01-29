@@ -37,6 +37,23 @@ export const dashboard = {
 }
 
 // ==================
+// NOTIFICATIONS
+// ==================
+
+export const notifications = {
+  list: (params?: { page?: number; per_page?: number; read?: boolean }) =>
+    api.get('/admin/notifications', { params }),
+
+  markAsRead: (id: string) => api.post(`/admin/notifications/${id}/mark-as-read`),
+
+  markAllAsRead: () => api.post('/admin/notifications/mark-all-as-read'),
+
+  delete: (id: string) => api.delete(`/admin/notifications/${id}`),
+
+  getUnreadCount: () => api.get('/admin/notifications/unread-count'),
+}
+
+// ==================
 // PRODUCTS
 // ==================
 
@@ -357,6 +374,31 @@ export const promotions = {
   delete: (id: number) => api.delete(`/admin/promotions/${id}`),
 
   toggle: (id: number) => api.post(`/admin/promotions/${id}/toggle`),
+}
+
+// ==================
+// REVIEWS
+// ==================
+
+export const reviews = {
+  list: (params?: {
+    page?: number
+    per_page?: number
+    search?: string
+    status?: string
+    product_id?: number
+    user_id?: number
+    rating?: number
+    sort_by?: string
+    sort_order?: string
+  }) => api.get('/admin/reviews', { params }),
+
+  get: (id: number) => api.get(`/admin/reviews/${id}`),
+
+  updateStatus: (id: number, status: 'approved' | 'rejected') =>
+    api.put(`/admin/reviews/${id}/status`, { status }),
+
+  delete: (id: number) => api.delete(`/admin/reviews/${id}`),
 }
 
 // ==================

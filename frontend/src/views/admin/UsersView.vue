@@ -24,6 +24,18 @@
         <option value="inactive">Inactive</option>
         <option value="banned">Banned</option>
       </select>
+      <button
+        v-if="searchQuery || selectedStatus"
+        class="btn-reset"
+        @click="resetFilters"
+        title="Reset Filters"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+        Reset
+      </button>
     </div>
 
     <div class="table-card">
@@ -97,7 +109,7 @@
                     <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
                   </svg>
                 </button>
-                <button class="action-btn danger" @click="openDeleteModal(user)" title="Delete User">
+                <button class="action-btn danger" @click="openDeleteModal(user)" title="Delete User Permanently">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"/>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -159,19 +171,19 @@
                 </svg>
               </div>
             </div>
-            <h2 class="delete-title">Delete User</h2>
+            <h2 class="delete-title">Delete User Permanently</h2>
             <p class="delete-message">
-              Are you sure you want to delete
+              Are you sure you want to permanently delete
               <strong class="delete-item-name">{{ deletingUser?.name || 'this user' }}</strong>?
             </p>
             <p class="delete-warning">
-              This action cannot be undone. All user data, orders, and related information will be permanently removed.
+              This action cannot be undone. All user data, orders, and related information will be permanently removed from the database.
             </p>
             <div class="delete-actions">
-              <button 
-                type="button" 
-                class="delete-btn-cancel" 
-                @click.stop="closeDeleteModal" 
+              <button
+                type="button"
+                class="delete-btn-cancel"
+                @click.stop="closeDeleteModal"
                 :disabled="isDeleting"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -180,16 +192,16 @@
                 </svg>
                 Cancel
               </button>
-              <button 
-                type="button" 
-                class="delete-btn-confirm" 
-                @click.stop="confirmDelete" 
+              <button
+                type="button"
+                class="delete-btn-confirm"
+                @click.stop="confirmDelete"
                 :disabled="isDeleting"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
-                {{ isDeleting ? 'Deleting...' : 'Delete User' }}
+                {{ isDeleting ? 'Deleting...' : 'Delete Permanently' }}
               </button>
             </div>
           </div>
@@ -262,12 +274,12 @@ const loadUsers = async () => {
     }
 
     const response = await usersApi.list(params)
-    
+
     if (response.data.success) {
       const data = response.data.data
       // Handle both paginated and direct array responses
       const usersData = data.data || data || []
-      
+
       users.value = usersData.map((u: any) => ({
         id: u.id,
         first_name: u.first_name || '',
@@ -305,9 +317,9 @@ const formatPrice = (price: number) => {
 
 const formatDate = (date: Date | string) => {
   const d = typeof date === 'string' ? new Date(date) : date
-  return new Intl.DateTimeFormat('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
     year: 'numeric'
   }).format(d)
 }
@@ -320,14 +332,14 @@ const viewUser = (id: number) => {
 
 const toggleUserStatus = async (user: User) => {
   const originalStatus = user.status
-  
+
   // Optimistically update UI
   user.status = user.status === 'active' ? 'inactive' : 'active'
-  
+
   try {
     const newStatus = user.status
     const response = await usersApi.update(user.id, { status: newStatus })
-    
+
     if (response.data.success) {
       success(
         'Status Updated',
@@ -370,7 +382,7 @@ const confirmBan = async () => {
 
   try {
     const response = await usersApi.ban(banningUser.value.id, banReason.value.trim())
-    
+
     if (response.data.success) {
       success(
         'User Banned',
@@ -395,7 +407,7 @@ const confirmBan = async () => {
 const unbanUser = async (user: User) => {
   try {
     const response = await usersApi.unban(user.id)
-    
+
     if (response.data.success) {
       success(
         'User Unbanned',
@@ -437,11 +449,11 @@ const confirmDelete = async () => {
 
   try {
     const response = await usersApi.delete(deletingUser.value.id)
-    
+
     if (response.data.success) {
       success(
         'User Deleted',
-        `User "${deletingUser.value.name}" has been deleted successfully.`
+        `User "${deletingUser.value.name}" has been permanently deleted.`
       )
       closeDeleteModal()
       await loadUsers()
@@ -457,6 +469,11 @@ const confirmDelete = async () => {
   } finally {
     isDeleting.value = false
   }
+}
+
+const resetFilters = () => {
+  searchQuery.value = ''
+  selectedStatus.value = ''
 }
 
 const exportUsers = () => {
@@ -477,7 +494,7 @@ const exportUsers = () => {
       u.totalSpent,
       formatDate(u.joinedDate)
     ])
-    
+
     const csvContent = [
       headers.join(','),
       ...rows.map(row => row.map(cell => {
@@ -485,7 +502,7 @@ const exportUsers = () => {
         return `"${value}"`
       }).join(','))
     ].join('\n')
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
@@ -604,6 +621,31 @@ onMounted(() => {
   background: var(--white);
   font-size: 0.9rem;
   cursor: pointer;
+}
+
+.btn-reset {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-reset:hover {
+  background: #e5e7eb;
+  color: var(--dark);
+  border-color: #d1d5db;
+}
+
+.btn-reset svg {
+  width: 18px;
+  height: 18px;
 }
 
 .table-card {

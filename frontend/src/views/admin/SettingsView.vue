@@ -8,62 +8,115 @@
     </div>
 
     <div class="settings-tabs">
-      <button 
-        v-for="tab in tabs" 
+      <button
+        v-for="tab in tabs"
         :key="tab.id"
         :class="['tab-btn', { active: activeTab === tab.id }]"
         @click="activeTab = tab.id"
       >
+        <span class="tab-icon" v-html="tab.icon"></span>
         {{ tab.label }}
       </button>
     </div>
 
     <div class="settings-content">
-      <div v-if="activeTab === 'store'" class="settings-section">
-        <h3>Store Information</h3>
-        <p class="settings-note">
-          Changes are automatically saved to your browser's local storage. Click "Save Changes" to sync with the server.
-        </p>
-        <div class="form-group">
-          <label>Store Name</label>
-          <input v-model="storeSettings.name" type="text" placeholder="Enter store name">
+      <!-- STORE SETTINGS -->
+      <div v-if="activeTab === 'store'" class="settings-section fade-in">
+        <div class="section-header">
+          <h3>Store Information</h3>
+          <p class="section-description">Manage your store's public profile and contact details.</p>
         </div>
-        <div class="form-group">
-          <label>Store Email</label>
-          <input v-model="storeSettings.email" type="email" placeholder="Enter store email">
+
+        <div class="store-grid">
+          <div class="store-logo-section">
+            <label>Store Logo</label>
+            <div class="logo-uploader" @click="triggerLogoUpload">
+              <img v-if="storeSettings.logo" :src="storeSettings.logo" alt="Store Logo" class="logo-preview">
+              <div v-else class="logo-placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>Upload Logo</span>
+              </div>
+              <div v-if="isUploadingLogo" class="upload-overlay">
+                <div class="spinner"></div>
+              </div>
+            </div>
+            <input type="file" ref="logoInput" accept="image/*" style="display: none" @change="handleLogoUpload">
+            <p class="help-text">Recommended size: 200x200px. Max 2MB.</p>
+          </div>
+
+          <div class="store-form">
+            <div class="form-group">
+              <label>Store Name</label>
+              <input v-model="storeSettings.name" type="text" placeholder="Enter store name">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Store Email</label>
+                <input v-model="storeSettings.email" type="email" placeholder="Enter store email">
+              </div>
+              <div class="form-group">
+                <label>Store Phone</label>
+                <input v-model="storeSettings.phone" type="tel" placeholder="Enter store phone">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Store Address</label>
+              <textarea v-model="storeSettings.address" rows="3" placeholder="Enter store address"></textarea>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Store Phone</label>
-          <input v-model="storeSettings.phone" type="tel" placeholder="Enter store phone">
-        </div>
-        <div class="form-group">
-          <label>Store Address</label>
-          <textarea v-model="storeSettings.address" rows="3" placeholder="Enter store address"></textarea>
-        </div>
+
         <div class="form-actions">
-          <button class="btn-primary" @click="saveSettings">Save Changes</button>
-          <button class="btn-secondary" @click="loadStoreSettings">Reload from Server</button>
+          <button class="btn-primary" @click="saveSettings" :disabled="isSaving">
+            <span v-if="isSaving" class="spinner-sm"></span>
+            {{ isSaving ? 'Saving...' : 'Save Changes' }}
+          </button>
         </div>
       </div>
 
-      <div v-if="activeTab === 'payment'" class="settings-section">
+      <!-- PAYMENT SETTINGS -->
+      <div v-if="activeTab === 'payment'" class="settings-section fade-in">
         <div class="section-header">
           <h3>Payment Methods</h3>
           <p class="section-description">Manage available payment methods and their settings.</p>
         </div>
-        
+
         <div v-if="isLoadingPaymentMethods" class="loading-state">
           <div class="spinner"></div>
           <span>Loading payment methods...</span>
         </div>
-        
+
         <div v-else class="payment-methods-list">
           <div
-            v-for="method in paymentMethods"
+            v-for="(method, index) in paymentMethods"
             :key="method.id"
             class="payment-method-item"
             :class="{ 'is-active': method.is_active, 'is-inactive': !method.is_active }"
           >
+            <div class="drag-handle">
+              <div class="order-controls">
+                <button
+                  class="btn-order"
+                  :disabled="index === 0"
+                  @click="reorderPaymentMethod(index, -1)"
+                  title="Move Up"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                </button>
+                <button
+                  class="btn-order"
+                  :disabled="index === paymentMethods.length - 1"
+                  @click="reorderPaymentMethod(index, 1)"
+                  title="Move Down"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+              </div>
+            </div>
             <div class="method-main">
               <div class="method-info">
                 <div class="method-header-row">
@@ -83,226 +136,318 @@
                     Fee: ₱{{ formatPrice(method.fee_fixed) }}
                   </span>
                   <span v-else class="fee-info no-fee">No fee</span>
-                  <span v-if="method.min_amount || method.max_amount" class="limits-info">
-                    Limits: ₱{{ formatPrice(method.min_amount || 0) }} - ₱{{ formatPrice(method.max_amount || 0) }}
-                  </span>
                 </div>
               </div>
               <div class="method-actions">
-                <button
-                  class="btn-toggle"
-                  :class="{ active: method.is_active }"
-                  @click="togglePaymentMethod(method)"
-                >
-                  {{ method.is_active ? 'Disable' : 'Enable' }}
+                <label class="switch">
+                  <input type="checkbox" :checked="method.is_active" @change="togglePaymentMethod(method)">
+                  <span class="slider round"></span>
+                </label>
+                <button class="btn-icon" @click="editPaymentMethod(method)" title="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
                 </button>
-                <button class="btn-edit" @click="editPaymentMethod(method)">Edit</button>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Edit Payment Method Modal -->
-        <div v-if="editingMethod" class="modal-overlay" @click="closeEditModal">
-          <div class="modal-content" @click.stop>
-            <div class="modal-header">
-              <h3>Edit Payment Method: {{ editingMethod.name }}</h3>
-              <button class="btn-close" @click="closeEditModal">×</button>
-            </div>
-            <div class="modal-body">
-              <div class="form-group">
-                <label>Name *</label>
-                <input v-model="editForm.name" type="text" required />
-              </div>
-              <div class="form-group">
-                <label>Description</label>
-                <textarea v-model="editForm.description" rows="3"></textarea>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Fixed Fee (₱)</label>
-                  <input v-model.number="editForm.fee_fixed" type="number" min="0" step="0.01" />
-                </div>
-                <div class="form-group">
-                  <label>Percentage Fee (%)</label>
-                  <input v-model.number="editForm.fee_percentage" type="number" min="0" max="100" step="0.01" />
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Minimum Amount (₱)</label>
-                  <input v-model.number="editForm.min_amount" type="number" min="0" step="0.01" />
-                </div>
-                <div class="form-group">
-                  <label>Maximum Amount (₱)</label>
-                  <input v-model.number="editForm.max_amount" type="number" min="0" step="0.01" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Payment Instructions</label>
-                <textarea v-model="editForm.payment_instructions" rows="5" placeholder="Step-by-step instructions for customers..."></textarea>
-              </div>
-              <div class="form-group">
-                <label>
-                  <input type="checkbox" v-model="editForm.requires_verification" />
-                  Requires Manual Verification
-                </label>
-              </div>
-              <div class="form-group">
-                <label>
-                  <input type="checkbox" v-model="editForm.requires_proof_of_payment" />
-                  Requires Proof of Payment
-                </label>
-              </div>
-              <div class="form-group">
-                <label>
-                  <input type="checkbox" v-model="editForm.is_active" />
-                  Active (visible to customers)
-                </label>
-              </div>
-              <div class="form-group">
-                <label>Display Order</label>
-                <input v-model.number="editForm.display_order" type="number" min="0" />
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button class="btn-secondary" @click="closeEditModal">Cancel</button>
-              <button class="btn-primary" @click="savePaymentMethod" :disabled="isSaving">
-                {{ isSaving ? 'Saving...' : 'Save Changes' }}
-              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div v-if="activeTab === 'shipping'" class="settings-section">
-        <h3>Shipping Settings</h3>
-        <div class="form-group">
-          <label>Default Shipping Fee</label>
-          <input v-model.number="shippingSettings.defaultFee" type="number">
+      <!-- SHIPPING SETTINGS -->
+      <div v-if="activeTab === 'shipping'" class="settings-section fade-in">
+        <div class="section-header">
+          <h3>Shipping Configuration</h3>
+          <p class="section-description">Set up global shipping rules and specific shipping methods.</p>
         </div>
-        <div class="form-group">
-          <label>Free Shipping Threshold</label>
-          <input v-model.number="shippingSettings.freeThreshold" type="number">
+
+        <div class="settings-card">
+          <h4>Global Rules</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Default Shipping Fee (₱)</label>
+              <input v-model.number="shippingSettings.defaultFee" type="number" min="0">
+            </div>
+            <div class="form-group">
+              <label>Free Shipping Threshold (₱)</label>
+              <input v-model.number="shippingSettings.freeThreshold" type="number" min="0">
+              <p class="help-text">Orders above this amount get free shipping.</p>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" @click="saveSettings" :disabled="isSaving">
+              <span v-if="isSaving" class="spinner-sm"></span>
+              Save Global Rules
+            </button>
+          </div>
         </div>
-        <button class="btn-primary" @click="saveSettings">Save Changes</button>
+
+        <div class="settings-card mt-4">
+          <div class="card-header-row">
+            <h4>Shipping Methods</h4>
+            <button class="btn-secondary btn-sm" @click="openAddShippingModal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Add Method
+            </button>
+          </div>
+
+          <div v-if="isLoadingShipping" class="loading-state">
+            <div class="spinner"></div>
+          </div>
+
+          <div v-else-if="shippingMethods.length === 0" class="empty-state">
+            <p>No shipping methods configured.</p>
+          </div>
+
+          <div v-else class="shipping-list">
+            <div v-for="method in shippingMethods" :key="method.id" class="shipping-item">
+              <div class="shipping-info">
+                <div class="shipping-name">
+                  {{ method.name }}
+                  <span v-if="!method.is_active" class="badge-inactive">Inactive</span>
+                </div>
+                <div class="shipping-meta">
+                  <span>Fee: ₱{{ formatPrice(method.amount) }}</span>
+                  <span v-if="method.min_order || method.max_order">
+                    Orders: ₱{{ method.min_order || 0 }} - {{ method.max_order ? '₱' + method.max_order : '∞' }}
+                  </span>
+                </div>
+              </div>
+              <div class="shipping-actions">
+                <button class="btn-icon" @click="editShippingMethod(method)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </button>
+                <button class="btn-icon delete" @click="deleteShippingMethod(method)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div v-if="activeTab === 'system'" class="settings-section">
-        <h3>System Preferences</h3>
-        <label class="checkbox-label">
-          <input type="checkbox" v-model="systemSettings.maintenanceMode">
-          <span>Maintenance Mode</span>
-        </label>
-        <label class="checkbox-label">
-          <input type="checkbox" v-model="systemSettings.emailNotifications">
-          <span>Email Notifications</span>
-        </label>
-        <button class="btn-primary" @click="saveSettings">Save Changes</button>
+      <!-- SYSTEM SETTINGS -->
+      <div v-if="activeTab === 'system'" class="settings-section fade-in">
+        <div class="section-header">
+          <h3>System Preferences</h3>
+          <p class="section-description">Configure system-wide behaviors and notifications.</p>
+        </div>
+
+        <div class="system-options">
+          <div class="option-card">
+            <div class="option-info">
+              <h4>Maintenance Mode</h4>
+              <p>Enable to show a maintenance page to customers. Admins can still access the site.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" v-model="systemSettings.maintenanceMode">
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="option-card">
+            <div class="option-info">
+              <h4>Email Notifications</h4>
+              <p>Enable system-wide email notifications for orders and updates.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" v-model="systemSettings.emailNotifications">
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-primary" @click="saveSettings" :disabled="isSaving">
+            <span v-if="isSaving" class="spinner-sm"></span>
+            Save Preferences
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Payment Method Modal -->
+    <Teleport to="body">
+      <div v-if="editingMethod" class="modal-overlay" @click="closeEditModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h3>{{ editingMethod.id ? 'Edit' : 'Add' }} Payment Method</h3>
+            <button class="btn-close" @click="closeEditModal">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Name *</label>
+              <input v-model="editForm.name" type="text" required />
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea v-model="editForm.description" rows="2"></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Fixed Fee (₱)</label>
+                <input v-model.number="editForm.fee_fixed" type="number" min="0" step="0.01" />
+              </div>
+              <div class="form-group">
+                <label>Percentage Fee (%)</label>
+                <input v-model.number="editForm.fee_percentage" type="number" min="0" max="100" step="0.01" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Payment Instructions</label>
+              <textarea v-model="editForm.payment_instructions" rows="4" placeholder="Instructions shown to customer..."></textarea>
+            </div>
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" v-model="editForm.requires_proof_of_payment" />
+                <span>Requires Proof of Payment (Screenshot)</span>
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" @click="closeEditModal">Cancel</button>
+            <button class="btn-primary" @click="savePaymentMethod" :disabled="isSaving">
+              {{ isSaving ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Shipping Method Modal -->
+    <Teleport to="body">
+      <div v-if="showShippingModal" class="modal-overlay" @click="closeShippingModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h3>{{ editingShippingId ? 'Edit' : 'Add' }} Shipping Method</h3>
+            <button class="btn-close" @click="closeShippingModal">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Method Name *</label>
+              <input v-model="shippingForm.name" type="text" required placeholder="e.g., Express Delivery" />
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea v-model="shippingForm.description" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Shipping Fee (₱) *</label>
+              <input v-model.number="shippingForm.amount" type="number" min="0" required />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Min Order Amount</label>
+                <input v-model.number="shippingForm.min_order" type="number" min="0" />
+              </div>
+              <div class="form-group">
+                <label>Max Order Amount</label>
+                <input v-model.number="shippingForm.max_order" type="number" min="0" />
+              </div>
+            </div>
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" v-model="shippingForm.is_active" />
+                <span>Active</span>
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" @click="closeShippingModal">Cancel</button>
+            <button class="btn-primary" @click="saveShippingMethod" :disabled="isSaving">
+              {{ isSaving ? 'Saving...' : 'Save Method' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { settings as settingsApi } from '@/services/adminApi'
+import { settings as settingsApi, shipping as shippingApi, upload as uploadApi } from '@/services/adminApi'
+import { useNotification } from '@/composables/useNotification'
+
+const { success, error: showError } = useNotification()
 
 const activeTab = ref('store')
 
 const tabs = [
-  { id: 'store', label: 'Store Info' },
-  { id: 'payment', label: 'Payments' },
-  { id: 'shipping', label: 'Shipping' },
-  { id: 'system', label: 'System' }
+  {
+    id: 'store',
+    label: 'Store Info',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>'
+  },
+  {
+    id: 'payment',
+    label: 'Payments',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>'
+  },
+  {
+    id: 'shipping',
+    label: 'Shipping',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>'
+  },
+  {
+    id: 'system',
+    label: 'System',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>'
+  }
 ]
 
-// Store Information with localStorage support
-const STORE_SETTINGS_KEY = 'casavera_store_settings'
-
+// ==========================================
+// STORE SETTINGS
+// ==========================================
 const storeSettings = ref({
   name: 'CASA VÉRA',
   email: 'info@casavera.com',
   phone: '+63 123 456 7890',
-  address: '123 Furniture St, Manila, Philippines'
+  address: '123 Furniture St, Manila, Philippines',
+  logo: ''
 })
+const isUploadingLogo = ref(false)
+const logoInput = ref<HTMLInputElement | null>(null)
 
-// Load store settings from localStorage
-const loadStoreSettingsFromLocalStorage = () => {
+const triggerLogoUpload = () => logoInput.value?.click()
+
+const handleLogoUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (!target.files?.length) return
+
+  isUploadingLogo.value = true
   try {
-    const stored = localStorage.getItem(STORE_SETTINGS_KEY)
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      if (parsed && typeof parsed === 'object') {
-        storeSettings.value = {
-          name: parsed.name || storeSettings.value.name,
-          email: parsed.email || storeSettings.value.email,
-          phone: parsed.phone || storeSettings.value.phone,
-          address: parsed.address || storeSettings.value.address,
-        }
-      }
+    const file = target.files[0]
+    const response = await uploadApi.image(file, 'settings')
+    if (response.data.success) {
+      storeSettings.value.logo = response.data.data.url
+      success('Logo Uploaded', 'Store logo has been updated.')
     }
-  } catch (error) {
-    console.error('Failed to load store settings from localStorage:', error)
-    // Continue with default values
+  } catch (err: any) {
+    showError('Upload Failed', err.response?.data?.message || 'Failed to upload logo.')
+  } finally {
+    isUploadingLogo.value = false
   }
 }
 
-// Save store settings to localStorage
-const saveStoreSettingsToLocalStorage = () => {
-  try {
-    localStorage.setItem(STORE_SETTINGS_KEY, JSON.stringify(storeSettings.value))
-  } catch (error) {
-    console.error('Failed to save store settings to localStorage:', error)
-  }
-}
-
-// Watch for changes and auto-save to localStorage
-watch(storeSettings, () => {
-  saveStoreSettingsToLocalStorage()
-}, { deep: true })
-
+// ==========================================
+// PAYMENT SETTINGS
+// ==========================================
 const paymentMethods = ref<any[]>([])
 const isLoadingPaymentMethods = ref(false)
 const editingMethod = ref<any>(null)
 const editForm = ref<any>({})
-const isSaving = ref(false)
-
-const shippingSettings = ref({
-  defaultFee: 150,
-  freeThreshold: 5000
-})
-
-const systemSettings = ref({
-  maintenanceMode: false,
-  emailNotifications: true
-})
-
-const formatPrice = (price: number) => {
-  return price.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-const formatPaymentType = (type: string) => {
-  const types: Record<string, string> = {
-    ewallet: 'E-Wallet',
-    bank_transfer: 'Bank Transfer',
-    cod: 'Cash on Delivery',
-    credit_card: 'Credit Card',
-    debit_card: 'Debit Card',
-    other: 'Other'
-  }
-  return types[type] || type
-}
 
 const loadPaymentMethods = async () => {
   isLoadingPaymentMethods.value = true
   try {
     const response = await settingsApi.getPaymentMethods()
     if (response.data.success) {
-      paymentMethods.value = response.data.data || []
+      paymentMethods.value = (response.data.data || []).sort((a: any, b: any) => a.display_order - b.display_order)
     }
-  } catch (error) {
-    console.error('Failed to load payment methods:', error)
+  } catch (err) {
+    console.error(err)
   } finally {
     isLoadingPaymentMethods.value = false
   }
@@ -310,32 +455,45 @@ const loadPaymentMethods = async () => {
 
 const togglePaymentMethod = async (method: any) => {
   try {
-    const response = await settingsApi.updatePaymentMethod(method.id, {
-      is_active: !method.is_active
-    })
+    const newState = !method.is_active
+    const response = await settingsApi.updatePaymentMethod(method.id, { is_active: newState })
     if (response.data.success) {
-      method.is_active = !method.is_active
+      method.is_active = newState
+      success('Updated', `${method.name} is now ${newState ? 'active' : 'inactive'}.`)
     }
-  } catch (error) {
-    console.error('Failed to toggle payment method:', error)
+  } catch (err) {
+    method.is_active = !method.is_active // Revert
+    showError('Error', 'Failed to update payment method.')
+  }
+}
+
+const reorderPaymentMethod = async (index: number, direction: number) => {
+  const newIndex = index + direction
+  if (newIndex < 0 || newIndex >= paymentMethods.value.length) return
+
+  // Swap in local array
+  const temp = paymentMethods.value[index]
+  paymentMethods.value[index] = paymentMethods.value[newIndex]
+  paymentMethods.value[newIndex] = temp
+
+  // Update display_order for swapped items
+  const item1 = paymentMethods.value[index]
+  const item2 = paymentMethods.value[newIndex]
+
+  try {
+    await Promise.all([
+      settingsApi.updatePaymentMethod(item1.id, { display_order: index }),
+      settingsApi.updatePaymentMethod(item2.id, { display_order: newIndex })
+    ])
+  } catch (err) {
+    showError('Error', 'Failed to save order.')
+    loadPaymentMethods() // Reload to reset
   }
 }
 
 const editPaymentMethod = (method: any) => {
   editingMethod.value = method
-  editForm.value = {
-    name: method.name,
-    description: method.description || '',
-    fee_fixed: method.fee_fixed || 0,
-    fee_percentage: method.fee_percentage || 0,
-    min_amount: method.min_amount || null,
-    max_amount: method.max_amount || null,
-    payment_instructions: method.payment_instructions || '',
-    requires_verification: method.requires_verification || false,
-    requires_proof_of_payment: method.requires_proof_of_payment || false,
-    is_active: method.is_active !== undefined ? method.is_active : true,
-    display_order: method.display_order || 0,
-  }
+  editForm.value = { ...method }
 }
 
 const closeEditModal = () => {
@@ -345,153 +503,218 @@ const closeEditModal = () => {
 
 const savePaymentMethod = async () => {
   if (!editingMethod.value) return
-  
   isSaving.value = true
   try {
     const response = await settingsApi.updatePaymentMethod(editingMethod.value.id, editForm.value)
     if (response.data.success) {
-      // Update local state
       Object.assign(editingMethod.value, editForm.value)
+      success('Saved', 'Payment method updated successfully.')
       closeEditModal()
     }
-  } catch (error) {
-    console.error('Failed to save payment method:', error)
+  } catch (err: any) {
+    showError('Error', err.response?.data?.message || 'Failed to save.')
   } finally {
     isSaving.value = false
   }
 }
 
-const saveSettings = async () => {
+// ==========================================
+// SHIPPING SETTINGS
+// ==========================================
+const shippingSettings = ref({
+  defaultFee: 150,
+  freeThreshold: 5000
+})
+const shippingMethods = ref<any[]>([])
+const isLoadingShipping = ref(false)
+const showShippingModal = ref(false)
+const editingShippingId = ref<number | null>(null)
+const shippingForm = ref({
+  name: '',
+  description: '',
+  amount: 0,
+  min_order: null,
+  max_order: null,
+  is_active: true
+})
+
+const loadShippingMethods = async () => {
+  isLoadingShipping.value = true
   try {
-    // Save to backend via API
+    const response = await shippingApi.list()
+    if (response.data.success) {
+      shippingMethods.value = response.data.data || []
+    }
+  } catch (err) {
+    console.error(err)
+  } finally {
+    isLoadingShipping.value = false
+  }
+}
+
+const openAddShippingModal = () => {
+  editingShippingId.value = null
+  shippingForm.value = { name: '', description: '', amount: 0, min_order: null, max_order: null, is_active: true }
+  showShippingModal.value = true
+}
+
+const editShippingMethod = (method: any) => {
+  editingShippingId.value = method.id
+  shippingForm.value = { ...method }
+  showShippingModal.value = true
+}
+
+const closeShippingModal = () => {
+  showShippingModal.value = false
+}
+
+const saveShippingMethod = async () => {
+  isSaving.value = true
+  try {
+    let response
+    if (editingShippingId.value) {
+      response = await shippingApi.update(editingShippingId.value, shippingForm.value)
+    } else {
+      response = await shippingApi.create(shippingForm.value)
+    }
+
+    if (response.data.success) {
+      success('Success', `Shipping method ${editingShippingId.value ? 'updated' : 'created'}.`)
+      closeShippingModal()
+      loadShippingMethods()
+    }
+  } catch (err: any) {
+    showError('Error', err.response?.data?.message || 'Failed to save shipping method.')
+  } finally {
+    isSaving.value = false
+  }
+}
+
+const deleteShippingMethod = async (method: any) => {
+  if (!confirm(`Are you sure you want to delete "${method.name}"?`)) return
+  try {
+    const response = await shippingApi.delete(method.id)
+    if (response.data.success) {
+      success('Deleted', 'Shipping method removed.')
+      loadShippingMethods()
+    }
+  } catch (err: any) {
+    showError('Error', 'Failed to delete shipping method.')
+  }
+}
+
+// ==========================================
+// SYSTEM SETTINGS
+// ==========================================
+const systemSettings = ref({
+  maintenanceMode: false,
+  emailNotifications: true
+})
+
+// ==========================================
+// GLOBAL SAVE & LOAD
+// ==========================================
+const isSaving = ref(false)
+
+const saveSettings = async () => {
+  isSaving.value = true
+  try {
     const settingsToSave: { key: string; value: unknown; group: string }[] = []
 
-    // Store settings
     if (activeTab.value === 'store') {
       settingsToSave.push(
         { key: 'store_name', value: storeSettings.value.name, group: 'store' },
         { key: 'store_email', value: storeSettings.value.email, group: 'store' },
         { key: 'store_phone', value: storeSettings.value.phone, group: 'store' },
-        { key: 'store_address', value: storeSettings.value.address, group: 'store' }
+        { key: 'store_address', value: storeSettings.value.address, group: 'store' },
+        { key: 'store_logo', value: storeSettings.value.logo, group: 'store' }
       )
-    }
-
-    // Shipping settings
-    if (activeTab.value === 'shipping') {
+    } else if (activeTab.value === 'shipping') {
       settingsToSave.push(
         { key: 'default_shipping_fee', value: shippingSettings.value.defaultFee, group: 'shipping' },
         { key: 'free_shipping_threshold', value: shippingSettings.value.freeThreshold, group: 'shipping' }
       )
-    }
-
-    // System settings
-    if (activeTab.value === 'system') {
+    } else if (activeTab.value === 'system') {
       settingsToSave.push(
         { key: 'maintenance_mode', value: systemSettings.value.maintenanceMode, group: 'system' },
         { key: 'email_notifications', value: systemSettings.value.emailNotifications, group: 'system' }
       )
     }
 
-    if (settingsToSave.length === 0) {
-      alert('No settings to save.')
-      return
+    if (settingsToSave.length > 0) {
+      const response = await settingsApi.update(settingsToSave)
+      if (response.data.success) {
+        success('Settings Saved', 'Your changes have been saved successfully.')
+      }
     }
-
-    const response = await settingsApi.update(settingsToSave)
-    
-    if (response.data.success) {
-      // Settings saved to backend - localStorage is already updated via watcher for store settings
-      alert('Settings saved successfully!')
-    } else {
-      alert('Failed to save settings. Please try again.')
-    }
-  } catch (error) {
-    console.error('Failed to save settings:', error)
-    alert('Failed to save settings. Please try again.')
+  } catch (err: any) {
+    showError('Save Failed', 'Could not save settings.')
+  } finally {
+    isSaving.value = false
   }
 }
 
-// Watch for tab changes
+const loadAllSettings = async () => {
+  try {
+    const response = await settingsApi.getAll()
+    if (response.data.success && response.data.data) {
+      const data = response.data.data
+
+      // Store
+      if (data.store) {
+        storeSettings.value = {
+          name: data.store.store_name || '',
+          email: data.store.store_email || '',
+          phone: data.store.store_phone || '',
+          address: data.store.store_address || '',
+          logo: data.store.store_logo || ''
+        }
+      }
+
+      // Shipping
+      if (data.shipping) {
+        shippingSettings.value = {
+          defaultFee: Number(data.shipping.default_shipping_fee) || 0,
+          freeThreshold: Number(data.shipping.free_shipping_threshold) || 0
+        }
+      }
+
+      // System
+      if (data.system) {
+        systemSettings.value = {
+          maintenanceMode: data.system.maintenance_mode === 'true' || data.system.maintenance_mode === true,
+          emailNotifications: data.system.email_notifications !== 'false' && data.system.email_notifications !== false
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load settings', err)
+  }
+}
+
+// Watchers & Lifecycle
 watch(activeTab, (newTab) => {
-  if (newTab === 'payment' && paymentMethods.value.length === 0) {
-    loadPaymentMethods()
-  } else if (newTab === 'store') {
-    // Reload store settings when switching to store tab
-    loadStoreSettings()
-  } else if (newTab === 'shipping') {
-    loadShippingSettings()
-  } else if (newTab === 'system') {
-    loadSystemSettings()
-  }
+  if (newTab === 'payment' && paymentMethods.value.length === 0) loadPaymentMethods()
+  if (newTab === 'shipping' && shippingMethods.value.length === 0) loadShippingMethods()
 })
-
-// Load store settings from backend on mount
-const loadStoreSettings = async () => {
-  try {
-    const response = await settingsApi.getAll('store')
-    if (response.data.success && response.data.data?.store) {
-      const storeData = response.data.data.store
-      storeSettings.value = {
-        name: storeData.store_name || storeSettings.value.name,
-        email: storeData.store_email || storeSettings.value.email,
-        phone: storeData.store_phone || storeSettings.value.phone,
-        address: storeData.store_address || storeSettings.value.address,
-      }
-      // Save loaded data to localStorage
-      saveStoreSettingsToLocalStorage()
-    } else {
-      // If no backend data, load from localStorage
-      loadStoreSettingsFromLocalStorage()
-    }
-  } catch (error) {
-    console.error('Failed to load store settings from backend:', error)
-    // Fallback to localStorage
-    loadStoreSettingsFromLocalStorage()
-  }
-}
-
-// Load shipping settings
-const loadShippingSettings = async () => {
-  try {
-    const response = await settingsApi.getAll('shipping')
-    if (response.data.success && response.data.data?.shipping) {
-      const shippingData = response.data.data.shipping
-      shippingSettings.value = {
-        defaultFee: shippingData.default_shipping_fee || shippingSettings.value.defaultFee,
-        freeThreshold: shippingData.free_shipping_threshold || shippingSettings.value.freeThreshold,
-      }
-    }
-  } catch (error) {
-    console.error('Failed to load shipping settings:', error)
-  }
-}
-
-// Load system settings
-const loadSystemSettings = async () => {
-  try {
-    const response = await settingsApi.getAll('system')
-    if (response.data.success && response.data.data?.system) {
-      const systemData = response.data.data.system
-      systemSettings.value = {
-        maintenanceMode: systemData.maintenance_mode || false,
-        emailNotifications: systemData.email_notifications !== false,
-      }
-    }
-  } catch (error) {
-    console.error('Failed to load system settings:', error)
-  }
-}
 
 onMounted(() => {
-  // Load store settings (from backend or localStorage)
-  loadStoreSettings()
-  loadShippingSettings()
-  loadSystemSettings()
-  
-  if (activeTab.value === 'payment') {
-    loadPaymentMethods()
-  }
+  loadAllSettings()
+  if (activeTab.value === 'payment') loadPaymentMethods()
 })
+
+// Helpers
+const formatPrice = (price: number | null | undefined) => {
+  return (Number(price) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+const formatPaymentType = (type: string) => {
+  const types: Record<string, string> = {
+    ewallet: 'E-Wallet', bank_transfer: 'Bank Transfer', cod: 'Cash on Delivery',
+    credit_card: 'Credit Card', debit_card: 'Debit Card', other: 'Other'
+  }
+  return types[type] || type
+}
+const loadStoreSettings = loadAllSettings // Alias for template
 </script>
 
 <style scoped>
@@ -501,41 +724,28 @@ onMounted(() => {
   --light: #f5f7fa;
   --white: #ffffff;
   --gray: #6b7280;
-  padding-top: 3.5rem;
-  padding-left: 2rem;
-  padding-right: 2rem;
-  padding-bottom: 2rem;
+  padding: 3.5rem 2rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
+.page-header { margin-bottom: 2rem; }
+.page-title { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: var(--dark); margin: 0 0 0.5rem; }
+.page-subtitle { color: #4b5563; margin: 0; }
 
-.page-header {
-  margin-bottom: 2rem;
-}
-
-.page-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--dark);
-  margin: 0 0 0.5rem;
-  transition: color 0.3s ease;
-}
-
-.page-subtitle {
-  color: #374151;
-  font-size: 0.95rem;
-  margin: 0;
-  transition: color 0.3s ease;
-}
-
+/* Tabs */
 .settings-tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
   margin-bottom: 2rem;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  overflow-x: auto;
 }
 
 .tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 1rem 1.5rem;
   background: none;
   border: none;
@@ -544,413 +754,156 @@ onMounted(() => {
   color: #6b7280;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
-.tab-btn.active {
-  color: var(--gold);
-  border-bottom-color: var(--gold);
-}
+.tab-btn:hover { color: var(--dark); }
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-icon { display: flex; align-items: center; }
+.tab-icon :deep(svg) { width: 18px; height: 18px; }
 
+/* Content */
 .settings-content {
   background: var(--white);
   border-radius: 16px;
   padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  min-height: 400px;
 }
 
-.settings-section h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--dark);
-  margin: 0 0 0.5rem;
-}
+.fade-in { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-.settings-note {
-  font-size: 0.875rem;
-  color: #6b7280;
-  background: #f3f4f6;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  border-left: 3px solid var(--gold);
-}
+.section-header { margin-bottom: 2rem; border-bottom: 1px solid #f3f4f6; padding-bottom: 1rem; }
+.section-header h3 { font-size: 1.5rem; font-weight: 700; color: var(--dark); margin: 0 0 0.5rem; }
+.section-description { color: #6b7280; margin: 0; }
 
-.form-group {
-  margin-bottom: 1.5rem;
+/* Forms */
+.form-group { margin-bottom: 1.5rem; }
+.form-group label { display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.5rem; font-size: 0.9rem; }
+.form-group input, .form-group textarea {
+  width: 100%; padding: 0.75rem 1rem; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.95rem; transition: border-color 0.2s;
 }
+.form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--gold); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 
-.form-group label {
-  display: block;
-  font-weight: 600;
-  color: var(--dark);
-  margin-bottom: 0.5rem;
+/* Store Logo */
+.store-grid { display: grid; grid-template-columns: 250px 1fr; gap: 2rem; }
+.store-logo-section { text-align: center; }
+.logo-uploader {
+  width: 100%; aspect-ratio: 1; border: 2px dashed #e5e7eb; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; position: relative; overflow: hidden; transition: all 0.2s; background: #f9fafb;
 }
+.logo-uploader:hover { border-color: var(--gold); background: #fefce8; }
+.logo-preview { width: 100%; height: 100%; object-fit: contain; padding: 1rem; }
+.logo-placeholder { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; color: #9ca3af; }
+.logo-placeholder svg { width: 32px; height: 32px; }
+.upload-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; }
+.help-text { font-size: 0.8rem; color: #9ca3af; margin-top: 0.5rem; }
 
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 0.9rem;
-}
-
-.payment-methods {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-}
-
+/* Buttons */
 .btn-primary {
-  padding: 0.75rem 1.5rem;
-  background: var(--gold);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--gold); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;
 }
-
-.btn-primary:hover {
-  background: #b8860b;
-  transform: translateY(-1px);
-}
-
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-}
+.btn-primary:hover:not(:disabled) { background: #b08d44; transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
 
 .btn-secondary {
-  padding: 0.75rem 1.5rem;
-  background: white;
-  color: var(--dark);
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  padding: 0.75rem 1.5rem; background: white; color: #4b5563; border: 1px solid #d1d5db; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;
 }
+.btn-secondary:hover { background: #f3f4f6; color: var(--dark); }
 
-.btn-secondary:hover {
-  border-color: var(--gold);
-  color: var(--gold);
+.btn-icon {
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: none; background: transparent; color: #6b7280; border-radius: 6px; cursor: pointer; transition: all 0.2s;
 }
+.btn-icon:hover { background: #f3f4f6; color: var(--dark); }
+.btn-icon.delete:hover { background: #fee2e2; color: #ef4444; }
+.btn-icon svg { width: 18px; height: 18px; }
 
-/* Payment Methods Section */
-.section-header {
-  margin-bottom: 2rem;
-}
-
-.section-description {
-  color: #6b7280;
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
-}
-
-.loading-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 3rem;
-  color: #6b7280;
-}
-
-.spinner {
-  width: 24px;
-  height: 24px;
-  border: 3px solid #e5e7eb;
-  border-top-color: var(--gold);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.payment-methods-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
+/* Payment Methods */
+.payment-methods-list { display: flex; flex-direction: column; gap: 1rem; }
 .payment-method-item {
-  background: white;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
+  display: flex; gap: 1rem; background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.25rem; transition: all 0.2s;
 }
+.payment-method-item:hover { border-color: #d1d5db; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+.payment-method-item.is-active { border-left: 4px solid var(--gold); }
+.payment-method-item.is-inactive { opacity: 0.7; background: #f9fafb; }
 
-.payment-method-item.is-active {
-  border-color: #c9a050;
-  background: #fefbf5;
+.drag-handle { display: flex; align-items: center; }
+.order-controls { display: flex; flex-direction: column; gap: 2px; }
+.btn-order {
+  width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border: 1px solid #e5e7eb; background: white; border-radius: 4px; cursor: pointer; color: #6b7280;
 }
+.btn-order:hover:not(:disabled) { background: #f3f4f6; color: var(--dark); }
+.btn-order:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn-order svg { width: 14px; height: 14px; }
 
-.payment-method-item.is-inactive {
-  opacity: 0.7;
-  background: #f9fafb;
-}
+.method-main { flex: 1; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.method-info { flex: 1; }
+.method-header-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+.method-name { font-size: 1.1rem; font-weight: 700; color: var(--dark); margin: 0; }
+.method-type-badge { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: 4px; background: #f3f4f6; color: #4b5563; }
+.status-badge { font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 4px; }
+.status-badge.active { background: #dcfce7; color: #166534; }
+.status-badge.inactive { background: #fee2e2; color: #991b1b; }
+.method-description { color: #6b7280; font-size: 0.9rem; margin: 0 0 0.5rem; }
+.method-details { display: flex; gap: 1rem; font-size: 0.85rem; color: #4b5563; }
+.fee-info { background: #fffbeb; color: #92400e; padding: 0.1rem 0.5rem; border-radius: 4px; }
 
-.method-main {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1.5rem;
-}
+.method-actions { display: flex; align-items: center; gap: 1rem; }
 
-.method-info {
-  flex: 1;
-}
+/* Switch */
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--gold); }
+input:checked + .slider:before { transform: translateX(20px); }
 
-.method-header-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-  flex-wrap: wrap;
-}
+/* Shipping */
+.settings-card { background: #f9fafb; border-radius: 12px; padding: 1.5rem; border: 1px solid #e5e7eb; }
+.settings-card h4 { margin: 0 0 1rem; color: var(--dark); font-size: 1.1rem; }
+.mt-4 { margin-top: 1.5rem; }
+.card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; }
+.btn-sm svg { width: 16px; height: 16px; }
 
-.method-name {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--dark);
-  margin: 0;
-}
+.shipping-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.shipping-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 1rem; border-radius: 8px; border: 1px solid #e5e7eb; }
+.shipping-name { font-weight: 600; color: var(--dark); }
+.badge-inactive { font-size: 0.7rem; background: #fee2e2; color: #991b1b; padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.5rem; }
+.shipping-meta { font-size: 0.85rem; color: #6b7280; margin-top: 0.2rem; display: flex; gap: 1rem; }
+.shipping-actions { display: flex; gap: 0.5rem; }
 
-.method-type-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
+/* System */
+.system-options { display: flex; flex-direction: column; gap: 1rem; }
+.option-card { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border: 1px solid #e5e7eb; border-radius: 12px; }
+.option-info h4 { margin: 0 0 0.25rem; color: var(--dark); }
+.option-info p { margin: 0; color: #6b7280; font-size: 0.9rem; }
 
-.method-type-badge.type-ewallet {
-  background: #dbeafe;
-  color: #1e40af;
-}
+/* Modals */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(2px); }
+.modal-content { background: white; width: 90%; max-width: 550px; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); overflow: hidden; animation: slideUp 0.3s ease; }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: #f9fafb; }
+.modal-header h3 { margin: 0; font-size: 1.25rem; color: var(--dark); }
+.modal-body { padding: 1.5rem; max-height: 70vh; overflow-y: auto; }
+.modal-footer { padding: 1.25rem 1.5rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 1rem; background: #f9fafb; }
 
-.method-type-badge.type-bank_transfer {
-  background: #fef3c7;
-  color: #92400e;
-}
+.checkbox-group { margin-top: 1rem; }
+.checkbox-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; color: var(--dark); }
+.checkbox-label input { width: 18px; height: 18px; accent-color: var(--gold); }
 
-.method-type-badge.type-cod {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.method-type-badge.type-credit_card,
-.method-type-badge.type-debit_card {
-  background: #e0e7ff;
-  color: #3730a3;
-}
-
-.method-type-badge.type-other {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.status-badge.active {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.status-badge.inactive {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.method-description {
-  color: #6b7280;
-  font-size: 0.9rem;
-  margin: 0.5rem 0;
-}
-
-.method-details {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.fee-info,
-.limits-info {
-  font-size: 0.85rem;
-  color: #6b7280;
-  padding: 0.25rem 0.5rem;
-  background: #f3f4f6;
-  border-radius: 4px;
-}
-
-.fee-info.no-fee {
-  color: #059669;
-  background: #d1fae5;
-}
-
-.method-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-toggle,
-.btn-edit {
-  padding: 0.5rem 1rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-toggle {
-  background: white;
-  color: #6b7280;
-}
-
-.btn-toggle.active {
-  background: #fee2e2;
-  color: #991b1b;
-  border-color: #fecaca;
-}
-
-.btn-toggle:hover {
-  border-color: #c9a050;
-}
-
-.btn-edit {
-  background: var(--gold);
-  color: white;
-  border-color: var(--gold);
-}
-
-.btn-edit:hover {
-  background: #b8860b;
-  border-color: #b8860b;
-}
-
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 2rem;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 16px;
-  width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: var(--dark);
-}
-
-.btn-close {
-  background: none;
-  border: none;
-  font-size: 2rem;
-  color: #6b7280;
-  cursor: pointer;
-  line-height: 1;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: all 0.2s;
-}
-
-.btn-close:hover {
-  background: #f3f4f6;
-  color: var(--dark);
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  padding: 1.5rem;
-  border-top: 2px solid #e5e7eb;
-}
+/* Loading */
+.loading-state { padding: 3rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; color: #6b7280; }
+.spinner { width: 32px; height: 32px; border: 3px solid #f3f4f6; border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite; }
+.spinner-sm { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 768px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-  
-  .method-main {
-    flex-direction: column;
-  }
-  
-  .method-actions {
-    width: 100%;
-  }
-  
-  .btn-toggle,
-  .btn-edit {
-    flex: 1;
-  }
+  .store-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .method-main { flex-direction: column; gap: 1rem; }
+  .method-actions { width: 100%; justify-content: space-between; }
 }
-
 </style>

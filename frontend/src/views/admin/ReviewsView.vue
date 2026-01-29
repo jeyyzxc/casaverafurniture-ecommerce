@@ -6,7 +6,7 @@
         <p class="page-subtitle">Manage product reviews and customer feedback.</p>
       </div>
       <div class="header-actions">
-        <select v-model="filterStatus" class="filter-select">
+        <select v-model="filterStatus" class="filter-select" @change="loadReviews">
           <option value="">All Reviews</option>
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
@@ -15,14 +15,23 @@
       </div>
     </div>
 
-    <div class="reviews-list">
-      <div v-for="review in filteredReviews" :key="review.id" class="review-card">
+    <div v-if="isLoading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading reviews...</p>
+    </div>
+
+    <div v-else-if="reviews.length === 0" class="empty-state">
+      <p>No reviews found.</p>
+    </div>
+
+    <div v-else class="reviews-list">
+      <div v-for="review in reviews" :key="review.id" class="review-card">
         <div class="review-header">
           <div class="reviewer-info">
-            <div class="reviewer-avatar">{{ review.customerName.charAt(0) }}</div>
+            <div class="reviewer-avatar">{{ review.user?.first_name?.charAt(0) || 'U' }}</div>
             <div>
-              <div class="reviewer-name">{{ review.customerName }}</div>
-              <div class="review-date">{{ formatDate(review.date) }}</div>
+              <div class="reviewer-name">{{ review.user?.full_name || 'Unknown User' }}</div>
+              <div class="review-date">{{ formatDate(review.created_at) }}</div>
             </div>
           </div>
           <div class="review-rating">
@@ -33,8 +42,8 @@
           </div>
         </div>
         <div class="review-product">
-          <img :src="review.productImage" :alt="review.productName" class="product-thumb">
-          <span>{{ review.productName }}</span>
+          <img :src="review.product?.image_url || '/placeholder.png'" :alt="review.product?.name" class="product-thumb">
+          <span>{{ review.product?.name || 'Unknown Product' }}</span>
         </div>
         <div class="review-content">
           <p>{{ review.comment }}</p>
@@ -42,12 +51,33 @@
         <div class="review-actions">
           <span class="status-badge" :class="review.status.toLowerCase()">{{ review.status }}</span>
           <div class="action-buttons">
-            <button v-if="review.status === 'Pending'" class="btn-small success" @click="approveReview(review.id)">Approve</button>
-            <button v-if="review.status === 'Pending'" class="btn-small danger" @click="rejectReview(review.id)">Reject</button>
+            <button v-if="review.status === 'pending'" class="btn-small success" @click="updateStatus(review.id, 'approved')">Approve</button>
+            <button v-if="review.status === 'pending'" class="btn-small danger" @click="updateStatus(review.id, 'rejected')">Reject</button>
             <button class="btn-small" @click="deleteReview(review.id)">Delete</button>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" v-if="pagination.last_page > 1">
+      <button
+        @click="changePage(pagination.current_page - 1)"
+        :disabled="pagination.current_page === 1"
+        class="page-btn"
+      >
+        Previous
+      </button>
+      <span class="page-info">
+        Page {{ pagination.current_page }} of {{ pagination.last_page }}
+      </span>
+      <button
+        @click="changePage(pagination.current_page + 1)"
+        :disabled="pagination.current_page === pagination.last_page"
+        class="page-btn"
+      >
+        Next
+      </button>
     </div>
 
     <!-- Delete Confirmation Modal -->
@@ -67,8 +97,8 @@
             </div>
             <h2 class="delete-title">Delete Review</h2>
             <p class="delete-message">
-              Are you sure you want to delete this review from 
-              <strong class="delete-item-name">{{ deletingReview?.customerName }}</strong>?
+              Are you sure you want to delete this review from
+              <strong class="delete-item-name">{{ deletingReview?.user?.full_name }}</strong>?
             </p>
             <p class="delete-warning">
               This action cannot be undone. The review will be permanently removed.
@@ -119,58 +149,104 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
+import { reviews as reviewsApi } from '@/services/adminApi'
+import { useNotification } from '@/composables/useNotification'
+
+const { success, error: showError } = useNotification()
 
 interface Review {
   id: number
-  customerName: string
-  productName: string
-  productImage: string
+  user_id: number
+  product_id: number
   rating: number
   comment: string
-  date: Date
-  status: 'Pending' | 'Approved' | 'Rejected'
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+  user?: {
+    first_name: string
+    last_name: string
+    full_name: string
+  }
+  product?: {
+    name: string
+    image_url: string
+  }
 }
 
+const reviews = ref<Review[]>([])
+const isLoading = ref(false)
 const filterStatus = ref('')
 const showDeleteModal = ref(false)
 const deletingReview = ref<Review | null>(null)
 const showDeleteSuccess = ref(false)
 
-const reviews = ref<Review[]>([
-  {
-    id: 1,
-    customerName: 'John Doe',
-    productName: 'Cloud Sofa',
-    productImage: '/images/products/cloudsofa.png',
-    rating: 5,
-    comment: 'Excellent quality and very comfortable!',
-    date: new Date(),
-    status: 'Approved'
-  }
-])
-
-const filteredReviews = computed(() => {
-  if (!filterStatus.value) return reviews.value
-  return reviews.value.filter(r => r.status.toLowerCase() === filterStatus.value)
+const pagination = ref({
+  current_page: 1,
+  last_page: 1,
+  per_page: 10,
+  total: 0
 })
 
-const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
+const loadReviews = async () => {
+  isLoading.value = true
+  try {
+    const params: any = {
+      page: pagination.value.current_page,
+      per_page: pagination.value.per_page,
+      sort_by: 'created_at',
+      sort_order: 'desc'
+    }
+
+    if (filterStatus.value) {
+      params.status = filterStatus.value
+    }
+
+    const response = await reviewsApi.list(params)
+
+    if (response.data.success) {
+      reviews.value = response.data.data.data
+      pagination.value = {
+        current_page: response.data.data.current_page,
+        last_page: response.data.data.last_page,
+        per_page: response.data.data.per_page,
+        total: response.data.data.total
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load reviews:', err)
+    showError('Error', 'Failed to load reviews.')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const changePage = (page: number) => {
+  pagination.value.current_page = page
+  loadReviews()
+}
+
+const formatDate = (dateString: string) => {
+  if (!dateString) return ''
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
     year: 'numeric'
-  }).format(date)
+  }).format(new Date(dateString))
 }
 
-const approveReview = (id: number) => {
-  const review = reviews.value.find(r => r.id === id)
-  if (review) review.status = 'Approved'
-}
-
-const rejectReview = (id: number) => {
-  const review = reviews.value.find(r => r.id === id)
-  if (review) review.status = 'Rejected'
+const updateStatus = async (id: number, status: 'approved' | 'rejected') => {
+  try {
+    const response = await reviewsApi.updateStatus(id, status)
+    if (response.data.success) {
+      const review = reviews.value.find(r => r.id === id)
+      if (review) review.status = status
+      success('Success', `Review ${status}.`)
+    }
+  } catch (err) {
+    console.error('Failed to update status:', err)
+    showError('Error', 'Failed to update review status.')
+  }
 }
 
 const deleteReview = (id: number) => {
@@ -182,14 +258,28 @@ const deleteReview = (id: number) => {
   }
 }
 
-const confirmDelete = () => {
-  if (deletingReview.value) {
-    reviews.value = reviews.value.filter(r => r.id !== deletingReview.value!.id)
-    closeDeleteModal()
-    showDeleteSuccess.value = true
-    setTimeout(() => {
-      showDeleteSuccess.value = false
-    }, 4000)
+const confirmDelete = async () => {
+  if (!deletingReview.value) return
+
+  try {
+    const response = await reviewsApi.delete(deletingReview.value.id)
+    if (response.data.success) {
+      reviews.value = reviews.value.filter(r => r.id !== deletingReview.value!.id)
+      closeDeleteModal()
+      showDeleteSuccess.value = true
+      setTimeout(() => {
+        showDeleteSuccess.value = false
+      }, 4000)
+
+      // Reload if page becomes empty
+      if (reviews.value.length === 0 && pagination.value.current_page > 1) {
+        pagination.value.current_page--
+        loadReviews()
+      }
+    }
+  } catch (err) {
+    console.error('Failed to delete review:', err)
+    showError('Error', 'Failed to delete review.')
   }
 }
 
@@ -198,6 +288,10 @@ const closeDeleteModal = () => {
   deletingReview.value = null
   document.body.style.overflow = ''
 }
+
+onMounted(() => {
+  loadReviews()
+})
 </script>
 
 <style scoped>
@@ -245,6 +339,7 @@ const closeDeleteModal = () => {
   font-size: 0.9rem;
   color: var(--dark);
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .filter-select:focus {
@@ -389,6 +484,7 @@ const closeDeleteModal = () => {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
 .btn-small.success {
@@ -396,14 +492,88 @@ const closeDeleteModal = () => {
   color: #065f46;
 }
 
+.btn-small.success:hover {
+  background: #bbf7d0;
+}
+
 .btn-small.danger {
   background: #fee2e2;
   color: #991b1b;
 }
 
+.btn-small.danger:hover {
+  background: #fecaca;
+}
+
 .btn-small:not(.success):not(.danger) {
   background: #f3f4f6;
   color: var(--dark);
+}
+
+.btn-small:not(.success):not(.danger):hover {
+  background: #e5e7eb;
+}
+
+/* Loading & Empty States */
+.loading-state {
+  text-align: center;
+  padding: 4rem;
+  color: var(--gray);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem;
+  color: var(--gray);
+  background: var(--white);
+  border-radius: 16px;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.page-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e5e7eb;
+  background: var(--white);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--dark);
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-btn:hover:not(:disabled) {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.page-info {
+  color: var(--gray);
+  font-size: 0.9rem;
 }
 
 /* Delete Modal Styles */
@@ -712,23 +882,23 @@ const closeDeleteModal = () => {
   .delete-modal-content {
     padding: 2rem 1.5rem;
   }
-  
+
   .delete-actions {
     flex-direction: column;
   }
-  
+
   .delete-btn-cancel,
   .delete-btn-confirm {
     width: 100%;
     justify-content: center;
   }
-  
+
   .success-notification {
     top: 1rem;
     right: 1rem;
     left: 1rem;
   }
-  
+
   .success-content {
     min-width: auto;
     max-width: none;

@@ -26,25 +26,25 @@
           <input type="date" v-model="endDate" class="date-input" />
         </div>
         <div class="action-buttons">
-          <button 
-            class="btn-primary" 
-            @click="generateReport" 
+          <button
+            class="btn-primary"
+            @click="generateReport"
             :disabled="isLoading || !startDate || !endDate"
             title="Generate report for selected date range"
           >
             <span v-if="!isLoading">Generate Report</span>
             <span v-else class="loading-spinner">Loading...</span>
           </button>
-          <button 
-            class="btn-secondary" 
+          <button
+            class="btn-secondary"
             @click="resetFilters"
             title="Reset all filters to default"
           >
             Reset
           </button>
-          <button 
-            class="btn-export" 
-            @click="exportReport" 
+          <button
+            class="btn-export"
+            @click="exportReport"
             :disabled="!hasData || isLoading"
             title="Export current report to CSV"
           >
@@ -89,7 +89,7 @@
           <div class="card-content">
             <div class="summary-label">Total Orders</div>
             <div class="summary-value">{{ summaryData.stats.total_orders }}</div>
-            <div class="summary-subtext">{{ summaryData.stats.paid_orders }} paid</div>
+            <div class="summary-subtext">{{ summaryData.stats.paid_orders }} paid, {{ summaryData.stats.completed_orders }} successful</div>
           </div>
         </div>
         <div class="summary-card avg-order">
@@ -118,7 +118,10 @@
           <div class="card-icon">⭐</div>
           <div class="card-content">
             <div class="summary-label">Top Product</div>
-            <div class="summary-value">{{ summaryData.top_product }}</div>
+            <div class="summary-value">{{ summaryData.top_product ? summaryData.top_product.name : 'N/A' }}</div>
+            <div v-if="summaryData.top_product" class="summary-subtext">
+              {{ summaryData.top_product.quantity }} sold (₱{{ formatPrice(summaryData.top_product.revenue) }})
+            </div>
           </div>
         </div>
       </div>
@@ -331,9 +334,9 @@ const getNotificationKey = (title: string, message: string): string => {
 const wasNotificationShownRecently = (title: string, message: string): boolean => {
   const key = getNotificationKey(title, message)
   const existing = shownNotifications.value.get(key)
-  
+
   if (!existing) return false
-  
+
   const timeSinceShown = Date.now() - existing.timestamp
   return timeSinceShown < NOTIFICATION_COOLDOWN
 }
@@ -346,7 +349,7 @@ const trackNotification = (title: string, message: string): void => {
     message,
     timestamp: Date.now()
   })
-  
+
   // Clean up old entries (older than cooldown period)
   setTimeout(() => {
     shownNotifications.value.delete(key)
@@ -402,8 +405,15 @@ const hasData = computed(() => {
 const initializeDates = () => {
   const now = new Date()
   const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
-  startDate.value = firstDay.toISOString().split('T')[0]
-  endDate.value = now.toISOString().split('T')[0]
+  // Use local date strings to avoid timezone shift issues with toISOString()
+  const formatDateForInput = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+  startDate.value = formatDateForInput(firstDay)
+  endDate.value = formatDateForInput(now)
 }
 
 const formatPrice = (price: number): string => {
@@ -567,11 +577,11 @@ const exportToCSV = (data: any[], filename: string) => {
 
     // Get headers from first object
     const headers = Object.keys(data[0])
-    
+
     // Create CSV content
     const csvContent = [
       headers.join(','),
-      ...data.map(row => 
+      ...data.map(row =>
         headers.map(header => {
           const value = row[header]
           // Handle values with commas, quotes, or newlines
@@ -618,11 +628,14 @@ const exportReport = () => {
         { Metric: 'Total Revenue', Value: `₱${formatPrice(summaryData.value.stats.total_revenue)}` },
         { Metric: 'Total Orders', Value: summaryData.value.stats.total_orders },
         { Metric: 'Paid Orders', Value: summaryData.value.stats.paid_orders },
+        { Metric: 'Successful Orders', Value: summaryData.value.stats.completed_orders },
         { Metric: 'Average Order Value', Value: `₱${formatPrice(summaryData.value.stats.average_order_value)}` },
         { Metric: 'Total Customers', Value: summaryData.value.stats.total_customers },
         { Metric: 'New Customers', Value: summaryData.value.stats.new_customers },
         { Metric: 'Total Products', Value: summaryData.value.stats.total_products },
-        { Metric: 'Top Product', Value: summaryData.value.top_product },
+        { Metric: 'Top Product', Value: summaryData.value.top_product ? summaryData.value.top_product.name : 'N/A' },
+        { Metric: 'Top Product Quantity', Value: summaryData.value.top_product ? summaryData.value.top_product.quantity : 0 },
+        { Metric: 'Top Product Revenue', Value: summaryData.value.top_product ? `₱${formatPrice(summaryData.value.top_product.revenue)}` : 0 },
       ]
       filename = 'summary_report'
     } else if (reportType.value === 'sales' && salesData.value) {
@@ -820,12 +833,12 @@ onMounted(async () => {
 }
 
 .btn-export {
-  background: var(--dark);
+  background: var(--gold);
   color: white;
 }
 
 .btn-export:hover:not(:disabled) {
-  background: #2d3142;
+  background: #b08d44;
 }
 
 .btn-export:disabled {
@@ -916,7 +929,7 @@ onMounted(async () => {
 
 .report-summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
 }
 
@@ -929,6 +942,7 @@ onMounted(async () => {
   align-items: center;
   gap: 1rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  min-width: 0; /* Allow card to shrink if needed */
 }
 
 .summary-card:hover {
@@ -967,6 +981,7 @@ onMounted(async () => {
 
 .card-content {
   flex: 1;
+  min-width: 0; /* Ensure content can shrink and trigger ellipsis */
 }
 
 .summary-label {
@@ -976,6 +991,9 @@ onMounted(async () => {
   letter-spacing: 0.5px;
   margin-bottom: 0.5rem;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .summary-value {
@@ -983,12 +1001,18 @@ onMounted(async () => {
   font-weight: 700;
   color: var(--dark);
   margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .summary-subtext,
 .summary-period {
   font-size: 0.875rem;
   color: var(--gray);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .status-breakdown {

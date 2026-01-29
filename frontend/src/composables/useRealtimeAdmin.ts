@@ -18,6 +18,27 @@ export function useRealtimeAdmin() {
       case 'order.status.updated':
         window.dispatchEvent(new CustomEvent('realtime:admin:order:status:updated', { detail: data }))
         break
+      case 'notification.created':
+        window.dispatchEvent(new CustomEvent('realtime:admin:notification:created', { detail: data }))
+        break
+      case 'user.login':
+        window.dispatchEvent(new CustomEvent('realtime:admin:user:login', { detail: data }))
+        break
+      case 'user.registered':
+        window.dispatchEvent(new CustomEvent('realtime:admin:user:registered', { detail: data }))
+        break
+      case 'payment.received':
+        window.dispatchEvent(new CustomEvent('realtime:admin:payment:received', { detail: data }))
+        break
+      case 'promotion.created':
+        window.dispatchEvent(new CustomEvent('realtime:admin:promotion:created', { detail: data }))
+        break
+      case 'product.created':
+        window.dispatchEvent(new CustomEvent('realtime:admin:product:created', { detail: data }))
+        break
+      case 'product.updated':
+        window.dispatchEvent(new CustomEvent('realtime:admin:product:updated', { detail: data }))
+        break
     }
   }
 

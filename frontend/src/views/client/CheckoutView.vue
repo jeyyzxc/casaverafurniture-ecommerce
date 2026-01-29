@@ -19,7 +19,7 @@
                   Use Default Address
                 </button>
               </div>
-              
+
               <!-- Address Selection -->
               <div class="form-group full-width" v-if="savedAddresses.length > 0">
                 <label>Select Saved Address (Optional)</label>
@@ -42,10 +42,10 @@
                 </div>
                 <div class="form-group full-width">
                   <label>Address Line 1 *</label>
-                  <input 
-                    v-model="form.shipping_address_line_1" 
-                    type="text" 
-                    required 
+                  <input
+                    v-model="form.shipping_address_line_1"
+                    type="text"
+                    required
                     @input="formatShippingAddressLine1"
                     @blur="formatShippingAddressLine1"
                     placeholder="Street address, building name, house number"
@@ -53,9 +53,9 @@
                 </div>
                 <div class="form-group full-width">
                   <label>Address Line 2</label>
-                  <input 
-                    v-model="form.shipping_address_line_2" 
-                    type="text" 
+                  <input
+                    v-model="form.shipping_address_line_2"
+                    type="text"
                     @input="formatShippingAddressLine2"
                     @blur="formatShippingAddressLine2"
                     placeholder="Barangay, subdivision, village"
@@ -64,10 +64,10 @@
                 <div class="form-group">
                   <label>Province *</label>
                   <div class="select-wrapper">
-                    <select 
-                      v-model="form.shipping_province" 
+                    <select
+                      v-model="form.shipping_province"
                       @change="onProvinceChange"
-                      required 
+                      required
                       class="zone-select"
                     >
                       <option value="">Select Province</option>
@@ -80,10 +80,10 @@
                 <div class="form-group">
                   <label>City *</label>
                   <div class="select-wrapper">
-                    <select 
-                      v-model="form.shipping_city" 
+                    <select
+                      v-model="form.shipping_city"
                       :disabled="!form.shipping_province"
-                      required 
+                      required
                       class="zone-select"
                     >
                       <option value="">{{ form.shipping_province ? 'Select City' : 'Select Province First' }}</option>
@@ -95,10 +95,10 @@
                 </div>
                 <div class="form-group">
                   <label>Postal Code *</label>
-                  <input 
-                    v-model="form.shipping_postal_code" 
-                    type="text" 
-                    required 
+                  <input
+                    v-model="form.shipping_postal_code"
+                    type="text"
+                    required
                     maxlength="4"
                     pattern="[0-9]{4}"
                     placeholder="Auto-filled based on location"
@@ -110,10 +110,10 @@
                 <div class="form-group">
                   <label>Shipping Zone *</label>
                   <div class="select-wrapper">
-                    <select 
-                      v-model="form.shipping_zone_id" 
-                      required 
-                      @change="updateShipping" 
+                    <select
+                      v-model="form.shipping_zone_id"
+                      required
+                      @change="updateShipping"
                       class="zone-select"
                       :disabled="isLoadingZones"
                     >
@@ -158,7 +158,7 @@
                   v-for="method in paymentMethods.filter(m => m.is_active)"
                   :key="method.id"
                   class="payment-method-card"
-                  :class="{ 
+                  :class="{
                     active: form.payment_method_id === method.id,
                     disabled: !isPaymentMethodAvailable(method)
                   }"
@@ -228,7 +228,7 @@
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                       </svg>
-                      <strong>Account Details</strong>
+                      <strong>To(Casa Vera Furniture)</strong>
                     </div>
                     <div class="account-info">
                       <template v-if="method.account_details.account_number">
@@ -368,7 +368,7 @@
         <!-- Transaction Summary -->
         <div v-if="orderDetails" class="transaction-summary">
           <h3 class="summary-title">Transaction Summary</h3>
-          
+
           <!-- User Information -->
           <div class="summary-section">
             <h4 class="section-heading">Customer Information</h4>
@@ -550,37 +550,58 @@
             <div v-if="selectedPaymentMethod">
               <!-- GCash, PayPal, Maya -->
               <template v-if="['gcash', 'paypal', 'maya'].includes(selectedPaymentMethod.code?.toLowerCase() || '')">
+                <!-- Add Account Info display here -->
+                <div v-if="selectedPaymentMethod.account_details" class="payment-dest-info">
+                  <div class="dest-header">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    <span>Send Payment To:</span>
+                  </div>
+                  <div class="dest-details">
+                    <div v-if="selectedPaymentMethod.account_details.account_name" class="dest-item">
+                      <span class="dest-label">Account Name:</span>
+                      <span class="dest-value">{{ selectedPaymentMethod.account_details.account_name }}</span>
+                    </div>
+                    <div v-if="selectedPaymentMethod.account_details.account_number" class="dest-item">
+                      <span class="dest-label">Account Number:</span>
+                      <span class="dest-value">{{ selectedPaymentMethod.account_details.account_number }}</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div class="form-group">
                   <label>Sender Name *</label>
-                  <input 
-                    v-model="paymentConfirmationData.sender_name" 
-                    type="text" 
-                    required 
+                  <input
+                    v-model="paymentConfirmationData.sender_name"
+                    type="text"
+                    required
                     :placeholder="authStore.user?.full_name || 'Enter sender name'"
                   />
                 </div>
                 <div class="form-group">
                   <label>Sender Account (Last 4 digits or email)</label>
-                  <input 
-                    v-model="paymentConfirmationData.sender_account" 
-                    type="text" 
+                  <input
+                    v-model="paymentConfirmationData.sender_account"
+                    type="text"
                     placeholder="Optional"
                   />
                 </div>
                 <div class="form-group">
                   <label>Reference Number *</label>
-                  <input 
-                    v-model="paymentConfirmationData.reference_number" 
-                    type="text" 
-                    required 
+                  <input
+                    v-model="paymentConfirmationData.reference_number"
+                    type="text"
+                    required
                     placeholder="Enter transaction reference number"
                   />
                 </div>
                 <div class="form-group">
                   <label>Proof of Payment Image (Optional)</label>
                   <div class="image-upload-wrapper">
-                    <input 
-                      type="file" 
+                    <input
+                      type="file"
                       ref="proofImageInput"
                       accept="image/*"
                       @change="handleProofImageSelect"
@@ -594,9 +615,9 @@
                         </svg>
                       </button>
                     </div>
-                    <button 
-                      type="button" 
-                      class="upload-image-btn" 
+                    <button
+                      type="button"
+                      class="upload-image-btn"
                       @click="triggerProofImageUpload"
                       v-if="!proofImagePreview"
                     >
@@ -607,9 +628,9 @@
                       </svg>
                       Upload Proof Image
                     </button>
-                    <button 
-                      type="button" 
-                      class="change-image-btn" 
+                    <button
+                      type="button"
+                      class="change-image-btn"
                       @click="triggerProofImageUpload"
                       v-else
                     >
@@ -620,10 +641,10 @@
                 </div>
                 <div class="form-group">
                   <label>Payment Date *</label>
-                  <input 
-                    v-model="paymentConfirmationData.payment_date" 
-                    type="date" 
-                    required 
+                  <input
+                    v-model="paymentConfirmationData.payment_date"
+                    type="date"
+                    required
                     :max="new Date().toISOString().split('T')[0]"
                   />
                 </div>
@@ -633,10 +654,10 @@
               <template v-else-if="selectedPaymentMethod.type === 'bank_transfer' || (selectedPaymentMethod.code?.toLowerCase() || '').includes('bank')">
                 <div class="form-group">
                   <label>Card Number (Last 4 digits) *</label>
-                  <input 
-                    v-model="paymentConfirmationData.card_number" 
-                    type="text" 
-                    required 
+                  <input
+                    v-model="paymentConfirmationData.card_number"
+                    type="text"
+                    required
                     maxlength="4"
                     placeholder="1234"
                     pattern="[0-9]{4}"
@@ -644,20 +665,20 @@
                 </div>
                 <div class="form-group">
                   <label>Card Holder Name *</label>
-                  <input 
-                    v-model="paymentConfirmationData.card_holder_name" 
-                    type="text" 
-                    required 
+                  <input
+                    v-model="paymentConfirmationData.card_holder_name"
+                    type="text"
+                    required
                     :placeholder="authStore.user?.full_name || 'Enter card holder name'"
                   />
                 </div>
                 <div class="form-row">
                   <div class="form-group">
                     <label>Expiry Date (MM/YY) *</label>
-                    <input 
-                      v-model="paymentConfirmationData.card_expiry" 
-                      type="text" 
-                      required 
+                    <input
+                      v-model="paymentConfirmationData.card_expiry"
+                      type="text"
+                      required
                       placeholder="12/25"
                       maxlength="5"
                       pattern="[0-9]{2}/[0-9]{2}"
@@ -665,10 +686,10 @@
                   </div>
                   <div class="form-group">
                     <label>CVV *</label>
-                    <input 
-                      v-model="paymentConfirmationData.card_cvv" 
-                      type="password" 
-                      required 
+                    <input
+                      v-model="paymentConfirmationData.card_cvv"
+                      type="password"
+                      required
                       placeholder="123"
                       maxlength="4"
                       pattern="[0-9]{3,4}"
@@ -840,25 +861,25 @@ const selectedPaymentMethod = computed(() => {
 // Calculate payment fee based on selected method
 const calculatePaymentFee = (): number => {
   if (!selectedPaymentMethod.value) return 0
-  
+
   const method = selectedPaymentMethod.value
   // Ensure proper number conversion
   const sub = typeof subtotal.value === 'number' ? subtotal.value : parseFloat(String(subtotal.value)) || 0
   const disc = typeof discount.value === 'number' ? discount.value : parseFloat(String(discount.value)) || 0
   const shipping = typeof shippingAmount.value === 'number' ? shippingAmount.value : parseFloat(String(shippingAmount.value)) || 0
   const amountBeforeFee = sub - disc + shipping
-  
+
   // Check min/max amount constraints
   const minAmount = typeof method.min_amount === 'number' ? method.min_amount : parseFloat(String(method.min_amount)) || 0
   const maxAmount = typeof method.max_amount === 'number' ? method.max_amount : parseFloat(String(method.max_amount)) || 0
-  
+
   if (method.min_amount && amountBeforeFee < minAmount) return 0
   if (method.max_amount && amountBeforeFee > maxAmount) return 0
-  
+
   // Calculate fee: fixed + percentage
   const feePercentage = typeof method.fee_percentage === 'number' ? method.fee_percentage : parseFloat(String(method.fee_percentage)) || 0
   const feeFixed = typeof method.fee_fixed === 'number' ? method.fee_fixed : parseFloat(String(method.fee_fixed)) || 0
-  
+
   const percentageFee = amountBeforeFee * (feePercentage / 100)
   return parseFloat((feeFixed + percentageFee).toFixed(2))
 }
@@ -878,11 +899,11 @@ const total = computed(() => {
   const disc = typeof discount.value === 'number' ? discount.value : parseFloat(String(discount.value)) || 0
   const shipping = typeof shippingAmount.value === 'number' ? shippingAmount.value : parseFloat(String(shippingAmount.value)) || 0
   const fee = typeof paymentFee.value === 'number' ? paymentFee.value : parseFloat(String(paymentFee.value)) || 0
-  
+
   // Calculate total with proper numeric operations
   const baseTotal = sub - disc + shipping
   const finalTotal = baseTotal + fee
-  
+
   // Return as number with 2 decimal places
   return parseFloat(finalTotal.toFixed(2))
 })
@@ -913,7 +934,7 @@ const selectPaymentMethod = (method: PaymentMethod) => {
     checkoutError.value = 'This payment method is currently unavailable.'
     return
   }
-  
+
   // Check amount constraints
   const amountBeforeFee = subtotal.value - discount.value + shippingAmount.value
   if (method.min_amount && amountBeforeFee < method.min_amount) {
@@ -924,7 +945,7 @@ const selectPaymentMethod = (method: PaymentMethod) => {
     checkoutError.value = `Maximum amount for ${method.name} is ₱${formatPrice(method.max_amount)}.`
     return
   }
-  
+
   form.value.payment_method_id = method.id
   checkoutError.value = '' // Clear any previous errors
 }
@@ -934,14 +955,14 @@ const provinceToRegionMap: Record<string, string> = {
   // Metro Manila / NCR
   'Metro Manila': 'NCR',
   'NCR': 'NCR',
-  
+
   // Calabarzon (Region IV-A)
   'Cavite': 'Calabarzon',
   'Laguna': 'Calabarzon',
   'Batangas': 'Calabarzon',
   'Rizal': 'Calabarzon',
   'Quezon': 'Calabarzon',
-  
+
   // Central Luzon (Region III)
   'Bulacan': 'Central Luzon',
   'Pampanga': 'Central Luzon',
@@ -950,20 +971,20 @@ const provinceToRegionMap: Record<string, string> = {
   'Zambales': 'Central Luzon',
   'Bataan': 'Central Luzon',
   'Aurora': 'Central Luzon',
-  
+
   // Ilocos Region (Region I)
   'Ilocos Norte': 'Ilocos Region',
   'Ilocos Sur': 'Ilocos Region',
   'La Union': 'Ilocos Region',
   'Pangasinan': 'Ilocos Region',
-  
+
   // Cagayan Valley (Region II)
   'Cagayan': 'Cagayan Valley',
   'Isabela': 'Cagayan Valley',
   'Nueva Vizcaya': 'Cagayan Valley',
   'Quirino': 'Cagayan Valley',
   'Batanes': 'Cagayan Valley',
-  
+
   // Bicol Region (Region V)
   'Albay': 'Bicol Region',
   'Camarines Norte': 'Bicol Region',
@@ -971,7 +992,7 @@ const provinceToRegionMap: Record<string, string> = {
   'Catanduanes': 'Bicol Region',
   'Masbate': 'Bicol Region',
   'Sorsogon': 'Bicol Region',
-  
+
   // Western Visayas (Region VI)
   'Aklan': 'Western Visayas',
   'Antique': 'Western Visayas',
@@ -979,13 +1000,13 @@ const provinceToRegionMap: Record<string, string> = {
   'Guimaras': 'Western Visayas',
   'Iloilo': 'Western Visayas',
   'Negros Occidental': 'Western Visayas',
-  
+
   // Central Visayas (Region VII)
   'Bohol': 'Central Visayas',
   'Cebu': 'Central Visayas',
   'Negros Oriental': 'Central Visayas',
   'Siquijor': 'Central Visayas',
-  
+
   // Eastern Visayas (Region VIII)
   'Biliran': 'Eastern Visayas',
   'Eastern Samar': 'Eastern Visayas',
@@ -993,38 +1014,38 @@ const provinceToRegionMap: Record<string, string> = {
   'Northern Samar': 'Eastern Visayas',
   'Samar': 'Eastern Visayas',
   'Southern Leyte': 'Eastern Visayas',
-  
+
   // Zamboanga Peninsula (Region IX)
   'Zamboanga del Norte': 'Zamboanga Peninsula',
   'Zamboanga del Sur': 'Zamboanga Peninsula',
   'Zamboanga Sibugay': 'Zamboanga Peninsula',
-  
+
   // Northern Mindanao (Region X)
   'Bukidnon': 'Northern Mindanao',
   'Camiguin': 'Northern Mindanao',
   'Lanao del Norte': 'Northern Mindanao',
   'Misamis Occidental': 'Northern Mindanao',
   'Misamis Oriental': 'Northern Mindanao',
-  
+
   // Davao Region (Region XI)
   'Davao del Norte': 'Davao Region',
   'Davao del Sur': 'Davao Region',
   'Davao Occidental': 'Davao Region',
   'Davao Oriental': 'Davao Region',
-  
+
   // SOCCSKSARGEN (Region XII)
   'Cotabato': 'SOCCSKSARGEN',
   'Sarangani': 'SOCCSKSARGEN',
   'South Cotabato': 'SOCCSKSARGEN',
   'Sultan Kudarat': 'SOCCSKSARGEN',
-  
+
   // CARAGA (Region XIII)
   'Agusan del Norte': 'CARAGA',
   'Agusan del Sur': 'CARAGA',
   'Dinagat Islands': 'CARAGA',
   'Surigao del Norte': 'CARAGA',
   'Surigao del Sur': 'CARAGA',
-  
+
   // Cordillera Administrative Region (CAR)
   'Abra': 'CAR',
   'Apayao': 'CAR',
@@ -1032,14 +1053,14 @@ const provinceToRegionMap: Record<string, string> = {
   'Ifugao': 'CAR',
   'Kalinga': 'CAR',
   'Mountain Province': 'CAR',
-  
+
   // MIMAROPA (Region IV-B)
   'Marinduque': 'MIMAROPA',
   'Occidental Mindoro': 'MIMAROPA',
   'Oriental Mindoro': 'MIMAROPA',
   'Palawan': 'MIMAROPA',
   'Romblon': 'MIMAROPA',
-  
+
   // BARMM (Bangsamoro Autonomous Region)
   'Basilan': 'BARMM',
   'Lanao del Sur': 'BARMM',
@@ -1051,11 +1072,11 @@ const provinceToRegionMap: Record<string, string> = {
 // Function to get region from province
 const getRegionFromProvince = (province: string): string | null => {
   if (!province) return null
-  
+
   // Direct lookup
   const region = provinceToRegionMap[province]
   if (region) return region
-  
+
   // Case-insensitive lookup
   const provinceLower = province.toLowerCase()
   for (const [key, value] of Object.entries(provinceToRegionMap)) {
@@ -1063,24 +1084,24 @@ const getRegionFromProvince = (province: string): string | null => {
       return value
     }
   }
-  
+
   return null
 }
 
 // Function to find matching shipping zone based on location
 const findMatchingShippingZone = (province: string, city?: string): ShippingZone | null => {
   if (!province || shippingZones.value.length === 0) return null
-  
+
   // Get the region for the province
   const region = getRegionFromProvince(province)
-  
+
   if (!region) {
     // Fallback: try to find zone that matches province name directly
     for (const zone of shippingZones.value) {
       const regions = zone.regions || []
       if (Array.isArray(regions)) {
-        const provinceMatch = regions.some((r: string) => 
-          r.toLowerCase().includes(province.toLowerCase()) || 
+        const provinceMatch = regions.some((r: string) =>
+          r.toLowerCase().includes(province.toLowerCase()) ||
           province.toLowerCase().includes(r.toLowerCase())
         )
         if (provinceMatch) {
@@ -1091,22 +1112,22 @@ const findMatchingShippingZone = (province: string, city?: string): ShippingZone
     // If no match, return first available zone as fallback
     return shippingZones.value.length > 0 ? shippingZones.value[0] : null
   }
-  
+
   // Find zone that matches the region
   for (const zone of shippingZones.value) {
     const zoneName = zone.name || ''
     const regions = zone.regions || []
-    
+
     // Check if zone name matches the region
-    if (zoneName.toLowerCase().includes(region.toLowerCase()) || 
+    if (zoneName.toLowerCase().includes(region.toLowerCase()) ||
         region.toLowerCase().includes(zoneName.toLowerCase())) {
       return zone
     }
-    
+
     // Check if any region in the zone matches
     if (Array.isArray(regions)) {
-      const regionMatch = regions.some((r: string) => 
-        r.toLowerCase().includes(region.toLowerCase()) || 
+      const regionMatch = regions.some((r: string) =>
+        r.toLowerCase().includes(region.toLowerCase()) ||
         region.toLowerCase().includes(r.toLowerCase())
       )
       if (regionMatch) {
@@ -1114,7 +1135,7 @@ const findMatchingShippingZone = (province: string, city?: string): ShippingZone
       }
     }
   }
-  
+
   // If no exact match, return first available zone as fallback
   return shippingZones.value.length > 0 ? shippingZones.value[0] : null
 }
@@ -1123,7 +1144,7 @@ const onProvinceChange = () => {
   // Reset city when province changes
   form.value.shipping_city = ''
   form.value.shipping_postal_code = ''
-  
+
   // Auto-select shipping zone based on province
   if (form.value.shipping_province) {
     const matchingZone = findMatchingShippingZone(form.value.shipping_province)
@@ -1194,7 +1215,7 @@ watch(
         form.value.shipping_zone_id = matchingZone.id
         updateShipping()
       }
-      
+
       // Auto-fill postal code
       const postalCode = getPostalCode(form.value.shipping_province, newCity)
       if (postalCode) {
@@ -1251,12 +1272,12 @@ const getPaymentFeeDisplay = (method: PaymentMethod): string => {
 
 const isPaymentMethodAvailable = (method: PaymentMethod): boolean => {
   if (!method.is_active) return false
-  
+
   const amountBeforeFee = subtotal.value - discount.value + shippingAmount.value
-  
+
   if (method.min_amount && amountBeforeFee < method.min_amount) return false
   if (method.max_amount && amountBeforeFee > method.max_amount) return false
-  
+
   return true
 }
 
@@ -1268,36 +1289,36 @@ const triggerProofImageUpload = () => {
 const handleProofImageSelect = (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
-  
+
   if (!file) return
-  
+
   // Validate file type
   if (!file.type.startsWith('image/')) {
     checkoutError.value = 'Please select a valid image file.'
     return
   }
-  
+
   // Validate file size (max 5MB)
   const maxSize = 5 * 1024 * 1024 // 5MB in bytes
   if (file.size > maxSize) {
     checkoutError.value = 'Image size must be less than 5MB. Please compress or select a smaller image.'
     return
   }
-  
+
   // Read file as base64
   const reader = new FileReader()
-  
+
   reader.onload = (e) => {
     const result = e.target?.result as string
     paymentConfirmationData.value.proof_image = result
     proofImagePreview.value = result
     checkoutError.value = '' // Clear any previous errors
   }
-  
+
   reader.onerror = () => {
     checkoutError.value = 'Error reading image file. Please try again.'
   }
-  
+
   reader.readAsDataURL(file)
 }
 
@@ -1313,10 +1334,10 @@ const removeProofImage = () => {
 const loadAddresses = async () => {
   try {
     const response = await addressesApi.list()
-    
+
     if (response.data.success) {
       savedAddresses.value = response.data.data || []
-      
+
       // Auto-select default shipping address if available
       if (defaultShippingAddress.value && !selectedShippingAddressId.value) {
         selectedShippingAddressId.value = defaultShippingAddress.value.id
@@ -1345,7 +1366,7 @@ const onShippingAddressSelect = () => {
       form.value.shipping_address_line_2 = address.address_line_2 || ''
       form.value.shipping_city = address.city
       form.value.shipping_province = address.province
-      
+
       // Auto-fill postal code if not provided in address
       if (address.postal_code) {
         form.value.shipping_postal_code = address.postal_code
@@ -1355,7 +1376,7 @@ const onShippingAddressSelect = () => {
           form.value.shipping_postal_code = postalCode
         }
       }
-      
+
       // Auto-select shipping zone based on address location
       if (address.province) {
         const matchingZone = findMatchingShippingZone(address.province, address.city)
@@ -1372,7 +1393,7 @@ const loadCheckoutData = async () => {
   isLoadingZones.value = true
   isLoadingPaymentMethods.value = true
   checkoutError.value = ''
-  
+
   try {
     const [zonesRes, methodsRes] = await Promise.all([
       checkout.getShippingZones(),
@@ -1382,7 +1403,7 @@ const loadCheckoutData = async () => {
     if (zonesRes.data.success) {
       const zones = zonesRes.data.data || []
       // Remove duplicates based on zone name (keep first occurrence)
-      const uniqueZones = zones.filter((zone: ShippingZone, index: number, self: ShippingZone[]) => 
+      const uniqueZones = zones.filter((zone: ShippingZone, index: number, self: ShippingZone[]) =>
         index === self.findIndex((z: ShippingZone) => z.name === zone.name)
       )
       shippingZones.value = uniqueZones
@@ -1390,15 +1411,15 @@ const loadCheckoutData = async () => {
       console.error('Failed to load zones:', zonesRes.data)
       checkoutError.value = 'Failed to load shipping zones. Please refresh the page.'
     }
-    
+
     if (methodsRes.data.success) {
       paymentMethods.value = methodsRes.data.data || []
       console.log('Loaded payment methods:', paymentMethods.value.length, paymentMethods.value)
-      
+
       // Log active payment methods
       const activeMethods = paymentMethods.value.filter(m => m.is_active)
       console.log('Active payment methods:', activeMethods.length, activeMethods)
-      
+
       // Auto-select first available payment method if none selected
       if (paymentMethods.value.length > 0 && !form.value.payment_method_id) {
         const firstAvailable = paymentMethods.value.find(m => isPaymentMethodAvailable(m))
@@ -1442,13 +1463,13 @@ const updateShipping = () => {
 const calculateShippingCost = (zone: any) => {
   // Ensure proper number conversion
   const sub = typeof subtotal.value === 'number' ? subtotal.value : parseFloat(String(subtotal.value)) || 0
-  const freeThreshold = typeof zone.free_shipping_threshold === 'number' 
-    ? zone.free_shipping_threshold 
+  const freeThreshold = typeof zone.free_shipping_threshold === 'number'
+    ? zone.free_shipping_threshold
     : parseFloat(String(zone.free_shipping_threshold)) || Infinity
-  const baseRate = typeof zone.base_rate === 'number' 
-    ? zone.base_rate 
+  const baseRate = typeof zone.base_rate === 'number'
+    ? zone.base_rate
     : parseFloat(String(zone.base_rate)) || 0
-  
+
   shippingAmount.value = sub >= freeThreshold ? 0 : baseRate
 }
 
@@ -1494,7 +1515,7 @@ const handleCheckout = async () => {
     const authResult = await authStore.fetchUser()
     // fetchUser always returns an object, so we can safely check it
     if (!authResult.success || !authStore.isAuthenticated) {
-      checkoutError.value = authResult.expired 
+      checkoutError.value = authResult.expired
         ? 'Your session has expired. Please log in again.'
         : 'Authentication failed. Please log in again.'
       sessionStorage.setItem('redirectAfterLogin', '/checkout')
@@ -1578,7 +1599,7 @@ const handleCheckout = async () => {
     checkoutError.value = 'Please select a payment method.'
     return
   }
-  
+
   // Step 6: Validate selected payment method is still available
   const selectedMethod = paymentMethods.value.find(m => m.id === form.value.payment_method_id)
   if (!selectedMethod || !isPaymentMethodAvailable(selectedMethod)) {
@@ -1618,7 +1639,7 @@ const handleCheckout = async () => {
 
   // Store order data and show payment confirmation
   pendingOrderData.value = orderData
-  
+
   // Show payment confirmation modal
   showPaymentConfirmation.value = true
 }
@@ -1632,11 +1653,11 @@ const submitOrderWithConfirmation = async () => {
   try {
     // Prepare payment confirmation data
     const paymentConfirmation: any = {}
-    
+
     if (selectedPaymentMethod.value) {
       const method = selectedPaymentMethod.value
       const methodCode = (method.code || '').toLowerCase()
-      
+
       // For GCash, PayPal, Maya - require sender details
       if (['gcash', 'paypal', 'maya'].includes(methodCode)) {
         if (!paymentConfirmationData.value.sender_name?.trim()) {
@@ -1649,7 +1670,7 @@ const submitOrderWithConfirmation = async () => {
           isSubmitting.value = false
           return
         }
-        
+
         paymentConfirmation.sender_name = paymentConfirmationData.value.sender_name.trim()
         paymentConfirmation.sender_account = paymentConfirmationData.value.sender_account?.trim() || null
         paymentConfirmation.reference_number = paymentConfirmationData.value.reference_number.trim()
@@ -1659,7 +1680,7 @@ const submitOrderWithConfirmation = async () => {
           paymentConfirmation.proof_image = paymentConfirmationData.value.proof_image
         }
       }
-      
+
       // For bank transfers - require card details
       if (method.type === 'bank_transfer' || methodCode.includes('bank')) {
         if (!paymentConfirmationData.value.card_number?.trim()) {
@@ -1677,7 +1698,7 @@ const submitOrderWithConfirmation = async () => {
           isSubmitting.value = false
           return
         }
-        
+
         paymentConfirmation.card_number = paymentConfirmationData.value.card_number.trim()
         paymentConfirmation.card_holder_name = paymentConfirmationData.value.card_holder_name.trim()
         paymentConfirmation.card_expiry = paymentConfirmationData.value.card_expiry.trim()
@@ -1689,18 +1710,18 @@ const submitOrderWithConfirmation = async () => {
         }
       }
     }
-    
+
     // Add payment confirmation to order data
     if (Object.keys(paymentConfirmation).length > 0) {
       pendingOrderData.value.payment_confirmation = paymentConfirmation
     }
-    
+
     const response = await orders.create(pendingOrderData.value)
 
     if (response.data.success) {
       orderNumber.value = response.data.data.order.order_number
       orderDetails.value = response.data.data.order
-      
+
       // Fetch full order details with payment info
       try {
         const orderResponse = await orders.get(orderNumber.value)
@@ -1710,7 +1731,7 @@ const submitOrderWithConfirmation = async () => {
       } catch (error) {
         console.error('Failed to fetch order details:', error)
       }
-      
+
       orderPlaced.value = true
       showPaymentConfirmation.value = false
       // Reset payment confirmation data
@@ -1735,19 +1756,19 @@ const submitOrderWithConfirmation = async () => {
     }
   } catch (error: unknown) {
     console.error('Order creation error:', error)
-    
-    const apiError = error as { 
-      response?: { 
+
+    const apiError = error as {
+      response?: {
         status?: number
-        data?: { 
+        data?: {
           message?: string
           errors?: Record<string, string[]>
           error?: string
-        } 
+        }
       }
       message?: string
     }
-    
+
     // Handle 401 Unauthorized
     if (apiError.response?.status === 401) {
       checkoutError.value = 'Your session has expired. Please log in again.'
@@ -1757,7 +1778,7 @@ const submitOrderWithConfirmation = async () => {
       }, 2000)
       return
     }
-    
+
     // Handle 422 Validation errors
     if (apiError.response?.status === 422) {
       const errors = apiError.response.data?.errors
@@ -1769,13 +1790,13 @@ const submitOrderWithConfirmation = async () => {
       }
       return
     }
-    
+
     // Handle 500 Internal Server Error
     if (apiError.response?.status === 500) {
       checkoutError.value = apiError.response.data?.message || 'A server error occurred. Please try again later or contact support if the problem persists.'
       return
     }
-    
+
     // Handle other errors
     checkoutError.value = apiError.response?.data?.message || apiError.message || 'Failed to place order. Please try again.'
   } finally {
@@ -1818,10 +1839,10 @@ onMounted(async () => {
 
     // Step 2: Verify token is still valid (refresh if needed)
     const authResult = await authStore.fetchUser()
-    
+
     // fetchUser always returns an object, so we can safely check it
     if (!authResult.success || !authStore.isAuthenticated) {
-      checkoutError.value = authResult.expired 
+      checkoutError.value = authResult.expired
         ? 'Your session has expired. Please log in again.'
         : 'Please log in to continue with checkout.'
       sessionStorage.setItem('redirectAfterLogin', '/checkout')
@@ -1834,7 +1855,7 @@ onMounted(async () => {
     // Step 3: Load addresses and cart
     await loadAddresses()
     await cartStore.fetchCart()
-    
+
     // Step 4: Validate cart has items
     if (!cartStore.items || cartStore.items.length === 0) {
       checkoutError.value = 'Your cart is empty. Please add items before checkout.'
@@ -1843,7 +1864,7 @@ onMounted(async () => {
       }, 2000)
       return
     }
-    
+
     // Step 5: Load checkout data (zones, payment methods)
     await loadCheckoutData()
 
@@ -1865,7 +1886,7 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to initialize checkout:', error)
     const apiError = error as { response?: { status?: number; data?: { message?: string } } }
-    
+
     if (apiError.response?.status === 401) {
       checkoutError.value = 'Your session has expired. Please log in again.'
       sessionStorage.setItem('redirectAfterLogin', '/checkout')
@@ -2666,7 +2687,7 @@ onMounted(async () => {
   .checkout-layout {
     grid-template-columns: 1fr;
   }
-  
+
   .order-summary-sidebar {
     position: static;
   }
@@ -2820,6 +2841,54 @@ onMounted(async () => {
 
 .confirmation-summary .summary-row.total span {
   color: #000000;
+}
+
+.payment-dest-info {
+  background: #fdfaf3;
+  border: 1px solid #f1e4c8;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.dest-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #8b6e3d;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1e4c8;
+}
+
+.dest-header svg {
+  width: 18px;
+  height: 18px;
+}
+
+.dest-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dest-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dest-label {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.dest-value {
+  color: #2c2c2c;
+  font-weight: 500;
+  font-family: monospace;
+  font-size: 1rem;
 }
 
 .payment-confirmation-form .form-group {
@@ -3206,7 +3275,7 @@ onMounted(async () => {
   .payment-confirmation-form .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .section-header {
     flex-direction: column;
     align-items: flex-start;

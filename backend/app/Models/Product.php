@@ -190,13 +190,40 @@ class Product extends Model
 
     protected function updateStockStatus(): void
     {
+        $adminNotificationService = app(\App\Services\AdminNotificationService::class);
+
         if ($this->stock_quantity <= 0) {
-            $this->update(['stock_status' => 'out_of_stock']);
+            if ($this->stock_status !== 'out_of_stock') {
+                $this->update(['stock_status' => 'out_of_stock']);
+                $adminNotificationService->notifyOutOfStock($this);
+                $this->createStockAlert('out_of_stock');
+            }
         } elseif ($this->stock_quantity <= $this->low_stock_threshold) {
-            // Low stock - could trigger alert
+            if ($this->stock_status !== 'low_stock') {
+                // We might want to track 'low_stock' status explicitly if the schema allows,
+                // but usually it's just a threshold check.
+                // For now, let's trigger notification if it just crossed the threshold.
+                $adminNotificationService->notifyLowStock($this, $this->stock_quantity);
+                $this->createStockAlert('low_stock');
+            }
+            $this->update(['stock_status' => 'in_stock']); // Keep as in_stock for customer visibility but alert admin
         } else {
-            $this->update(['stock_status' => 'in_stock']);
+            if ($this->stock_status !== 'in_stock') {
+                $this->update(['stock_status' => 'in_stock']);
+            }
         }
+    }
+
+    protected function createStockAlert(string $type): void
+    {
+        StockAlert::updateOrCreate(
+            ['product_id' => $this->id, 'is_acknowledged' => false],
+            [
+                'alert_type' => $type,
+                'current_quantity' => $this->stock_quantity,
+                'threshold_quantity' => $this->low_stock_threshold,
+            ]
+        );
     }
 
     // Stock status helpers
@@ -206,8 +233,8 @@ class Product extends Model
             return false;
         }
 
-        return $this->stock_quantity > 0 
-            && $this->low_stock_threshold > 0 
+        return $this->stock_quantity > 0
+            && $this->low_stock_threshold > 0
             && $this->stock_quantity <= $this->low_stock_threshold;
     }
 

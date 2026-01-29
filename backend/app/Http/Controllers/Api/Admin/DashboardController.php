@@ -21,20 +21,22 @@ class DashboardController extends Controller
     public function index(Request $request): JsonResponse
     {
         // Get date range
-        $startDate = $request->input('start_date', now()->startOfMonth());
-        $endDate = $request->input('end_date', now());
+        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', now()->toDateString());
+
+        $isPostgres = DB::connection()->getDriverName() === 'pgsql';
 
         // Basic stats
-        // Total orders: Show all orders (not date-filtered) for accurate count
-        // Revenue: Use date range for period-specific revenue
+        // Total orders: Show orders count for the selected period
+        // Revenue: Total revenue reflects all successful sales (paid) for the selected period
         $stats = [
-            'total_orders' => Order::count(), // All orders regardless of date
-            'total_revenue' => Order::whereBetween('created_at', [$startDate, $endDate])
-                ->where('payment_status', 'paid')
+            'total_orders' => Order::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])->count(),
+            'total_revenue' => Order::where('payment_status', 'paid')
+                ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                 ->sum('total'),
             'pending_orders' => Order::where('status', 'pending')->count(), // All pending orders
             'total_customers' => User::count(),
-            'new_customers' => User::whereBetween('created_at', [$startDate, $endDate])->count(),
+            'new_customers' => User::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])->count(),
             'total_products' => Product::where('status', 'active')->count(),
             'low_stock_products' => Product::where('track_inventory', true)
                 ->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
@@ -45,14 +47,14 @@ class DashboardController extends Controller
             'pending_reviews' => Review::where('status', 'pending')->count(),
         ];
 
-        // Revenue by day (last 30 days)
+        // Revenue by day for the selected period
         $revenueByDay = Order::select(
-                DB::raw('DATE(created_at) as date'),
+                $isPostgres ? DB::raw('created_at::date as date') : DB::raw('DATE(created_at) as date'),
                 DB::raw('SUM(total) as revenue'),
                 DB::raw('COUNT(*) as orders')
             )
             ->where('payment_status', 'paid')
-            ->where('created_at', '>=', now()->subDays(30))
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->groupBy('date')
             ->orderBy('date')
             ->get();
@@ -83,16 +85,30 @@ class DashboardController extends Controller
                     'sku' => $product->sku,
                     'price' => $product->price,
                     'order_count' => $product->order_count,
-                    'primary_image' => $product->primaryImage?->image_path ?? '/images/products/placeholder.png',
+                    'primary_image' => $product->primaryImage?->image_url ?? '/images/products/placeholder.png',
                 ];
             });
 
-        // Stock alerts
-        $stockAlerts = StockAlert::with('product:id,name,sku,stock_quantity')
-            ->where('is_acknowledged', false)
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+        // Stock alerts (Low stock + Out of stock)
+        // Instead of relying on StockAlert model which might be incomplete,
+        // we fetch products directly that are low on stock or out of stock.
+        $stockAlerts = Product::select('id', 'name', 'sku', 'stock_quantity', 'low_stock_threshold')
+            ->where('status', 'active')
+            ->where('track_inventory', true)
+            ->where(function($query) {
+                $query->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
+                      ->orWhere('stock_quantity', 0)
+                      ->orWhere('stock_status', 'out_of_stock');
+            })
+            ->orderBy('stock_quantity', 'asc') // Show lowest stock first (0 then low)
+            ->limit(15)
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => null, // Virtual alert
+                    'product' => $product
+                ];
+            });
 
         return response()->json([
             'success' => true,
@@ -117,7 +133,12 @@ class DashboardController extends Controller
             'data' => [
                 'pending_orders' => Order::where('status', 'pending')->count(),
                 'pending_payments' => Payment::where('status', 'pending')->count(),
-                'low_stock_alerts' => StockAlert::where('is_acknowledged', false)->count(),
+                'low_stock_alerts' => Product::where('status', 'active')
+                    ->where('track_inventory', true)
+                    ->where(function($query) {
+                        $query->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
+                              ->orWhere('stock_quantity', 0);
+                    })->count(),
                 'pending_reviews' => Review::where('status', 'pending')->count(),
             ],
         ]);

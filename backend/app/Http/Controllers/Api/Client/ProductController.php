@@ -128,7 +128,7 @@ class ProductController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to load products',
@@ -204,6 +204,7 @@ class ProductController extends Controller
                     'images' => $product->images->map(fn($img) => [
                         'id' => $img->id,
                         'image_path' => $img->image_path,
+                        'image_url' => $img->image_url,
                         'thumbnail_path' => $img->thumbnail_path,
                         'alt_text' => $img->alt_text,
                         'is_primary' => $img->is_primary,
@@ -319,7 +320,9 @@ class ProductController extends Controller
             'is_bestseller' => $product->is_bestseller,
             'average_rating' => $product->average_rating,
             'review_count' => $product->review_count,
-            'image' => $product->primaryImage?->image_path,
+            'description' => $product->description,
+            'attributes' => $product->attributes,
+            'image' => $product->primaryImage?->image_url,
             'category' => $product->category ? [
                 'id' => $product->category->id,
                 'name' => $product->category->name,

@@ -75,6 +75,28 @@ class SiteSettingsSeeder extends Seeder
             ],
 
             // ===========================================
+            // PAYMENT INFORMATION (BUSINESS)
+            // ===========================================
+            [
+                'key' => 'business_payment_gcash_name',
+                'group' => 'payment',
+                'value' => 'Casa Vera Furniture',
+                'type' => 'text',
+                'label' => 'GCash Account Name',
+                'description' => 'Account name for GCash payments',
+                'is_public' => true,
+            ],
+            [
+                'key' => 'business_payment_gcash_number',
+                'group' => 'payment',
+                'value' => '0917-155-2913',
+                'type' => 'text',
+                'label' => 'GCash Account Number',
+                'description' => 'Account number for GCash payments',
+                'is_public' => true,
+            ],
+
+            // ===========================================
             // CONTACT INFORMATION
             // ===========================================
             [
@@ -89,7 +111,7 @@ class SiteSettingsSeeder extends Seeder
             [
                 'key' => 'contact_phone',
                 'group' => 'contact',
-                'value' => '+63 912 345 6789',
+                'value' => '0917-155-2913',
                 'type' => 'text',
                 'label' => 'Contact Phone',
                 'description' => 'Primary contact phone number',

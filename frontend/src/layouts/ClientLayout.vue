@@ -75,17 +75,17 @@ const openLoginModal = () => {
 
 const handleLoginSuccess = async () => {
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ClientLayout.vue:67',message:'handleLoginSuccess ENTRY',data:{isAuthenticated:authStore.isAuthenticated,hasUser:!!authStore.user},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B'})}).catch(()=>{});
+  
   // #endregion
   try {
     // Tokens are stored in memory via tokenManager, not localStorage
     // Just call fetchUser() - the API interceptor will use the token from memory
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ClientLayout.vue:70',message:'handleLoginSuccess - calling fetchUser',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    
     // #endregion
     await authStore.fetchUser()
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ClientLayout.vue:72',message:'handleLoginSuccess - AFTER fetchUser',data:{isAuthenticated:authStore.isAuthenticated,hasUser:!!authStore.user,userId:authStore.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    
     // #endregion
     // Refresh cart to merge guest cart with user cart
     await cartStore.fetchCart()
@@ -94,14 +94,14 @@ const handleLoginSuccess = async () => {
     const redirectPath = sessionStorage.getItem('redirectAfterLogin')
     if (redirectPath) {
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ClientLayout.vue:78',message:'handleLoginSuccess - redirecting after login',data:{redirectPath},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      
       // #endregion
       sessionStorage.removeItem('redirectAfterLogin')
       router.push(redirectPath).catch(() => {})
     }
   } catch (error) {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ClientLayout.vue:82',message:'handleLoginSuccess - EXCEPTION',data:{error:(error as Error)?.message||String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    
     // #endregion
     console.error('Failed to fetch user after login:', error)
   }

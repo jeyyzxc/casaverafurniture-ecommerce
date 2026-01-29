@@ -17,12 +17,12 @@
               <span class="form-label">Message Us</span>
               <h2 class="form-title">How can we help?</h2>
             </div>
-            
+
             <form @submit.prevent="submitForm" class="contact-form" novalidate>
               <div class="form-group">
-                <input 
-                  type="text" 
-                  v-model="form.name" 
+                <input
+                  type="text"
+                  v-model="form.name"
                   @input="handleNameInput"
                   @blur="validateName"
                   @keydown="preventLeadingSpace"
@@ -36,9 +36,9 @@
               </div>
 
               <div class="form-group">
-                <input 
-                  type="email" 
-                  v-model="form.email" 
+                <input
+                  type="email"
+                  v-model="form.email"
                   @input="handleEmailInput"
                   @blur="validateEmail"
                   @keydown="preventSpaceInEmail"
@@ -52,8 +52,8 @@
               </div>
 
               <div class="form-group">
-                <textarea 
-                  v-model="form.message" 
+                <textarea
+                  v-model="form.message"
                   @input="handleMessageInput"
                   @blur="validateMessage"
                   @keydown="preventSpaceInMessage"
@@ -152,12 +152,12 @@
                 <h6>Email Us</h6>
                 <span>hello@casavera.com</span>
               </a>
-              <a href="tel:+639123456789" class="action-card">
+              <a href="tel:09171552913" class="action-card">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                 </svg>
                 <h6>Call Us</h6>
-                <span>+63 912 345 6789</span>
+                <span>0917-155-2913</span>
               </a>
             </div>
           </div>
@@ -168,10 +168,10 @@
     <!-- Map Section -->
     <section class="map-section">
       <div class="map-container">
-        <iframe 
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.889369324636!2d121.04879531535497!3d14.54840298983577!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c8f258a62e01%3A0x628047913079250!2sBonifacio%20Global%20City!5e0!3m2!1sen!2sph!4v1674291234567!5m2!1sen!2sph" 
-          allowfullscreen="" 
-          loading="lazy" 
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.889369324636!2d121.04879531535497!3d14.54840298983577!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c8f258a62e01%3A0x628047913079250!2sBonifacio%20Global%20City!5e0!3m2!1sen!2sph!4v1674291234567!5m2!1sen!2sph"
+          allowfullscreen=""
+          loading="lazy"
           referrerpolicy="no-referrer-when-downgrade"
         ></iframe>
         <div class="map-overlay-guard"></div>
@@ -229,15 +229,15 @@ const preventSpaceInMessage = (event: KeyboardEvent) => {
 const handleNameInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   let value = target.value
-  
+
   // Block spaces at the start - must start with a letter
   if (value.length > 0 && value[0] === ' ') {
     value = value.trimStart()
   }
-  
+
   // Replace consecutive spaces with single space (allow only one space at a time)
   value = value.replace(/\s{2,}/g, ' ')
-  
+
   form.value.name = value
   errors.value.name = ''
 }
@@ -246,10 +246,10 @@ const handleNameInput = (event: Event) => {
 const handleEmailInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   let value = target.value
-  
+
   // Remove all spaces from email (in case user pastes text with spaces)
   value = value.replace(/\s/g, '')
-  
+
   form.value.email = value
   errors.value.email = ''
 }
@@ -258,10 +258,10 @@ const handleEmailInput = (event: Event) => {
 const handleMessageInput = (event: Event) => {
   const target = event.target as HTMLTextAreaElement
   let value = target.value
-  
+
   // Remove all spaces from the message (in case user pastes text with spaces)
   value = value.replace(/\s/g, '')
-  
+
   form.value.message = value
   errors.value.message = ''
 }
@@ -269,105 +269,105 @@ const handleMessageInput = (event: Event) => {
 // Validate name field
 const validateName = () => {
   errors.value.name = ''
-  
+
   // Check if field is empty
   if (!form.value.name.trim()) {
     errors.value.name = 'Full Name is required'
     return false
   }
-  
+
   // Check minimum length (6 characters)
   if (form.value.name.trim().length < 6) {
     errors.value.name = 'Full Name must be at least 6 characters'
     return false
   }
-  
+
   // Check if starts with space (shouldn't happen due to input handler, but double-check)
   if (form.value.name.trim().startsWith(' ')) {
     errors.value.name = 'Full Name cannot start with a space'
     return false
   }
-  
+
   // Check if starts with a letter (not a space or number)
   if (form.value.name.trim().length > 0 && !/^[a-zA-Z]/.test(form.value.name.trim())) {
     errors.value.name = 'Full Name must start with a letter'
     return false
   }
-  
+
   // Check for consecutive spaces
   if (/\s{2,}/.test(form.value.name)) {
     errors.value.name = 'Full Name cannot contain consecutive spaces'
     return false
   }
-  
+
   return true
 }
 
 const validateEmail = () => {
   errors.value.email = ''
-  
+
   // Check if field is empty
   if (!form.value.email.trim()) {
     errors.value.email = 'Email Address is required'
     return false
   }
-  
+
   // Check if email contains any spaces (strictly not allowed)
   if (/\s/.test(form.value.email)) {
     errors.value.email = 'Email Address cannot contain spaces'
     return false
   }
-  
+
   // Check if starts with a letter (not a space or number)
   if (form.value.email.trim().length > 0 && !/^[a-zA-Z]/.test(form.value.email.trim())) {
     errors.value.email = 'Email Address must start with a letter'
     return false
   }
-  
+
   // Email format validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(form.value.email.trim())) {
     errors.value.email = 'Please enter a valid email address'
     return false
   }
-  
+
   return true
 }
 
 const validateMessage = () => {
   errors.value.message = ''
-  
+
   // Check if field is empty
   if (!form.value.message.trim()) {
     errors.value.message = 'Message is required'
     return false
   }
-  
+
   // Check minimum length (8 characters)
   if (form.value.message.trim().length < 8) {
     errors.value.message = 'Message must be at least 8 characters'
     return false
   }
-  
+
   // Check if message contains any spaces (shouldn't happen due to input handler, but double-check)
   if (/\s/.test(form.value.message)) {
     errors.value.message = 'Message cannot contain spaces'
     return false
   }
-  
+
   // Check if starts with a letter (not a space or number)
   if (form.value.message.trim().length > 0 && !/^[a-zA-Z]/.test(form.value.message.trim())) {
     errors.value.message = 'Message must start with a letter'
     return false
   }
-  
+
   return true
 }
 
 const submitForm = async () => {
   // Immediately validate all fields and show ALL errors at once
   let isValid = true
-  
+
   // Validate name field - set error immediately if empty
   if (!form.value.name || !form.value.name.trim()) {
     errors.value.name = 'Full Name is required'
@@ -390,7 +390,7 @@ const submitForm = async () => {
       errors.value.name = ''
     }
   }
-  
+
   // Validate email field - set error immediately if empty
   if (!form.value.email || !form.value.email.trim()) {
     errors.value.email = 'Email Address is required'
@@ -413,7 +413,7 @@ const submitForm = async () => {
       }
     }
   }
-  
+
   // Validate message field - set error immediately if empty
   if (!form.value.message || !form.value.message.trim()) {
     errors.value.message = 'Message is required'
@@ -433,20 +433,20 @@ const submitForm = async () => {
       errors.value.message = ''
     }
   }
-  
+
   // If validation fails, prevent submission (all errors are already set above)
   if (!isValid) {
     return
   }
-  
+
   isSubmitting.value = true
-  
+
   // Simulate API call
   await new Promise(resolve => setTimeout(resolve, 1500))
-  
+
   isSubmitting.value = false
   isSuccess.value = true
-  
+
   // Reset after 3 seconds
   setTimeout(() => {
     form.value = { name: '', email: '', message: '' }
@@ -465,7 +465,7 @@ const submitForm = async () => {
   --white: #ffffff;
   --light: #f8f8f8;
   --gray: #666;
-  
+
   display: flex;
   flex-direction: column;
   min-height: 100vh;

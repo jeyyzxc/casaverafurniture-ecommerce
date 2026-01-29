@@ -453,7 +453,7 @@ class ShippingZonesSeeder extends Seeder
                 'logo' => '/images/couriers/casavera.png',
                 'tracking_url' => null,
                 'website' => null,
-                'contact_phone' => '+63 912 345 6789',
+                'contact_phone' => '0917-155-2913',
                 'contact_email' => 'delivery@casavera.com',
                 'has_api_integration' => false,
                 'api_config' => null,

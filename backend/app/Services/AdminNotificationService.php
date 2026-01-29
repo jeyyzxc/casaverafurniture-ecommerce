@@ -6,6 +6,7 @@ use App\Models\AdminNotification;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Events\AdminNotificationCreated;
 use Illuminate\Support\Facades\DB;
 
 class AdminNotificationService
@@ -25,7 +26,7 @@ class AdminNotificationService
         ?int $adminId = null
     ): AdminNotification {
         try {
-            return \DB::transaction(function() use ($title, $message, $type, $priority, $relatedType, $relatedId, $actionUrl, $adminId) {
+            $notification = \DB::transaction(function() use ($title, $message, $type, $priority, $relatedType, $relatedId, $actionUrl, $adminId) {
                 return AdminNotification::create([
                     'admin_id' => $adminId, // null = all admins
                     'title' => $title,
@@ -39,6 +40,10 @@ class AdminNotificationService
                     'color' => $this->getColorForType($type),
                 ]);
             });
+
+            event(new AdminNotificationCreated($notification));
+
+            return $notification;
         } catch (\Exception $e) {
             \Log::error('Failed to create admin notification', [
                 'title' => $title,
@@ -58,7 +63,7 @@ class AdminNotificationService
     {
         $itemsCount = $order->items()->count();
         $itemsText = $itemsCount === 1 ? 'item' : 'items';
-        
+
         $this->createNotification(
             title: 'New Order Received',
             message: "Order #{$order->order_number} has been placed by {$order->customer_name} ({$itemsCount} {$itemsText}, ₱" . number_format($order->total, 2) . ")",
@@ -93,7 +98,7 @@ class AdminNotificationService
     {
         $order = $orderItem->order;
         $productName = $orderItem->product_name;
-        
+
         $messages = [
             'quantity_changed' => "Quantity changed for {$productName} in Order #{$order->order_number}",
             'price_updated' => "Price updated for {$productName} in Order #{$order->order_number}",
@@ -132,7 +137,7 @@ class AdminNotificationService
      */
     public function notifyProductSale(Product $product, ?float $salePrice = null): void
     {
-        $message = $salePrice 
+        $message = $salePrice
             ? "Product '{$product->name}' is now on sale for ₱" . number_format($salePrice, 2)
             : "Product '{$product->name}' is now on sale";
 
@@ -153,7 +158,7 @@ class AdminNotificationService
     public function notifyProductUpdate(Product $product, array $changes = []): void
     {
         $changeMessages = [];
-        
+
         if (isset($changes['price'])) {
             $changeMessages[] = "Price updated to ₱" . number_format($changes['price'], 2);
         }
@@ -249,7 +254,7 @@ class AdminNotificationService
     public function markAsRead(int $notificationId, ?int $adminId = null): bool
     {
         $query = AdminNotification::where('id', $notificationId);
-        
+
         if ($adminId) {
             $query->where(function($q) use ($adminId) {
                 $q->where('admin_id', $adminId)
@@ -258,7 +263,7 @@ class AdminNotificationService
         }
 
         $notification = $query->first();
-        
+
         if ($notification) {
             $notification->markAsRead();
             return true;
@@ -273,7 +278,7 @@ class AdminNotificationService
     public function markAllAsRead(?int $adminId = null): int
     {
         $query = AdminNotification::where('is_read', false);
-        
+
         if ($adminId) {
             $query->where(function($q) use ($adminId) {
                 $q->where('admin_id', $adminId)

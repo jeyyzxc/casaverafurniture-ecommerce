@@ -15,7 +15,7 @@
     <section class="products-main">
       <div class="products-container">
         <div class="products-layout">
-          
+
           <!-- SIDEBAR FILTERS -->
           <aside class="filter-sidebar rise-up">
             <div class="filter-header">
@@ -36,10 +36,10 @@
                   <circle cx="11" cy="11" r="8"/>
                   <path d="m21 21-4.35-4.35"/>
                 </svg>
-                <input 
-                  type="text" 
-                  v-model="searchQuery" 
-                  class="search-input" 
+                <input
+                  type="text"
+                  v-model="searchQuery"
+                  class="search-input"
                   placeholder="Find your piece..."
                 >
               </div>
@@ -56,8 +56,8 @@
                 </svg>
               </div>
               <div class="category-list" v-show="categoryOpen">
-                <div 
-                  v-for="cat in categoryOptions" 
+                <div
+                  v-for="cat in categoryOptions"
                   :key="cat.value"
                   class="category-item"
                   :class="{ active: selectedCategory === cat.value }"
@@ -86,12 +86,12 @@
                   <span>₱0</span>
                   <span class="price-max">₱{{ maxPrice.toLocaleString() }}{{ maxPrice >= 300000 ? '+' : '' }}</span>
                 </div>
-                <input 
-                  type="range" 
-                  v-model.number="maxPrice" 
-                  class="price-slider" 
-                  min="0" 
-                  max="300000" 
+                <input
+                  type="range"
+                  v-model.number="maxPrice"
+                  class="price-slider"
+                  min="0"
+                  max="300000"
                   step="5000"
                 >
                 <div class="price-presets">
@@ -172,9 +172,9 @@
 
             <!-- Grid -->
             <div class="products-grid" v-else-if="filteredProducts.length > 0">
-              <article 
-                v-for="(product, index) in filteredProducts" 
-                :key="product.id" 
+              <article
+                v-for="(product, index) in filteredProducts"
+                :key="product.id"
                 class="product-card"
                 :class="{ 'out-of-stock': isOutOfStock(product), [`rise-up-delay-${Math.min(Math.floor(index / 3) + 2, 5)}`]: true }"
               >
@@ -182,7 +182,7 @@
                   <span v-if="product.is_new" class="product-badge">New</span>
                   <span v-if="isOutOfStock(product)" class="product-badge out-of-stock-badge">Out of Stock</span>
                   <span v-else-if="isLowStock(product)" class="product-badge low-stock-badge">Low Stock</span>
-                  <button 
+                  <button
                     class="wishlist-btn"
                     :class="{ 'in-wishlist': isInWishlist(product.id) }"
                     :disabled="isTogglingWishlist === product.id"
@@ -208,8 +208,8 @@
                     <p v-if="product.sale_price" class="product-price-original">₱{{ formatPrice(product.price) }}</p>
                   </div>
                   <div class="product-actions" v-if="!isOutOfStock(product)">
-                    <button 
-                      class="btn-add-cart" 
+                    <button
+                      class="btn-add-cart"
                       @click="addToCart(product)"
                       :disabled="isAddingToCart && addingProductId === product.id"
                     >
@@ -236,7 +236,7 @@
 
             <!-- Pagination -->
             <div v-if="!isLoading && !error && filteredProducts.length > 0 && totalPages > 1" class="pagination" style="margin-top: 3rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
-              <button 
+              <button
                 @click="changePage(currentPage - 1)"
                 :disabled="currentPage === 1"
                 style="padding: 0.5rem 1rem; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px;"
@@ -244,7 +244,7 @@
               >
                 Previous
               </button>
-              
+
               <template v-for="page in Math.min(5, totalPages)" :key="page">
                 <button
                   v-if="page <= totalPages"
@@ -261,9 +261,9 @@
                   {{ page }}
                 </button>
               </template>
-              
+
               <span v-if="totalPages > 5" style="padding: 0.5rem;">...</span>
-              
+
               <button
                 v-if="totalPages > 5"
                 @click="changePage(totalPages)"
@@ -278,8 +278,8 @@
               >
                 {{ totalPages }}
               </button>
-              
-              <button 
+
+              <button
                 @click="changePage(currentPage + 1)"
                 :disabled="currentPage === totalPages"
                 style="padding: 0.5rem 1rem; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px;"
@@ -315,7 +315,26 @@
             <div class="qv-details">
               <span class="qv-category">{{ quickViewProduct?.category_name || quickViewProduct?.category || 'Uncategorized' }}</span>
               <h2 class="qv-name">{{ quickViewProduct?.name }}</h2>
-              <p class="qv-desc">{{ quickViewProduct?.description || 'Experience luxury with this handcrafted piece, designed to bring elegance and comfort to your home.' }}</p>
+              <div class="qv-desc" v-html="quickViewProduct?.description || ''"></div>
+            </div>
+
+            <div class="qv-specs" v-if="quickViewProduct?.attributes">
+              <div class="qv-spec-item" v-if="quickViewProduct.attributes.dimensions">
+                <span class="qv-spec-label">Dimensions:</span>
+                <span class="qv-spec-value">{{ quickViewProduct.attributes.dimensions }}</span>
+              </div>
+              <div class="qv-spec-item" v-if="quickViewProduct.attributes.material">
+                <span class="qv-spec-label">Material:</span>
+                <span class="qv-spec-value">{{ quickViewProduct.attributes.material }}</span>
+              </div>
+              <div class="qv-spec-item" v-if="quickViewProduct.attributes.color">
+                <span class="qv-spec-label">Color:</span>
+                <span class="qv-spec-value">{{ quickViewProduct.attributes.color }}</span>
+              </div>
+              <div class="qv-spec-item" v-if="quickViewProduct.attributes.weight">
+                <span class="qv-spec-label">Weight:</span>
+                <span class="qv-spec-value">{{ quickViewProduct.attributes.weight }}</span>
+              </div>
             </div>
 
             <div class="qv-price-area">
@@ -396,6 +415,12 @@ interface Product {
   is_new?: boolean
   is_featured?: boolean
   description?: string
+  attributes?: {
+    dimensions?: string
+    material?: string
+    color?: string
+    weight?: string
+  }
   stock?: number
   stock_quantity?: number
   stock_status?: string
@@ -519,7 +544,7 @@ const applyFilters = async (resetPage = true) => {
   if (resetPage) {
     currentPage.value = 1
   }
-  
+
   await loadProducts()
 }
 
@@ -529,7 +554,7 @@ watch([searchQuery, selectedCategory, maxPrice, sortBy], () => {
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
-  
+
   searchTimeout = setTimeout(() => {
     applyFilters()
   }, searchQuery.value ? 500 : 0) // 500ms delay for search, immediate for other filters
@@ -538,7 +563,7 @@ watch([searchQuery, selectedCategory, maxPrice, sortBy], () => {
 const loadProducts = async () => {
   isLoading.value = true
   error.value = null
-  
+
   try {
     // Build API parameters
     const params: {
@@ -554,23 +579,23 @@ const loadProducts = async () => {
       page: currentPage.value,
       per_page: perPage.value,
     }
-    
+
     // Add search
     if (searchQuery.value.trim()) {
       params.search = searchQuery.value.trim()
     }
-    
+
     // Add category filter
     if (selectedCategory.value && selectedCategory.value !== 'All') {
       params.category = selectedCategory.value
     }
-    
+
     // Add price filter
     if (maxPrice.value < 300000) {
       params.max_price = maxPrice.value
     }
     params.min_price = 0
-    
+
     // Add sorting
     const sortMapping: Record<string, { sort_by: string; sort_order: string }> = {
       newest: { sort_by: 'newest', sort_order: 'desc' },
@@ -578,18 +603,18 @@ const loadProducts = async () => {
       price_high: { sort_by: 'price_high', sort_order: 'desc' },
       name_asc: { sort_by: 'name', sort_order: 'asc' },
     }
-    
+
     const sortConfig = sortMapping[sortBy.value]
     if (sortConfig) {
       params.sort_by = sortConfig.sort_by
       params.sort_order = sortConfig.sort_order
     }
-    
+
     const response = await productsApi.list(params)
-    
+
     if (response.data.success) {
       const responseData = response.data.data
-      
+
       // Handle both paginated response and array response
       const isPaginated = responseData && typeof responseData === 'object' && 'data' in responseData && !Array.isArray(responseData)
       const paginatedData = isPaginated ? responseData as {
@@ -598,60 +623,47 @@ const loadProducts = async () => {
         last_page?: number
         total?: number
       } : null
-      
-      const products: Array<Record<string, unknown>> = isPaginated 
+
+      const products: Array<Record<string, unknown>> = isPaginated
         ? (paginatedData?.data || [])
         : (Array.isArray(responseData) ? responseData : [])
-      
+
       // Map products to our interface
       allProducts.value = products.map((p) => {
-        const product = p as {
-          id: number
-          name: string
-          slug: string
-          price: number | string
-          sale_price?: number | string | null
-          current_price?: number | string
-          is_on_sale?: boolean
-          image?: string | null
-          category?: { id: number; name: string; slug: string } | null
-          is_new?: boolean
-          is_featured?: boolean
-          is_bestseller?: boolean
-          description?: string
-          stock_quantity?: number
-          stock_status?: string
-          low_stock_threshold?: number
-          track_inventory?: boolean
-          average_rating?: number
-          review_count?: number
-          created_at?: string
-        }
-        
+        const product = p as Record<string, unknown>
+        const cat = product.category as Record<string, unknown> | null
+        const attrs = product.attributes as Record<string, unknown> | null
+
         return {
-          id: product.id,
-          name: product.name,
-          slug: product.slug,
-          category: product.category?.slug,
-          category_name: product.category?.name,
+          id: product.id as number,
+          name: product.name as string,
+          slug: product.slug as string,
+          category: cat?.slug as string,
+          category_name: cat?.name as string,
           price: typeof product.price === 'string' ? parseFloat(product.price) : (typeof product.price === 'number' ? product.price : 0),
-          sale_price: product.sale_price ? (typeof product.sale_price === 'string' ? parseFloat(product.sale_price) : (typeof product.sale_price === 'number' ? product.sale_price : null)) : null,
-          image: product.image || '/images/products/placeholder.png',
-          primary_image: product.image || undefined,
-          is_new: product.is_new || false,
-          is_featured: product.is_featured || false,
-          is_bestseller: product.is_bestseller || false,
-          description: product.description || '',
-          stock_quantity: product.stock_quantity || 0,
-          stock_status: product.stock_status || 'in_stock',
-          low_stock_threshold: product.low_stock_threshold || 5,
+          sale_price: product.sale_price ? (typeof product.sale_price === 'string' ? parseFloat(product.sale_price as string) : (typeof product.sale_price === 'number' ? product.sale_price as number : null)) : null,
+          image: (product.image || '/images/products/placeholder.png') as string,
+          primary_image: product.image as string | undefined,
+          is_new: (product.is_new || false) as boolean,
+          is_featured: (product.is_featured || false) as boolean,
+          is_bestseller: (product.is_bestseller || false) as boolean,
+          description: (product.description || '') as string,
+          attributes: {
+            dimensions: attrs?.dimensions as string | undefined,
+            material: attrs?.material as string | undefined,
+            color: attrs?.color as string | undefined,
+            weight: attrs?.weight as string | undefined,
+          },
+          stock_quantity: (product.stock_quantity || 0) as number,
+          stock_status: (product.stock_status || 'in_stock') as string,
+          low_stock_threshold: (product.low_stock_threshold || 5) as number,
           track_inventory: product.track_inventory !== false,
-          average_rating: product.average_rating || 0,
-          review_count: product.review_count || 0,
-          created_at: product.created_at,
+          average_rating: (product.average_rating || 0) as number,
+          review_count: (product.review_count || 0) as number,
+          created_at: product.created_at as string,
         }
       })
-      
+
       // Update pagination info
       if (isPaginated && paginatedData) {
         if (paginatedData.current_page !== undefined) {
@@ -667,7 +679,7 @@ const loadProducts = async () => {
         totalPages.value = 1
         totalProducts.value = allProducts.value.length
       }
-      
+
       // Set filtered products (same as all products since filtering is server-side)
       filteredProducts.value = allProducts.value
     } else {
@@ -748,20 +760,20 @@ const handleProductUpdated = (event: Event) => {
   }>
   const productData = customEvent.detail
   if (!productData) return
-  
+
   const index = allProducts.value.findIndex(p => p.id === productData.id)
   if (index !== -1 && allProducts.value[index]) {
     const existingProduct = allProducts.value[index]
     // Ensure price values are properly converted to numbers
-    const price = typeof productData.price === 'string' 
-      ? parseFloat(productData.price.replace(/[^0-9.-]/g, '')) 
+    const price = typeof productData.price === 'string'
+      ? parseFloat(productData.price.replace(/[^0-9.-]/g, ''))
       : (typeof productData.price === 'number' ? productData.price : existingProduct.price)
-    const salePrice = productData.sale_price 
-      ? (typeof productData.sale_price === 'string' 
-          ? parseFloat(productData.sale_price.replace(/[^0-9.-]/g, '')) 
-          : (typeof productData.sale_price === 'number' ? productData.sale_price : null)) 
+    const salePrice = productData.sale_price
+      ? (typeof productData.sale_price === 'string'
+          ? parseFloat(productData.sale_price.replace(/[^0-9.-]/g, ''))
+          : (typeof productData.sale_price === 'number' ? productData.sale_price : null))
       : null
-    
+
     // Update product in place
     allProducts.value[index] = {
       ...existingProduct,
@@ -790,7 +802,7 @@ const handleProductDeleted = (event: Event) => {
   const customEvent = event as CustomEvent<{ id: number; slug: string }>
   const detail = customEvent.detail
   if (!detail) return
-  
+
   const { id } = detail
   allProducts.value = allProducts.value.filter(p => p.id !== id)
   filteredProducts.value = filteredProducts.value.filter(p => p.id !== id)
@@ -807,12 +819,12 @@ const handleStockChanged = (event: Event) => {
   }>
   const stockData = customEvent.detail
   if (!stockData) return
-  
+
   const product = allProducts.value.find(p => p.id === stockData.product_id)
   if (product) {
     product.stock_quantity = stockData.new_quantity
     product.stock_status = stockData.stock_status
-    
+
     // Update filtered products
     const filteredIndex = filteredProducts.value.findIndex(p => p.id === stockData.product_id)
     if (filteredIndex !== -1) {
@@ -821,7 +833,7 @@ const handleStockChanged = (event: Event) => {
         filteredProducts.value[filteredIndex] = { ...product }
       }
     }
-    
+
     // Show notification for low stock or out of stock
     if (stockData.type === 'low_stock') {
       console.warn(`Low stock alert: ${stockData.product_name} (${stockData.new_quantity} remaining)`)
@@ -834,10 +846,10 @@ const handleStockChanged = (event: Event) => {
 onMounted(async () => {
   // Load wishlist if user is authenticated
   loadWishlist()
-  
+
   await loadCategories()
   await loadProducts()
-  
+
   // Check if we're viewing a specific category
   if (route.params.category) {
     selectedCategory.value = route.params.category as string
@@ -868,7 +880,7 @@ onUnmounted(() => {
 const addToCart = async (product: Product) => {
   isAddingToCart.value = true
   addingProductId.value = product.id
-  
+
   try {
     const result = await cartStore.addItem(product.id, 1)
     if (result.success) {
@@ -894,10 +906,10 @@ const buyNow = async (product: Product) => {
     router.push({ name: 'home', query: { login: 'true' } })
     return
   }
-  
+
   isAddingToCart.value = true
   addingProductId.value = product.id
-  
+
   try {
     const result = await cartStore.addItem(product.id, 1)
     if (result.success) {
@@ -1018,7 +1030,7 @@ onMounted(() => {
   --white: #ffffff;
   --gray: #666;
   --transition: all 0.3s ease;
-  
+
   display: flex;
   flex-direction: column;
   min-height: 100vh;

@@ -15,12 +15,14 @@
             <line x1="12" y1="9" x2="12" y2="13"/>
             <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          <h3>Low Stock Alerts ({{ lowStockItems.length }})</h3>
+          <h3>Inventory Alerts ({{ lowStockItems.length }})</h3>
         </div>
         <div class="alert-items">
           <div v-for="item in lowStockItems" :key="item.id" class="alert-item">
             <span class="alert-product">{{ item.name }}</span>
-            <span class="alert-stock">Only {{ item.stock }} left</span>
+            <span class="alert-stock" :class="{ 'out-of-stock': item.stock === 0 }">
+              {{ item.stock === 0 ? 'Out of Stock' : `Only ${item.stock} left` }}
+            </span>
             <button class="btn-small" @click="quickRestock(item)">Restock</button>
           </div>
         </div>
@@ -79,12 +81,14 @@
           <tr v-else v-for="item in filteredInventory" :key="item.id">
             <td>
               <div class="product-cell">
-                <img 
-                  :src="item.image || '/images/products/placeholder.png'" 
-                  :alt="item.name" 
-                  class="product-thumb"
-                  @error="(e) => { (e.target as HTMLImageElement).src = '/images/products/placeholder.png' }"
-                >
+                <div class="product-thumb-container">
+                  <img
+                    :src="item.image || '/images/products/placeholder.png'"
+                    :alt="item.name"
+                    class="product-thumb"
+                    @error="(e) => { (e.target as HTMLImageElement).src = '/images/products/placeholder.png' }"
+                  >
+                </div>
                 <div>
                   <div class="product-name">{{ item.name }}</div>
                   <div class="product-category">{{ item.category }}</div>
@@ -278,23 +282,40 @@ const loadInventory = async () => {
     }
 
     const response = await productsApi.list(params)
-    
+
     if (response.data.success) {
       const data = response.data.data
       // Handle both paginated and direct array responses
       const productsData = data.data || data || []
-      
+
       inventory.value = productsData.map((p: any) => {
         // Handle image path - check multiple possible locations
         let imagePath = '/images/products/placeholder.png'
-        if (p.primary_image?.image_path) {
-          imagePath = p.primary_image.image_path
-        } else if (p.images && Array.isArray(p.images) && p.images.length > 0) {
-          imagePath = p.images[0].image_path || imagePath
-        } else if (p.image_path) {
-          imagePath = p.image_path
+
+        // Priority order for image discovery:
+        // 1. primary_image.image_url (from backend formatProduct)
+        // 2. p.image (direct image URL from client API)
+        // 3. p.primary_image.image_path (original backend structure)
+        // 4. p.images[0].image_url or image_path
+
+        if (p.primary_image?.image_url) {
+          imagePath = p.primary_image.image_url
         } else if (p.image) {
           imagePath = p.image
+        } else if (p.primary_image?.image_path) {
+          // If it's a relative path, we might need to fix it, but usually the API returns full URLs for image or image_url
+          imagePath = p.primary_image.image_path
+        } else if (p.images && Array.isArray(p.images) && p.images.length > 0) {
+          imagePath = p.images[0].image_url || p.images[0].image_path || imagePath
+        } else if (p.image_path) {
+          imagePath = p.image_path
+        }
+
+        // Ensure imagePath is a proper URL if it's a relative path from storage
+        if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/images') && !imagePath.startsWith('blob:')) {
+          // If it looks like a storage path (e.g. "products/abc.jpg"), it might need a prefix
+          // But usually the backend should provide the full URL.
+          // If it's just a path, we'll try to let the browser handle it or use the placeholder
         }
 
         return {
@@ -321,8 +342,8 @@ const loadInventory = async () => {
   }
 }
 
-const lowStockItems = computed(() => 
-  inventory.value.filter(item => item.stock <= item.lowStockThreshold && item.stock > 0)
+const lowStockItems = computed(() =>
+  inventory.value.filter(item => item.stock <= item.lowStockThreshold)
 )
 
 // Inventory is already filtered by API, so we use it directly
@@ -341,9 +362,9 @@ const getStockStatusLabel = (item: InventoryItem) => {
 }
 
 const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit'
@@ -365,10 +386,10 @@ const getChangeClass = (change: number) => {
 
 const adjustStock = (item: InventoryItem) => {
   adjustingItem.value = item
-  adjustmentForm.value = { 
-    type: 'add', 
-    quantity: 0, 
-    reason: '' 
+  adjustmentForm.value = {
+    type: 'add',
+    quantity: 0,
+    reason: ''
   }
   showAdjustModal.value = true
   document.body.style.overflow = 'hidden'
@@ -388,7 +409,7 @@ const closeAdjustModal = (force = false) => {
 
 const saveAdjustment = async () => {
   if (!adjustingItem.value) return
-  
+
   // Validation
   if (adjustmentForm.value.quantity <= 0) {
     showError('Invalid Quantity', 'Quantity must be greater than 0.')
@@ -401,7 +422,7 @@ const saveAdjustment = async () => {
   }
 
   isSaving.value = true
-  
+
   try {
     const response = await productsApi.updateStock(
       adjustingItem.value.id,
@@ -409,28 +430,28 @@ const saveAdjustment = async () => {
       adjustmentForm.value.type,
       adjustmentForm.value.reason || undefined
     )
-    
+
     if (response.data.success) {
       const oldQty = response.data.data.old_quantity
       const newQty = response.data.data.new_quantity
       const productName = adjustingItem.value.name
-      
+
       // Update the item in the inventory list immediately
       const item = inventory.value.find(i => i.id === adjustingItem.value.id)
       if (item) {
         item.stock = newQty
         item.lastUpdated = new Date()
       }
-      
+
       // Close modal first
       closeAdjustModal(true)
-      
+
       // Show success notification
       success(
         'Stock Adjusted Successfully',
         `Stock for "${productName}" has been updated from ${oldQty} to ${newQty}.`
       )
-      
+
       // Reload inventory to ensure consistency
       await loadInventory()
     } else {
@@ -509,12 +530,19 @@ const handleStockChanged = (event: Event) => {
   loadInventory()
 }
 
-// Watch for filter changes and reload inventory
+// Watch for filter changes and search changes
 watch([searchQuery, stockFilter], () => {
   loadInventory()
 })
 
 onMounted(async () => {
+  // Check for search query in URL
+  const urlParams = new URLSearchParams(window.location.search)
+  const searchParam = urlParams.get('search')
+  if (searchParam) {
+    searchQuery.value = searchParam
+  }
+
   await loadInventory()
 
   // Set up real-time listeners
@@ -636,11 +664,16 @@ onUnmounted(() => {
 .alert-product {
   flex: 1;
   font-weight: 600;
+  color: #000000;
 }
 
 .alert-stock {
-  color: #f59e0b;
-  font-weight: 600;
+  color: #d97706; /* Darker amber for better visibility */
+  font-weight: 700;
+}
+
+.alert-stock.out-of-stock {
+  color: #dc2626; /* Red */
 }
 
 .btn-small {
@@ -731,11 +764,22 @@ onUnmounted(() => {
   gap: 0.75rem;
 }
 
-.product-thumb {
+.product-thumb-container {
   width: 50px;
   height: 50px;
-  object-fit: cover;
   border-radius: 8px;
+  overflow: hidden;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e5e7eb;
+}
+
+.product-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .product-name {

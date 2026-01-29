@@ -16,30 +16,58 @@ const api: AxiosInstance = axios.create({
 
 // Track if we're currently handling a 401 to prevent loops
 let isHandling401 = false
+let failedQueue: Array<{
+  resolve: (token: string | null) => void
+  reject: (error: Error) => void
+}> = []
+
+/**
+ * Process the queue of failed requests
+ */
+const processQueue = (error: Error | null, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+
+  failedQueue = []
+}
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Determine if this is an admin or client route
-    const isAdminRoute = config.url?.startsWith('/admin')
-    
+    const isAdminRoute = config.url?.includes('/admin/')
+
     // Get appropriate token from memory (not localStorage)
     const token = isAdminRoute ? getAdminAccessToken() : getClientAccessToken()
 
 
-    if (token) {
-      // Ensure headers object exists
-      if (!config.headers) {
-        config.headers = {} as any
-      }
-      // Set Authorization header
+    if (token && token !== 'undefined' && token !== 'null') {
       config.headers.Authorization = `Bearer ${token}`
+    } else {
+      // Missing token - if this is a protected route, it will likely fail with 401
+      // and trigger our robust refresh logic in the response interceptor.
+      // We log this for debugging.
+      if (isAdminRoute && !config.url?.includes('/auth/login')) {
+         console.log(`[DEBUG_LOG] Admin request to ${config.url} has no in-memory token.`)
+      }
     }
 
     // Add session ID for guest cart
     const sessionId = localStorage.getItem('session_id')
     if (sessionId) {
       config.headers['X-Session-ID'] = sessionId
+    }
+
+    if (isAdminRoute) {
+      console.log(`[DEBUG_LOG] Admin Request to ${config.url}`, {
+        hasToken: !!token,
+        tokenValue: token ? (token.substring(0, 10) + '...') : 'none'
+      });
     }
 
     return config
@@ -59,80 +87,95 @@ api.interceptors.response.use(
       const { status, data } = error.response
 
       // Handle 401 Unauthorized - try to refresh token
-      if (status === 401 && !isHandling401 && !originalRequest._retry) {
+      if (status === 401 && !originalRequest._retry) {
+        // Don't attempt to refresh if the failed request was a login or refresh attempt
+        if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/refresh')) {
+          return Promise.reject(error)
+        }
+
         // Mark request as retried to prevent infinite loops
         originalRequest._retry = true
+
+        const isAdminRoute = originalRequest.url?.includes('/admin/')
+
+        // If it's a public route that we expect to work without auth, don't try to refresh
+        const isPublicRoute = (originalRequest.url?.includes('/home') ||
+                             originalRequest.url?.includes('/categories') ||
+                             originalRequest.url?.includes('/products') ||
+                             originalRequest.url?.includes('/settings')) &&
+                             !isAdminRoute
+
+        if (isPublicRoute) {
+          return Promise.reject(error)
+        }
+
+        // If already handling 401, WAIT for the existing refresh process to complete
+        if (isHandling401) {
+          console.log(`[DEBUG_LOG] 401 already being handled, queuing request for ${originalRequest.url}`)
+
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject })
+          })
+            .then((token) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`
+              return api(originalRequest)
+            })
+            .catch((err) => {
+              return Promise.reject(err)
+            })
+        }
+
         isHandling401 = true
+        console.log(`[DEBUG_LOG] Handling 401 for ${originalRequest.url}`)
 
         try {
-          // Determine if this is an admin or client route
-          const isAdminRoute = originalRequest.url?.startsWith('/admin')
-          
           // Attempt to refresh token
-          const newToken = isAdminRoute 
-            ? await refreshAdminToken() 
+          const newToken = isAdminRoute
+            ? await refreshAdminToken()
             : await refreshClientToken()
 
           if (newToken) {
+            console.log(`[DEBUG_LOG] Token refreshed successfully for ${isAdminRoute ? 'admin' : 'client'}`)
+
+            isHandling401 = false
+            processQueue(null, newToken)
+
             // Update the original request with new token
             originalRequest.headers.Authorization = `Bearer ${newToken}`
-            
-            // Mark that we're retrying after successful refresh
-            // This prevents the original 401 error from being logged
             originalRequest._retryAfterRefresh = true
-            
-            // Retry the original request
-            isHandling401 = false
-            
-            // Retry the request - if successful, the response will be returned
-            try {
-              const retryResponse = await api(originalRequest)
-              return retryResponse
-            } catch (retryError) {
-              // Retry failed - propagate the error
-              return Promise.reject(retryError)
-            }
+
+            console.log(`[DEBUG_LOG] Retrying original request to ${originalRequest.url}`)
+            return api(originalRequest)
           } else {
-            // Refresh failed - clear all auth state
-            clearAllTokens()
-            localStorage.removeItem('admin')
-            localStorage.removeItem('user')
-
-            // Set error message
-            error.message = data?.message || 'Your session has expired. Please log in again.'
-
-            // Redirect to appropriate login page
-            const currentPath = window.location.pathname
-            if (currentPath.startsWith('/admin') && !currentPath.includes('/login')) {
-              setTimeout(() => {
-                window.location.href = '/admin/login'
-              }, 100)
-            } else if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
-              // For client routes, redirect to home with login prompt
-              setTimeout(() => {
-                window.location.href = '/?login=true'
-              }, 100)
-            }
+            console.log(`[DEBUG_LOG] Token refresh FAILED for ${isAdminRoute ? 'admin' : 'client'}`)
+            throw new Error('Refresh failed')
           }
-        } catch (refreshError) {
-          // Refresh failed completely
+        } catch (err: unknown) {
+          console.error(`[DEBUG_LOG] Exception during 401 handling:`, err)
+          isHandling401 = false
+          processQueue(err as Error, null)
+
+          // Refresh failed - clear all auth state
           clearAllTokens()
           localStorage.removeItem('admin')
           localStorage.removeItem('user')
-          
-          error.message = 'Authentication failed. Please log in again.'
-        } finally {
-          // Reset flag after a delay
-          setTimeout(() => {
-            isHandling401 = false
-          }, 1000)
+
+          error.message = data?.message || 'Your session has expired. Please log in again.'
+
+          // Redirect to appropriate login page
+          const currentPath = window.location.pathname
+          if (currentPath.startsWith('/admin') && !currentPath.includes('/login')) {
+            setTimeout(() => {
+              window.location.href = '/admin/login'
+            }, 100)
+          } else if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
+            setTimeout(() => {
+              window.location.href = '/?login=true'
+            }, 100)
+          }
+
+          return Promise.reject(error)
         }
-      } else if (status === 401 && isHandling401) {
-        // Already handling 401, just return the error
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'services/api.ts:123',message:'401 already being handled - rejecting',data:{url:originalRequest.url},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
-        return Promise.reject(error)
       }
 
       // Handle validation errors (422)

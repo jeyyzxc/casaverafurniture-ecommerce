@@ -108,6 +108,12 @@ class RealtimeService {
         .listen('.stock.changed', (data: any) => callback('stock.changed', data))
         .listen('.order.created', (data: any) => callback('order.created', data))
         .listen('.order.status.updated', (data: any) => callback('order.status.updated', data))
+        .listen('.user.login', (data: any) => callback('user.login', data))
+        .listen('.user.registered', (data: any) => callback('user.registered', data))
+        .listen('.payment.received', (data: any) => callback('payment.received', data))
+        .listen('.promotion.created', (data: any) => callback('promotion.created', data))
+        .listen('.product.created', (data: any) => callback('product.created', data))
+        .listen('.product.updated', (data: any) => callback('product.updated', data))
     } else {
       // Polling fallback
       this.startPolling('admin', callback, 3000) // Poll every 3 seconds

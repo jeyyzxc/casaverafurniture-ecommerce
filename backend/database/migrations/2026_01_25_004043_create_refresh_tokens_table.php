@@ -13,7 +13,7 @@ return new class extends Migration
     {
         // Drop existing incomplete table if it exists
         Schema::dropIfExists('refresh_tokens');
-        
+
         Schema::create('refresh_tokens', function (Blueprint $table) {
             $table->id();
             $table->morphs('tokenable'); // Supports both User and Admin models (creates index automatically)
@@ -22,7 +22,8 @@ return new class extends Migration
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->timestamps();
-            
+            $table->softDeletes();
+
             // Additional indexes for performance (morphs() already creates tokenable_type/tokenable_id index)
             $table->index('expires_at');
         });

@@ -1,168 +1,204 @@
 <template>
-  <div class="admin-admins-page">
+  <div class="admin-page-container">
+    <!-- Header -->
     <div class="page-header">
-      <div>
-        <h1 class="page-title">Admin Users</h1>
-        <p class="page-subtitle">Manage admin accounts, roles, and permissions.</p>
+      <div class="header-text">
+        <h1 class="title">Admin Users</h1>
+        <p class="subtitle">Manage system administrators and their permissions</p>
       </div>
-      <div class="header-actions">
+      <button v-if="isSuperAdmin" class="btn-add" @click="openAddModal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>Add Admin</span>
+      </button>
+    </div>
+
+    <!-- Controls / Filters -->
+    <div class="controls-panel">
+      <div class="search-control">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
         <input
           type="text"
           v-model="searchQuery"
-          placeholder="Search admins..."
-          class="search-input"
+          placeholder="Search by name or email..."
           @input="debouncedSearch"
         />
-        <select v-model="filterRole" class="filter-select" @change="loadAdmins">
+      </div>
+
+      <div class="filters-control">
+        <select v-model="filterRole" @change="loadAdmins">
           <option value="">All Roles</option>
-          <option v-for="role in roles" :key="role.id" :value="role.id">
-            {{ role.name }}
-          </option>
+          <option v-for="role in roles" :key="role.id" :value="role.id">{{ role.name }}</option>
         </select>
-        <select v-model="filterStatus" class="filter-select" @change="loadAdmins">
+
+        <select v-model="filterStatus" @change="loadAdmins">
           <option value="">All Status</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </select>
+
         <button
-          v-if="isSuperAdmin"
-          class="btn-primary"
-          @click="openAddModal"
+          class="btn-reset"
+          @click="resetFilters"
+          title="Clear Filters"
+          :disabled="!searchQuery && !filterRole && !filterStatus"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M12 8v8M8 12h8"/>
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
           </svg>
-          Add Admin
+          <span>Reset</span>
         </button>
       </div>
     </div>
 
-    <div v-if="error" class="error-message">
+    <!-- Error State -->
+    <div v-if="error" class="alert-error">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
       {{ error }}
     </div>
 
-    <div class="table-card" v-if="!isLoading">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Admin</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Last Login</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="admins.length === 0">
-            <td colspan="6" class="no-data">No admins found</td>
-          </tr>
-          <tr v-else v-for="admin in admins" :key="admin.id">
-            <td>
-              <div class="admin-cell">
-                <div class="admin-avatar">
-                  {{ admin.first_name.charAt(0).toUpperCase() }}
+    <!-- Main Table -->
+    <div class="content-card">
+      <div class="table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Admin User</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Last Login</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Loading -->
+            <tr v-if="isLoading && admins.length === 0">
+              <td colspan="6" class="state-cell">
+                <div class="spinner"></div>
+                <p>Loading data...</p>
+              </td>
+            </tr>
+
+            <!-- Empty -->
+            <tr v-else-if="admins.length === 0">
+              <td colspan="6" class="state-cell">
+                <p>No admins found.</p>
+              </td>
+            </tr>
+
+            <!-- Data -->
+            <tr v-else v-for="admin in admins" :key="admin.id">
+              <td>
+                <div class="user-info">
+                  <div class="avatar">{{ admin.first_name.charAt(0).toUpperCase() }}</div>
+                  <div class="details">
+                    <span class="name">{{ admin.full_name }}</span>
+                    <span class="id">ID: #{{ admin.id }}</span>
+                  </div>
                 </div>
-                <div>
-                  <div class="admin-name">{{ admin.full_name }}</div>
-                  <div class="admin-id">ID: {{ admin.id }}</div>
+              </td>
+              <td class="email-text">{{ admin.email }}</td>
+              <td>
+                <span class="badge role" :class="getRoleClass(admin.role?.slug)">
+                  {{ admin.role?.name || 'No Role' }}
+                </span>
+              </td>
+              <td>
+                <span class="badge status" :class="admin.status.toLowerCase()">
+                  {{ admin.status }}
+                </span>
+              </td>
+              <td class="meta-text">
+                {{ admin.last_login_at ? formatDate(admin.last_login_at) : 'Never' }}
+              </td>
+              <td>
+                <div class="actions">
+                  <button
+                    v-if="isSuperAdmin || currentAdminId === admin.id"
+                    class="action-btn edit"
+                    @click="editAdmin(admin)"
+                    title="Edit"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button
+                    v-if="isSuperAdmin && currentAdminId !== admin.id"
+                    class="action-btn delete"
+                    @click="openDeleteModal(admin)"
+                    title="Delete Permanently"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                  </button>
                 </div>
-              </div>
-            </td>
-            <td>{{ admin.email }}</td>
-            <td>
-              <span class="role-badge" :class="getRoleClass(admin.role?.slug)">
-                {{ admin.role?.name || 'No Role' }}
-              </span>
-            </td>
-            <td>
-              <span class="status-badge" :class="admin.status.toLowerCase()">
-                {{ admin.status }}
-              </span>
-            </td>
-            <td class="date">
-              {{ admin.last_login_at ? formatDate(admin.last_login_at) : 'Never' }}
-            </td>
-            <td>
-              <div class="action-buttons">
-                <button
-                  v-if="isSuperAdmin || currentAdminId === admin.id"
-                  class="action-btn"
-                  @click="editAdmin(admin)"
-                  title="Edit"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-                <button
-                  v-if="isSuperAdmin && currentAdminId !== admin.id"
-                  class="action-btn danger"
-                  @click="openDeleteModal(admin)"
-                  title="Delete"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                  </svg>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <!-- Pagination -->
       <div class="pagination" v-if="pagination.last_page > 1">
-        <button
-          @click="changePage(pagination.current_page - 1)"
-          :disabled="pagination.current_page === 1"
-          class="page-btn"
-        >
-          Previous
-        </button>
-        <span class="page-info">
-          Page {{ pagination.current_page }} of {{ pagination.last_page }} ({{ pagination.total }} total)
+        <span class="page-count">
+          Page {{ pagination.current_page }} of {{ pagination.last_page }}
         </span>
-        <button
-          @click="changePage(pagination.current_page + 1)"
-          :disabled="pagination.current_page === pagination.last_page"
-          class="page-btn"
-        >
-          Next
-        </button>
+        <div class="page-controls">
+          <button
+            @click="changePage(pagination.current_page - 1)"
+            :disabled="pagination.current_page === 1"
+          >
+            Previous
+          </button>
+          <button
+            @click="changePage(pagination.current_page + 1)"
+            :disabled="pagination.current_page === pagination.last_page"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
 
-    <div v-if="isLoading" class="loading">
-      Loading admins...
-    </div>
-
-    <!-- Delete Confirmation Modal -->
+    <!-- Modals (Delete & Edit) -->
     <Teleport to="body">
-      <div class="modal-overlay" :class="{ active: showDeleteModal }" @click.self="closeDeleteModal">
+      <!-- Delete Modal -->
+      <div v-if="showDeleteModal" class="modal-backdrop" @click.self="closeDeleteModal">
         <div class="modal-container delete-modal">
           <div class="delete-modal-content">
             <div class="delete-icon-wrapper">
               <div class="delete-icon-circle">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"/>
                   <line x1="10" y1="11" x2="10" y2="17"/>
                   <line x1="14" y1="11" x2="14" y2="17"/>
                 </svg>
               </div>
             </div>
-            
+
             <h2 class="delete-title">Delete Admin</h2>
             <p class="delete-message">
-              Are you sure you want to delete 
-              <strong class="delete-admin-name">{{ deletingAdmin?.full_name }}</strong>?
+              Are you sure you want to delete
+              <strong class="delete-product-name">{{ deletingAdmin?.full_name }}</strong>?
             </p>
             <p class="delete-warning">
-              This action cannot be undone. All admin data will be permanently removed.
+              This action cannot be undone. This admin will lose all access to the system.
             </p>
 
             <div class="delete-actions">
@@ -183,113 +219,99 @@
           </div>
         </div>
       </div>
-    </Teleport>
 
-    <!-- Delete Success Notification -->
-    <Teleport to="body">
-      <div class="success-notification" :class="{ active: showDeleteSuccess }">
-        <div class="success-content">
-          <div class="success-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
+      <!-- Edit/Add Modal -->
+      <div v-if="showModal" class="modal-backdrop" @click.self="closeModal">
+        <div class="modal-card">
+          <div class="modal-head">
+            <h3>{{ editingAdmin ? 'Edit Admin' : 'Add New Admin' }}</h3>
+            <button class="btn-close" @click="closeModal">×</button>
           </div>
-          <div class="success-text">
-            <div class="success-title">Admin Deleted</div>
-            <div class="success-message">The admin account has been successfully removed.</div>
-          </div>
+          <form @submit.prevent="saveAdmin" class="modal-form">
+            <div class="form-grid">
+              <div class="field">
+                <label>First Name</label>
+                <input type="text" v-model="formData.first_name" required />
+              </div>
+              <div class="field">
+                <label>Last Name</label>
+                <input type="text" v-model="formData.last_name" required />
+              </div>
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input type="email" v-model="formData.email" required />
+            </div>
+            <div class="form-grid" v-if="!editingAdmin">
+              <div class="field">
+                <label>Password</label>
+                <div class="password-input-wrapper">
+                  <input :type="showPassword ? 'text' : 'password'" v-model="formData.password" :required="!editingAdmin" minlength="8" />
+                  <button type="button" class="toggle-password" @click="showPassword = !showPassword">
+                    <svg v-if="showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="field">
+                <label>Confirm Password</label>
+                <div class="password-input-wrapper">
+                  <input :type="showConfirmPassword ? 'text' : 'password'" v-model="formData.password_confirmation" :required="!editingAdmin" />
+                  <button type="button" class="toggle-password" @click="showConfirmPassword = !showConfirmPassword">
+                    <svg v-if="showConfirmPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label>Phone</label>
+              <input type="text" v-model="formData.phone" />
+            </div>
+            <div class="form-grid" v-if="isSuperAdmin">
+              <div class="field">
+                <label>Role</label>
+                <select v-model="formData.role_id" required>
+                  <option :value="null">Select Role</option>
+                  <option v-for="role in roles" :key="role.id" :value="role.id">{{ role.name }}</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Status</label>
+                <select v-model="formData.status">
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+
+            <div v-if="formError" class="form-alert">{{ formError }}</div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn-text" @click="closeModal">Cancel</button>
+              <button type="submit" class="btn-primary" :disabled="isSaving">
+                {{ isSaving ? 'Saving...' : 'Save Changes' }}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-    </Teleport>
 
-    <!-- Add/Edit Modal -->
-    <Teleport to="body">
-      <div class="modal-overlay" :class="{ active: showModal }" @click.self="closeModal">
-        <div class="modal-container" @click.stop>
-          <div class="modal-header">
-            <h2>{{ editingAdmin ? 'Edit Admin' : 'Add New Admin' }}</h2>
-            <button class="modal-close" @click="closeModal">×</button>
-          </div>
-          <form @submit.prevent="saveAdmin" class="modal-body">
-          <div class="form-group">
-            <label>First Name *</label>
-            <input
-              type="text"
-              v-model="formData.first_name"
-              required
-              placeholder="First name"
-            />
-          </div>
-          <div class="form-group">
-            <label>Last Name *</label>
-            <input
-              type="text"
-              v-model="formData.last_name"
-              required
-              placeholder="Last name"
-            />
-          </div>
-          <div class="form-group">
-            <label>Email *</label>
-            <input
-              type="email"
-              v-model="formData.email"
-              required
-              placeholder="email@example.com"
-            />
-          </div>
-          <div class="form-group" v-if="!editingAdmin">
-            <label>Password *</label>
-            <input
-              type="password"
-              v-model="formData.password"
-              :required="!editingAdmin"
-              placeholder="Minimum 8 characters"
-              minlength="8"
-            />
-          </div>
-          <div class="form-group" v-if="!editingAdmin">
-            <label>Confirm Password *</label>
-            <input
-              type="password"
-              v-model="formData.password_confirmation"
-              :required="!editingAdmin"
-              placeholder="Confirm password"
-            />
-          </div>
-          <div class="form-group">
-            <label>Phone</label>
-            <input
-              type="text"
-              v-model="formData.phone"
-              placeholder="Phone number"
-            />
-          </div>
-          <div class="form-group" v-if="isSuperAdmin">
-            <label>Role *</label>
-            <select v-model="formData.role_id" required>
-              <option value="">Select Role</option>
-              <option v-for="role in roles" :key="role.id" :value="role.id">
-                {{ role.name }}
-              </option>
-            </select>
-          </div>
-          <div class="form-group" v-if="isSuperAdmin">
-            <label>Status</label>
-            <select v-model="formData.status">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-          <div v-if="formError" class="form-error">{{ formError }}</div>
-          <div class="modal-actions">
-            <button type="button" class="btn-secondary" @click="closeModal">Cancel</button>
-            <button type="submit" class="btn-primary" :disabled="isSaving">
-              {{ isSaving ? 'Saving...' : (editingAdmin ? 'Update' : 'Create') }}
-            </button>
-          </div>
-        </form>
-        </div>
+      <!-- Success Toast -->
+      <div v-if="showDeleteSuccess" class="toast-success">
+        Admin permanently deleted.
       </div>
     </Teleport>
   </div>
@@ -300,6 +322,7 @@ import { ref, computed, onMounted } from 'vue'
 import { admins as adminsApi } from '@/services/adminApi'
 import { useAdminAuthStore } from '@/stores/adminAuth'
 
+// Types
 interface Admin {
   id: number
   first_name: string
@@ -309,27 +332,20 @@ interface Admin {
   phone: string | null
   avatar: string | null
   role_id: number
-  role: {
-    id: number
-    name: string
-    slug: string
-  } | null
+  role: { id: number; name: string; slug: string } | null
   status: 'active' | 'inactive'
   last_login_at?: string
-  last_login_ip?: string
   created_at: string
-  updated_at: string
 }
 
 interface Role {
   id: number
   name: string
   slug: string
-  description: string
 }
 
+// Store & State
 const adminAuthStore = useAdminAuthStore()
-
 const admins = ref<Admin[]>([])
 const roles = ref<Role[]>([])
 const isLoading = ref(false)
@@ -337,6 +353,8 @@ const error = ref<string | null>(null)
 const searchQuery = ref('')
 const filterRole = ref<number | string>('')
 const filterStatus = ref<string>('')
+
+// Modals State
 const showModal = ref(false)
 const editingAdmin = ref<Admin | null>(null)
 const isSaving = ref(false)
@@ -346,6 +364,11 @@ const deletingAdmin = ref<Admin | null>(null)
 const isDeleting = ref(false)
 const showDeleteSuccess = ref(false)
 
+// Password Visibility State
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
+
+// Pagination
 const pagination = ref({
   current_page: 1,
   last_page: 1,
@@ -353,6 +376,7 @@ const pagination = ref({
   total: 0,
 })
 
+// Form Data
 const formData = ref({
   first_name: '',
   last_name: '',
@@ -364,13 +388,11 @@ const formData = ref({
   status: 'active' as 'active' | 'inactive',
 })
 
-const isSuperAdmin = computed(() => {
-  return adminAuthStore.admin?.role?.slug === 'super-admin'
-})
-
+// Computed
+const isSuperAdmin = computed(() => adminAuthStore.admin?.role?.slug === 'super-admin')
 const currentAdminId = computed(() => adminAuthStore.admin?.id)
 
-// Debounced search
+// Methods
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 const debouncedSearch = () => {
   if (searchTimeout) clearTimeout(searchTimeout)
@@ -383,27 +405,16 @@ const debouncedSearch = () => {
 const loadAdmins = async () => {
   isLoading.value = true
   error.value = null
-
   try {
-    const params: Record<string, unknown> = {
+    const params: any = {
       page: pagination.value.current_page,
       per_page: pagination.value.per_page,
     }
-
-    if (searchQuery.value) {
-      params.search = searchQuery.value
-    }
-
-    if (filterRole.value) {
-      params.role_id = filterRole.value
-    }
-
-    if (filterStatus.value) {
-      params.status = filterStatus.value
-    }
+    if (searchQuery.value) params.search = searchQuery.value
+    if (filterRole.value) params.role_id = filterRole.value
+    if (filterStatus.value) params.status = filterStatus.value
 
     const response = await adminsApi.list(params)
-
     if (response.data.success) {
       admins.value = response.data.data.data || []
       pagination.value = {
@@ -412,12 +423,10 @@ const loadAdmins = async () => {
         per_page: response.data.data.per_page || 15,
         total: response.data.data.total || 0,
       }
-    } else {
-      error.value = 'Failed to load admins'
     }
-  } catch (err: unknown) {
-    console.error('Failed to load admins:', err)
-    error.value = 'Failed to load admins. Please try again.'
+  } catch (err: any) {
+    error.value = 'Failed to load admins.'
+    console.error(err)
   } finally {
     isLoading.value = false
   }
@@ -426,56 +435,27 @@ const loadAdmins = async () => {
 const loadRoles = async () => {
   try {
     const response = await adminsApi.getRoles()
-    if (response.data.success) {
-      roles.value = response.data.data || []
-    }
-  } catch (err) {
-    console.error('Failed to load roles:', err)
-  }
+    if (response.data.success) roles.value = response.data.data || []
+  } catch (err) { console.error(err) }
 }
 
-const formatDate = (dateString: string) => {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(dateString))
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-const getRoleClass = (slug: string | undefined): string => {
-  if (!slug) return ''
-  // Return slug as-is (CSS classes can have dashes)
-  return slug
-}
+const getRoleClass = (slug?: string) => slug || ''
 
+// Modal Actions
 const openAddModal = () => {
-  if (!isSuperAdmin.value) {
-    alert('Only Super Admin can add admin accounts.')
-    return
-  }
   editingAdmin.value = null
-  formData.value = {
-    first_name: '',
-    last_name: '',
-    email: '',
-    password: '',
-    password_confirmation: '',
-    phone: '',
-    role_id: null,
-    status: 'active',
-  }
+  formData.value = { first_name: '', last_name: '', email: '', password: '', password_confirmation: '', phone: '', role_id: null, status: 'active' }
   formError.value = null
+  showPassword.value = false
+  showConfirmPassword.value = false
   showModal.value = true
-  document.body.style.overflow = 'hidden'
 }
 
 const editAdmin = (admin: Admin) => {
-  if (!isSuperAdmin.value && currentAdminId.value !== admin.id) {
-    alert('You can only edit your own profile.')
-    return
-  }
   editingAdmin.value = admin
   formData.value = {
     first_name: admin.first_name,
@@ -488,133 +468,91 @@ const editAdmin = (admin: Admin) => {
     status: admin.status,
   }
   formError.value = null
+  showPassword.value = false
+  showConfirmPassword.value = false
   showModal.value = true
-  document.body.style.overflow = 'hidden'
 }
 
 const closeModal = () => {
   showModal.value = false
   editingAdmin.value = null
-  formError.value = null
-  document.body.style.overflow = ''
 }
 
 const saveAdmin = async () => {
-  if (!isSuperAdmin.value && editingAdmin.value && currentAdminId.value !== editingAdmin.value.id) {
-    alert('You can only edit your own profile.')
-    return
-  }
-
   isSaving.value = true
   formError.value = null
-
   try {
     if (editingAdmin.value) {
-      // Update existing admin
-      const updateData: Record<string, unknown> = {
+      const updateData: any = {
         first_name: formData.value.first_name,
         last_name: formData.value.last_name,
         email: formData.value.email,
         phone: formData.value.phone || null,
       }
-
-      // Only super-admin can update role and status
       if (isSuperAdmin.value) {
         updateData.role_id = formData.value.role_id
         updateData.status = formData.value.status
       }
-
-      const response = await adminsApi.update(editingAdmin.value.id, updateData)
-
-      if (response.data.success) {
+      const res = await adminsApi.update(editingAdmin.value.id, updateData)
+      if (res.data.success) {
         await loadAdmins()
         closeModal()
       } else {
-        formError.value = response.data.message || 'Failed to update admin'
+        formError.value = res.data.message
       }
     } else {
-      // Create new admin
-      if (!isSuperAdmin.value) {
-        formError.value = 'Only Super Admin can create admin accounts.'
-        return
-      }
-
-      const response = await adminsApi.create({
-        first_name: formData.value.first_name,
-        last_name: formData.value.last_name,
-        email: formData.value.email,
-        password: formData.value.password,
-        password_confirmation: formData.value.password_confirmation,
+      const res = await adminsApi.create({
+        ...formData.value,
         phone: formData.value.phone || undefined,
         role_id: formData.value.role_id!,
-        status: formData.value.status,
       })
-
-      if (response.data.success) {
+      if (res.data.success) {
         await loadAdmins()
         closeModal()
       } else {
-        formError.value = response.data.message || 'Failed to create admin'
+        formError.value = res.data.message
       }
     }
   } catch (err: any) {
-    console.error('Failed to save admin:', err)
-    formError.value = err.response?.data?.message || err.message || 'Failed to save admin'
+    formError.value = err.response?.data?.message || 'Failed to save.'
   } finally {
     isSaving.value = false
   }
 }
 
 const openDeleteModal = (admin: Admin) => {
-  if (!isSuperAdmin.value) {
-    alert('Only Super Admin can delete admin accounts.')
-    return
-  }
-
-  if (currentAdminId.value === admin.id) {
-    alert('You cannot delete your own account.')
-    return
-  }
-
   deletingAdmin.value = admin
   showDeleteModal.value = true
-  document.body.style.overflow = 'hidden'
 }
 
 const closeDeleteModal = () => {
   showDeleteModal.value = false
   deletingAdmin.value = null
-  document.body.style.overflow = ''
 }
 
 const confirmDelete = async () => {
   if (!deletingAdmin.value) return
-
   isDeleting.value = true
-
   try {
-    const response = await adminsApi.delete(deletingAdmin.value.id)
-    
-    if (response.data.success) {
+    const res = await adminsApi.delete(deletingAdmin.value.id)
+    if (res.data.success) {
       closeDeleteModal()
-      
-      // Show success notification
       showDeleteSuccess.value = true
-      setTimeout(() => {
-        showDeleteSuccess.value = false
-      }, 4000)
-      
-      // Reload admins
+      setTimeout(() => showDeleteSuccess.value = false, 3000)
       await loadAdmins()
-    } else {
-      alert(response.data.message || 'Failed to delete admin')
     }
   } catch (err: any) {
-    console.error('Failed to delete admin:', err)
-    alert(err.response?.data?.message || 'Failed to delete admin')
+    alert(err.response?.data?.message || 'Failed to delete.')
   } finally {
     isDeleting.value = false
   }
+}
+
+const resetFilters = () => {
+  searchQuery.value = ''
+  filterRole.value = ''
+  filterStatus.value = ''
+  loadAdmins()
 }
 
 const changePage = (page: number) => {
@@ -629,477 +567,529 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.admin-admins-page {
-  --gold: #c9a050;
-  --dark: #1a1d29;
-  --light: #f5f7fa;
-  --white: #ffffff;
-  --gray: #6b7280;
-  padding-top: 3.5rem;
-  padding-left: 2rem;
-  padding-right: 2rem;
-  padding-bottom: 2rem;
+.admin-page-container {
+  padding: 3rem 2rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  color: #1a1d29;
 }
 
+/* Header */
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 2rem;
+}
+
+.title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.subtitle {
+  color: #64748b;
+  margin: 0.5rem 0 0;
+}
+
+.btn-add {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #c9a050;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-add:hover {
+  background: #b08d44;
+}
+
+.btn-add svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Controls */
+.controls-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 1rem;
 }
 
-.page-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--dark);
-  margin: 0 0 0.5rem;
+.search-control {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
 }
 
-.page-subtitle {
-  color: #374151;
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: #94a3b8;
+}
+
+.search-control input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   font-size: 0.95rem;
-  margin: 0;
 }
 
-.header-actions {
+.filters-control {
   display: flex;
   gap: 0.75rem;
-  flex-wrap: wrap;
 }
 
-.search-input,
-.filter-select {
-  padding: 0.75rem 1rem;
-  border: 1px solid #e5e7eb;
+.filters-control select {
+  padding: 0.75rem 2rem 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  font-size: 0.9rem;
-  background: var(--white);
-  color: var(--dark);
+  background: white;
+  cursor: pointer;
 }
 
-.search-input {
-  min-width: 200px;
-}
-
-.btn-primary {
+.btn-reset {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: var(--gold);
-  color: white;
-  border: none;
+  padding: 0.75rem 1rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  font-weight: 600;
+  color: #64748b;
   cursor: pointer;
-  transition: all 0.3s;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
-.btn-primary:hover {
-  background: #b89040;
+.btn-reset:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #1a1d29;
 }
 
-.modal-actions .btn-primary {
-  color: #000000;
+.btn-reset:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f8fafc;
+  color: #cbd5e1;
 }
 
-.btn-primary svg {
+.btn-reset svg {
   width: 18px;
   height: 18px;
 }
 
-.error-message {
-  background: #fee2e2;
-  color: #991b1b;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
+/* Table */
+.content-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  overflow: hidden;
 }
 
-.table-card {
-  background: var(--white);
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+.table-wrapper {
+  overflow-x: auto;
 }
 
-.data-table {
+.admin-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.data-table thead {
-  background: #f9fafb;
-}
-
-.data-table th {
-  padding: 0.75rem;
+.admin-table th {
   text-align: left;
-  font-size: 0.75rem;
-  font-weight: 700;
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
+  color: #0f172a; /* Darker */
+  font-weight: 700; /* Bolder */
+  font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #6b7280;
-  border-bottom: 2px solid #e5e7eb;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.data-table td {
-  padding: 1rem 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
-  color: var(--dark);
+.admin-table td {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
 }
 
-.no-data {
-  text-align: center;
-  padding: 2rem;
-  color: var(--gray);
+.admin-table tr:last-child td {
+  border-bottom: none;
 }
 
-.admin-cell {
+.user-info {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
-.admin-avatar {
+.avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  background: var(--gold);
+  background: #c9a050;
   color: white;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
 }
 
-.admin-name {
-  font-weight: 600;
-}
-
-.admin-id {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.role-badge {
-  display: inline-block;
-  padding: 0.35rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.role-badge.super-admin {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.role-badge.admin {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.role-badge.manager {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.role-badge.support {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.role-badge.content-manager {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.role-badge.inventory {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 0.35rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.status-badge.active {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.status-badge.inactive {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.date {
-  color: #6b7280;
-  font-size: 0.9rem;
-}
-
-.action-buttons {
+.details {
   display: flex;
+  flex-direction: column;
+}
+
+.name {
+  font-weight: 600;
+  color: #1a1d29;
+}
+
+.id {
+  font-size: 0.75rem;
+  color: #334155; /* Darker */
+}
+
+.email-text {
+  color: #0f172a; /* Darker */
+  font-weight: 500;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge.role { background: #f1f5f9; color: #475569; }
+.badge.role.super-admin { background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; }
+.badge.role.admin { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
+
+.badge.status.active { background: #dcfce7; color: #15803d; }
+.badge.status.inactive { background: #fee2e2; color: #b91c1c; }
+
+.meta-text {
+  color: #0f172a; /* Darker */
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
   gap: 0.5rem;
 }
 
 .action-btn {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
-  border: none;
-  background: #f3f4f6;
-  color: #6b7280;
+  border-radius: 10px;
+  border: 2px solid transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
-.action-btn:hover {
-  background: #e5e7eb;
-  color: var(--gold);
-}
-
-.action-btn.danger:hover {
-  background: #fee2e2;
-  color: #991b1b;
+.action-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 8px;
 }
 
 .action-btn svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.loading {
-  text-align: center;
-  padding: 2rem;
-  color: var(--gray);
+.action-btn:hover svg {
+  transform: scale(1.15);
 }
 
+.action-btn:active {
+  transform: scale(0.92);
+}
+
+/* Edit Button - Modern Gold/Amber */
+.action-btn.edit {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  color: #d97706;
+  border-color: rgba(217, 119, 6, 0.1);
+  box-shadow: 0 2px 4px rgba(217, 119, 6, 0.1);
+}
+
+.action-btn.edit:hover {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: rgba(217, 119, 6, 0.3);
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);
+  transform: translateY(-2px);
+}
+
+.action-btn.edit:hover::before {
+  opacity: 0.08;
+}
+
+.action-btn.edit:hover svg {
+  animation: wiggle 0.4s ease;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: scale(1.15) rotate(0deg); }
+  25% { transform: scale(1.15) rotate(-8deg); }
+  75% { transform: scale(1.15) rotate(8deg); }
+}
+
+/* Delete Button - Modern Red */
+.action-btn.delete {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.1);
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1);
+}
+
+.action-btn.delete:hover {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: rgba(220, 38, 38, 0.3);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+  transform: translateY(-2px);
+}
+
+.action-btn.delete:hover::before {
+  opacity: 0.08;
+}
+
+.action-btn.delete:hover svg {
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: scale(1.15) translateX(0); }
+  25% { transform: scale(1.15) translateX(-2px); }
+  75% { transform: scale(1.15) translateX(2px); }
+}
+
+/* Pagination */
 .pagination {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 
-.page-btn {
+.page-count {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.page-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.page-controls button {
   padding: 0.5rem 1rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0;
+  background: white;
   border-radius: 6px;
-  background: var(--white);
-  color: var(--dark);
   cursor: pointer;
-  transition: all 0.3s;
+  color: #1a1d29;
 }
 
-.page-btn:hover:not(:disabled) {
-  background: #f9fafb;
-  border-color: var(--gold);
-  color: var(--gold);
-}
-
-.page-btn:disabled {
+.page-controls button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.page-info {
-  color: var(--gray);
-  font-size: 0.9rem;
+.page-controls button:hover:not(:disabled) {
+  border-color: #c9a050;
+  color: #c9a050;
 }
 
-/* Modal Styles */
-.modal-overlay {
+/* Modals */
+.modal-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
 }
 
-.modal-overlay.active {
-  opacity: 1;
-  visibility: visible;
-}
-
-.modal-container {
+.modal-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 12px;
   width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  transform: scale(0.9);
-  transition: transform 0.3s ease;
-  color: #000000;
+  max-width: 500px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
 }
 
-.modal-overlay.active .modal-container {
-  transform: scale(1);
-}
-
-.modal-header {
+.modal-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.modal-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #000000;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 2rem;
-  color: #6b7280;
-  cursor: pointer;
-  line-height: 1;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-close:hover {
-  color: var(--dark);
-}
-
-.modal-body {
-  padding: 1.5rem;
-  color: #000000;
-}
-
-.form-group {
   margin-bottom: 1.5rem;
 }
 
-.form-group label {
+.modal-head h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #000000; /* Darker */
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #94a3b8;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.field {
+  margin-bottom: 1rem;
+}
+
+.field label {
   display: block;
   margin-bottom: 0.5rem;
-  font-weight: 600;
-  color: #000000;
+  font-weight: 600; /* Bolder */
+  font-size: 0.9rem;
+  color: #000000; /* Darker */
 }
 
-.form-group input,
-.form-group select {
+.field input, .field select {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  color: #000000;
-  background: #ffffff;
-  transition: border-color 0.3s;
+  border: 1px solid #94a3b8; /* Darker border */
+  border-radius: 6px;
+  color: #000000; /* Darker text */
+  font-weight: 500;
 }
 
-.form-group input::placeholder {
-  color: #6b7280;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: var(--gold);
-  color: #000000;
-}
-
-.form-group select option {
-  color: #000000;
-  background: #ffffff;
-}
-
-.form-error {
-  background: #fee2e2;
-  color: #000000;
-  padding: 0.75rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.modal-actions {
+.password-input-wrapper {
+  position: relative;
   display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  align-items: center;
 }
 
-.btn-secondary {
-  padding: 0.75rem 1.5rem;
-  background: #f3f4f6;
-  color: #000000;
+.password-input-wrapper input {
+  padding-right: 2.5rem;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 0.5rem;
+  background: none;
   border: none;
-  border-radius: 8px;
-  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn-secondary:hover {
-  background: #e5e7eb;
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ═══════════════════════════════════════════════════
-   DELETE CONFIRMATION MODAL
-   ═══════════════════════════════════════════════════ */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  color: #94a3b8;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
+  padding: 0.25rem;
 }
 
-.modal-overlay.active {
-  opacity: 1;
-  visibility: visible;
+.toggle-password:hover {
+  color: #1a1d29;
+}
+
+.toggle-password svg {
+  width: 20px;
+  height: 20px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: #334155; /* Darker */
+}
+
+.btn-primary {
+  background: #c9a050;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Delete Modal Styles */
+.modal-container {
+  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+  border-radius: 24px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.9) translateY(20px);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(201, 160, 80, 0.1);
+}
+
+.modal-backdrop .modal-container {
+  transform: scale(1) translateY(0);
 }
 
 .delete-modal {
@@ -1108,7 +1098,7 @@ onMounted(() => {
   background: #ffffff;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 
+  box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.25),
     0 0 0 1px rgba(220, 53, 69, 0.1);
 }
@@ -1190,7 +1180,7 @@ onMounted(() => {
   line-height: 1.6;
 }
 
-.delete-admin-name {
+.delete-product-name {
   color: #dc2626;
   font-weight: 700;
   font-size: 1.1rem;
@@ -1289,89 +1279,53 @@ onMounted(() => {
   transform: translateY(0);
 }
 
-.delete-btn-confirm:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* ═══════════════════════════════════════════════════
-   DELETE SUCCESS NOTIFICATION
-   ═══════════════════════════════════════════════════ */
-.success-notification {
+/* Toast */
+.toast-success {
   position: fixed;
-  top: 2rem;
+  bottom: 2rem;
   right: 2rem;
-  z-index: 10000;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateX(400px);
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: #10b981;
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  animation: slideUp 0.3s ease;
+  z-index: 2000;
 }
 
-.success-notification.active {
-  opacity: 1;
-  visibility: visible;
-  transform: translateX(0);
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
-.success-content {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
-  border-radius: 16px;
-  box-shadow: 
-    0 10px 25px -5px rgba(0, 0, 0, 0.15),
-    0 0 0 1px rgba(16, 185, 129, 0.1);
-  border-left: 4px solid #10b981;
-  min-width: 320px;
-  max-width: 420px;
-  animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+.state-cell {
+  text-align: center;
+  padding: 3rem !important;
+  color: #94a3b8;
 }
 
-@keyframes slideInRight {
-  from {
-    transform: translateX(400px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-.success-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.success-icon svg {
+.spinner {
+  border: 3px solid #f1f5f9;
+  border-top: 3px solid #c9a050;
+  border-radius: 50%;
   width: 24px;
   height: 24px;
-  color: #10b981;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 0.5rem;
 }
 
-.success-text {
-  flex: 1;
-}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-.success-title {
-  font-weight: 700;
-  font-size: 1rem;
-  color: #1a1d29;
-  margin-bottom: 0.25rem;
-}
-
-.success-message {
-  font-size: 0.875rem;
-  color: #6b7280;
+@media (max-width: 768px) {
+  .controls-panel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filters-control {
+    flex-direction: column;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

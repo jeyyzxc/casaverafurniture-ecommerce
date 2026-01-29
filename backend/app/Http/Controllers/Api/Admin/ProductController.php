@@ -182,7 +182,7 @@ class ProductController extends Controller
         // Broadcast product created event
         if ($product->status === 'active') {
             event(new ProductCreated($product));
-            
+
             // If featured, also update homepage
             if ($product->is_featured) {
                 event(new HomepageUpdated('featured_products', [
@@ -269,25 +269,36 @@ class ProductController extends Controller
         $product->refresh();
 
         // Update images if provided
-        if (isset($validated['images'])) {
-            // Delete old images not in new list
-            $newImageIds = collect($validated['images'])->pluck('id')->filter()->toArray();
-            $product->images()->whereNotIn('id', $newImageIds)->delete();
+        if ($request->has('images')) {
+            $images = $request->input('images');
 
-            foreach ($validated['images'] as $index => $imageData) {
-                if (!empty($imageData['id'])) {
-                    ProductImage::where('id', $imageData['id'])->update([
-                        'image_path' => $imageData['image_path'],
-                        'is_primary' => $imageData['is_primary'] ?? false,
-                        'display_order' => $index,
-                    ]);
-                } else {
-                    ProductImage::create([
-                        'product_id' => $product->id,
-                        'image_path' => $imageData['image_path'],
-                        'is_primary' => $imageData['is_primary'] ?? false,
-                        'display_order' => $index,
-                    ]);
+            // Only perform sync/delete if images is an array (even if empty)
+            if (is_array($images)) {
+                // Delete old images not in new list
+                $newImageIds = collect($images)->pluck('id')->filter()->toArray();
+                $product->images()->whereNotIn('id', $newImageIds)->delete();
+
+                foreach ($images as $index => $imageData) {
+                    if (!empty($imageData['id'])) {
+                        $updateData = [
+                            'is_primary' => $imageData['is_primary'] ?? false,
+                            'display_order' => $index,
+                        ];
+
+                        // Only update image_path if it's provided and not empty
+                        if (!empty($imageData['image_path'])) {
+                            $updateData['image_path'] = $imageData['image_path'];
+                        }
+
+                        $product->images()->where('id', $imageData['id'])->update($updateData);
+                    } elseif (!empty($imageData['image_path'])) {
+                        ProductImage::create([
+                            'product_id' => $product->id,
+                            'image_path' => $imageData['image_path'],
+                            'is_primary' => $imageData['is_primary'] ?? false,
+                            'display_order' => $index,
+                        ]);
+                    }
                 }
             }
         }
@@ -325,7 +336,7 @@ class ProductController extends Controller
             } elseif ($product->stock_quantity > $oldStockQuantity && $oldStockQuantity <= $product->low_stock_threshold) {
                 $stockType = 'restocked';
             }
-            
+
             event(new StockChanged($product, $oldStockQuantity, $product->stock_quantity, $stockType));
         }
 
@@ -509,7 +520,7 @@ class ProductController extends Controller
     {
         try {
             $perPage = min($request->input('per_page', 50), 100);
-            
+
             // Use Eloquent model with relationships
             $logs = StockLog::where('product_id', $product->id)
                 ->with(['admin:id,first_name,last_name'])

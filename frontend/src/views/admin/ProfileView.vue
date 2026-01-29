@@ -15,7 +15,8 @@
         <div class="profile-header">
           <div class="profile-avatar-section">
             <div class="profile-avatar-large">
-              <svg viewBox="0 0 24 24" fill="currentColor">
+              <img v-if="profileData?.avatar" :src="profileData.avatar" alt="Avatar" class="avatar-img">
+              <svg v-else viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
               </svg>
             </div>
@@ -26,11 +27,11 @@
               </svg>
               Change Avatar
             </button>
-            <input 
-              ref="avatarInput" 
-              type="file" 
-              accept="image/*" 
-              @change="handleAvatarChange" 
+            <input
+              ref="avatarInput"
+              type="file"
+              accept="image/*"
+              @change="handleAvatarChange"
               class="avatar-input"
               style="display: none;"
             >
@@ -38,7 +39,12 @@
         </div>
 
         <div class="profile-body">
-          <form @submit.prevent="saveProfile" class="profile-form">
+          <div v-if="isLoadingProfile" class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading profile...</p>
+          </div>
+
+          <form v-else @submit.prevent="saveProfile" class="profile-form">
             <!-- Personal Information Section -->
             <div class="form-section">
               <h3 class="section-title">
@@ -48,56 +54,56 @@
                 </svg>
                 Personal Information
               </h3>
-              
+
               <div class="form-grid">
                 <div class="form-group">
                   <label>First Name <span class="required">*</span></label>
-                  <input 
-                    v-model="profileForm.first_name" 
-                    type="text" 
+                  <input
+                    v-model="profileForm.first_name"
+                    type="text"
                     required
                     placeholder="Enter your first name"
                     class="form-input"
                   >
                 </div>
-                
+
                 <div class="form-group">
                   <label>Last Name <span class="required">*</span></label>
-                  <input 
-                    v-model="profileForm.last_name" 
-                    type="text" 
+                  <input
+                    v-model="profileForm.last_name"
+                    type="text"
                     required
                     placeholder="Enter your last name"
                     class="form-input"
                   >
                 </div>
-                
+
                 <div class="form-group">
                   <label>Email Address <span class="required">*</span></label>
-                  <input 
-                    v-model="profileForm.email" 
-                    type="email" 
+                  <input
+                    v-model="profileForm.email"
+                    type="email"
                     required
                     placeholder="Enter your email"
                     class="form-input"
                   >
                 </div>
-                
+
                 <div class="form-group">
                   <label>Phone Number</label>
-                  <input 
-                    v-model="profileForm.phone" 
-                    type="tel" 
+                  <input
+                    v-model="profileForm.phone"
+                    type="tel"
                     placeholder="Enter your phone number"
                     class="form-input"
                   >
                 </div>
-                
+
                 <div class="form-group">
                   <label>Role</label>
-                  <input 
+                  <input
                     :value="roleDisplay"
-                    type="text" 
+                    type="text"
                     disabled
                     class="form-input disabled-input"
                   >
@@ -114,39 +120,75 @@
                 </svg>
                 Security Settings
               </h3>
-              
+
               <div class="form-grid">
                 <div class="form-group">
                   <label>Current Password</label>
-                  <input 
-                    v-model="profileForm.currentPassword" 
-                    type="password" 
-                    placeholder="Enter current password (required to change password)"
-                    class="form-input"
-                  >
+                  <div class="password-input-wrapper">
+                    <input
+                      v-model="profileForm.currentPassword"
+                      :type="showCurrentPassword ? 'text' : 'password'"
+                      placeholder="Enter current password (required to change password)"
+                      class="form-input"
+                    >
+                    <button type="button" class="toggle-password" @click="showCurrentPassword = !showCurrentPassword">
+                      <svg v-if="showCurrentPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                      </svg>
+                      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-                
+
                 <div class="form-group">
                   <label>New Password</label>
-                  <input 
-                    v-model="profileForm.newPassword" 
-                    type="password" 
-                    placeholder="Enter new password (leave blank to keep current)"
-                    class="form-input"
-                    :class="{ 'has-error': passwordError }"
-                  >
+                  <div class="password-input-wrapper">
+                    <input
+                      v-model="profileForm.newPassword"
+                      :type="showNewPassword ? 'text' : 'password'"
+                      placeholder="Enter new password (leave blank to keep current)"
+                      class="form-input"
+                      :class="{ 'has-error': passwordError }"
+                    >
+                    <button type="button" class="toggle-password" @click="showNewPassword = !showNewPassword">
+                      <svg v-if="showNewPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                      </svg>
+                      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                    </button>
+                  </div>
                   <span v-if="passwordError" class="error-message">{{ passwordError }}</span>
                 </div>
-                
+
                 <div class="form-group">
                   <label>Confirm New Password</label>
-                  <input 
-                    v-model="profileForm.confirmPassword" 
-                    type="password" 
-                    placeholder="Confirm new password"
-                    class="form-input"
-                    :class="{ 'has-error': passwordError }"
-                  >
+                  <div class="password-input-wrapper">
+                    <input
+                      v-model="profileForm.confirmPassword"
+                      :type="showConfirmPassword ? 'text' : 'password'"
+                      placeholder="Confirm new password"
+                      class="form-input"
+                      :class="{ 'has-error': passwordError }"
+                    >
+                    <button type="button" class="toggle-password" @click="showConfirmPassword = !showConfirmPassword">
+                      <svg v-if="showConfirmPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                      </svg>
+                      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -160,7 +202,7 @@
                 </svg>
                 Preferences
               </h3>
-              
+
               <div class="form-grid">
                 <div class="form-group">
                   <label>Language</label>
@@ -168,9 +210,18 @@
                     <option value="en">English</option>
                     <option value="es">Spanish</option>
                     <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="zh">Chinese</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="tl">Tagalog</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="ru">Russian</option>
+                    <option value="ar">Arabic</option>
                   </select>
                 </div>
-                
+
                 <div class="form-group">
                   <label>Timezone</label>
                   <select v-model="profileForm.timezone" class="form-input">
@@ -180,6 +231,8 @@
                     <option value="America/Denver">Mountain Time (MT)</option>
                     <option value="America/Los_Angeles">Pacific Time (PT)</option>
                     <option value="Asia/Manila">Philippine Time (PHT)</option>
+                    <option value="Asia/Tokyo">Japan Standard Time (JST)</option>
+                    <option value="Europe/London">Greenwich Mean Time (GMT)</option>
                   </select>
                 </div>
               </div>
@@ -224,7 +277,7 @@
               <div class="stat-label">Total Actions</div>
             </div>
           </div>
-          
+
           <div class="stat-item">
             <div class="stat-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -233,11 +286,11 @@
               </svg>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ accountStats.lastLogin }}</div>
+              <div class="stat-value small-text">{{ accountStats.lastLogin }}</div>
               <div class="stat-label">Last Login</div>
             </div>
           </div>
-          
+
           <div class="stat-item">
             <div class="stat-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -261,6 +314,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAdminAuthStore } from '@/stores/adminAuth'
 import { useNotification } from '@/composables/useNotification'
+import { upload as uploadApi, activityLogs, admins as adminsApi } from '@/services/adminApi'
 
 const router = useRouter()
 const adminStore = useAdminAuthStore()
@@ -271,7 +325,13 @@ const { success, error: showError } = useNotification()
 // ═══════════════════════════════════════════════════
 const avatarInput = ref<HTMLInputElement | null>(null)
 const isSaving = ref(false)
+const isLoadingProfile = ref(true)
 const passwordError = ref('')
+
+// Password Visibility State
+const showCurrentPassword = ref(false)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
 
 const profileForm = ref({
   first_name: '',
@@ -291,16 +351,18 @@ const accountStats = ref({
   memberSince: 'N/A'
 })
 
+const profileData = ref<any>(null)
+
 // ═══════════════════════════════════════════════════
 // COMPUTED
 // ═══════════════════════════════════════════════════
 const currentAdmin = computed(() => adminStore.admin)
 
 const roleDisplay = computed(() => {
-  const role = currentAdmin.value?.role?.slug || currentAdmin.value?.role
+  const role = profileData.value?.role?.slug || profileData.value?.role?.name || 'Staff'
   if (role === 'super-admin' || role === 'super_admin') return 'Super Admin'
   if (role === 'admin') return 'Admin'
-  return 'Staff'
+  return role
 })
 
 // ═══════════════════════════════════════════════════
@@ -315,38 +377,49 @@ const handleAvatarChange = async (event: Event) => {
   const file = target.files?.[0]
   if (file) {
     try {
-      // TODO: Implement avatar upload via FileUploadController
-      // For now, just log it
-      console.log('Avatar file selected:', file.name)
-      // This would typically upload to server and update avatar URL
-    } catch (err) {
+      const response = await uploadApi.image(file, 'avatars')
+      if (response.data.success) {
+        // Update profile with new avatar URL
+        const updateRes = await adminStore.updateProfile({
+          avatar: response.data.data.url
+        } as any)
+
+        if (updateRes.success) {
+          profileData.value.avatar = response.data.data.url
+          success('Avatar Updated', 'Your profile picture has been updated successfully.')
+        } else {
+          showError('Update Failed', updateRes.message)
+        }
+      }
+    } catch (err: any) {
       console.error('Failed to upload avatar:', err)
+      showError('Upload Failed', err.response?.data?.message || 'Failed to upload avatar.')
     }
   }
 }
 
 const validatePassword = () => {
   passwordError.value = ''
-  
+
   if (!profileForm.value.newPassword && !profileForm.value.confirmPassword) {
     return true // No password change requested
   }
-  
+
   if (profileForm.value.newPassword && !profileForm.value.currentPassword) {
     passwordError.value = 'Current password is required to change password'
     return false
   }
-  
-  if (profileForm.value.newPassword.length < 6) {
-    passwordError.value = 'Password must be at least 6 characters long'
+
+  if (profileForm.value.newPassword.length < 8) {
+    passwordError.value = 'Password must be at least 8 characters long'
     return false
   }
-  
+
   if (profileForm.value.newPassword !== profileForm.value.confirmPassword) {
     passwordError.value = 'Passwords do not match'
     return false
   }
-  
+
   return true
 }
 
@@ -354,32 +427,50 @@ const saveProfile = async () => {
   if (!validatePassword()) {
     return
   }
-  
+
   isSaving.value = true
-  
+
   try {
-    // TODO: Implement actual API call to update admin profile
-    await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
-    
-    // Update local admin data
-    if (adminStore.currentAdmin) {
-      adminStore.currentAdmin.name = profileForm.value.name
-      adminStore.currentAdmin.email = profileForm.value.email
-      ;(adminStore.currentAdmin as any).phone = profileForm.value.phone
-      
-      // Save to localStorage
-      localStorage.setItem('admin_user', JSON.stringify(adminStore.currentAdmin))
+    // 1. Update Profile Info
+    const profileDataPayload = {
+      first_name: profileForm.value.first_name,
+      last_name: profileForm.value.last_name,
+      email: profileForm.value.email,
+      phone: profileForm.value.phone
     }
-    
-    // Log activity
-    adminStore.logActivity('profile', 'Admin profile updated')
-    
-    // Show success message
-    alert('Profile updated successfully!')
-    
-  } catch (error) {
+
+    const profileRes = await adminStore.updateProfile(profileDataPayload)
+
+    if (!profileRes.success) {
+      throw new Error(profileRes.message)
+    }
+
+    // 2. Update Password if requested
+    if (profileForm.value.newPassword) {
+      const passwordRes = await adminStore.changePassword(
+        profileForm.value.currentPassword,
+        profileForm.value.newPassword,
+        profileForm.value.confirmPassword
+      )
+
+      if (!passwordRes.success) {
+        throw new Error(passwordRes.message)
+      }
+
+      // Clear password fields on success
+      profileForm.value.currentPassword = ''
+      profileForm.value.newPassword = ''
+      profileForm.value.confirmPassword = ''
+    }
+
+    success('Profile Updated', 'Your profile information has been saved successfully.')
+
+    // Refresh data
+    await fetchFullProfile()
+
+  } catch (error: any) {
     console.error('Error saving profile:', error)
-    alert('Failed to update profile. Please try again.')
+    showError('Update Failed', error.message || 'Failed to update profile. Please try again.')
   } finally {
     isSaving.value = false
   }
@@ -389,36 +480,107 @@ const cancelEdit = () => {
   router.push('/admin/dashboard')
 }
 
+const fetchFullProfile = async () => {
+  isLoadingProfile.value = true
+  try {
+    // Ensure we have the ID from auth store
+    if (!adminStore.admin?.id) {
+      await adminStore.fetchAdmin()
+    }
+
+    const adminId = adminStore.admin?.id
+    if (!adminId) {
+      throw new Error('Admin ID not found')
+    }
+
+    // Fetch full details from admins API
+    const response = await adminsApi.get(adminId)
+    if (response.data.success) {
+      profileData.value = response.data.data
+
+      // Populate Form
+      profileForm.value.first_name = profileData.value.first_name || ''
+      profileForm.value.last_name = profileData.value.last_name || ''
+      profileForm.value.email = profileData.value.email || ''
+      profileForm.value.phone = profileData.value.phone || ''
+
+      // Populate Member Since
+      if (profileData.value.created_at) {
+        const date = new Date(profileData.value.created_at)
+        accountStats.value.memberSince = date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        })
+      }
+
+      // Populate Last Login (Fallback)
+      if (profileData.value.last_login_at) {
+        const date = new Date(profileData.value.last_login_at)
+        accountStats.value.lastLogin = date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      }
+
+      // Load stats from logs
+      await loadAccountStats(adminId)
+    }
+  } catch (err) {
+    console.error('Failed to fetch full profile:', err)
+    showError('Error', 'Failed to load profile data.')
+  } finally {
+    isLoadingProfile.value = false
+  }
+}
+
+const loadAccountStats = async (adminId: number) => {
+  try {
+    // 1. Total Actions
+    const response = await activityLogs.list({
+      causer_id: adminId,
+      per_page: 1
+    })
+
+    if (response.data.success) {
+      const total = response.data.data.total || 0
+      accountStats.value.totalActions = total.toLocaleString()
+    }
+
+    // 2. Last Login from Activity Logs (More accurate than user table if available)
+    const loginResponse = await activityLogs.list({
+      causer_id: adminId,
+      action: 'login',
+      per_page: 1,
+      sort_by: 'created_at',
+      sort_order: 'desc'
+    })
+
+    if (loginResponse.data.success && loginResponse.data.data.data.length > 0) {
+      const lastLogin = loginResponse.data.data.data[0]
+      const date = new Date(lastLogin.timestamp || lastLogin.created_at)
+      accountStats.value.lastLogin = date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    }
+
+  } catch (err) {
+    console.error('Failed to load account stats:', err)
+  }
+}
+
 // ═══════════════════════════════════════════════════
 // LIFECYCLE
 // ═══════════════════════════════════════════════════
-onMounted(async () => {
-  // Fetch latest admin data
-  if (!currentAdmin.value) {
-    await adminStore.fetchAdmin()
-  }
-  
-  // Initialize form with current admin data
-  if (currentAdmin.value) {
-    const admin = currentAdmin.value
-    profileForm.value = {
-      first_name: admin.first_name || '',
-      last_name: admin.last_name || '',
-      email: admin.email || '',
-      phone: admin.phone || '',
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-      language: 'en',
-      timezone: 'Asia/Manila'
-    }
-    
-    // Update account stats (if available from admin data)
-    if (admin.created_at) {
-      const createdDate = new Date(admin.created_at)
-      accountStats.value.memberSince = createdDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-    }
-  }
+onMounted(() => {
+  fetchFullProfile()
 })
 </script>
 
@@ -494,6 +656,13 @@ onMounted(async () => {
   border: 4px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .profile-avatar-large:hover {
@@ -623,6 +792,40 @@ onMounted(async () => {
   box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
 }
 
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  transition: color 0.2s;
+}
+
+.toggle-password:hover {
+  color: var(--dark);
+}
+
+.toggle-password svg {
+  width: 20px;
+  height: 20px;
+}
+
 .error-message {
   font-size: 0.85rem;
   color: #ef4444;
@@ -705,6 +908,23 @@ onMounted(async () => {
   animation: spin 0.6s linear infinite;
 }
 
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: var(--gray);
+  gap: 1rem;
+}
+
+.loading-state .spinner {
+  width: 32px;
+  height: 32px;
+  border-color: #e5e7eb;
+  border-top-color: var(--gold);
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -781,6 +1001,10 @@ onMounted(async () => {
   margin-bottom: 0.25rem;
 }
 
+.stat-value.small-text {
+  font-size: 1.1rem;
+}
+
 .stat-label {
   font-size: 0.85rem;
   color: var(--gray);
@@ -793,7 +1017,7 @@ onMounted(async () => {
   .profile-content {
     grid-template-columns: 1fr;
   }
-  
+
   .stats-card {
     position: static;
   }
@@ -803,21 +1027,21 @@ onMounted(async () => {
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .form-actions {
     flex-direction: column;
   }
-  
+
   .btn-secondary,
   .btn-primary {
     width: 100%;
     justify-content: center;
   }
-  
+
   .profile-header {
     padding: 2rem 1.5rem;
   }
-  
+
   .profile-body {
     padding: 1.5rem;
   }

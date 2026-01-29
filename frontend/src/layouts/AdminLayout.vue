@@ -5,7 +5,7 @@
       <div class="sidebar-header">
         <div class="logo-section">
           <h2 class="logo-text">CASA VÉRA</h2>
-          <span class="logo-subtitle">Admin Panel</span>
+          <span class="logo-subtitle">{{ currentAdmin.role }}</span>
         </div>
         <button class="sidebar-toggle" @click="toggleSidebar" title="Toggle Sidebar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -185,7 +185,7 @@
           </div>
           <div class="admin-details">
             <div class="admin-name">{{ currentAdmin.name }}</div>
-            <div class="admin-role">{{ currentAdmin.role === 'super_admin' ? 'Super Admin' : currentAdmin.role === 'admin' ? 'Admin' : 'Staff' }}</div>
+            <div class="admin-role">{{ currentAdmin.role }}</div>
           </div>
         </div>
         <button class="logout-btn" @click="handleLogout" title="Logout">
@@ -217,8 +217,8 @@
         </div>
         <div class="header-right">
           <div class="notification-wrapper">
-            <button 
-              class="header-icon-btn" 
+            <button
+              class="header-icon-btn"
               @click="toggleNotificationDropdown"
               title="Notifications"
               :class="{ active: notificationDropdownOpen }"
@@ -231,13 +231,13 @@
                 {{ notificationStore.unreadCount }}
               </span>
             </button>
-            
+
             <!-- Notification Dropdown -->
             <div v-if="notificationDropdownOpen" class="notification-dropdown">
               <div class="notification-header">
                 <h3>Notifications</h3>
                 <div class="notification-actions">
-                  <button 
+                  <button
                     v-if="notificationStore.unreadCount > 0"
                     @click="markAllAsRead"
                     class="mark-all-read-btn"
@@ -246,9 +246,9 @@
                   </button>
                 </div>
               </div>
-              
+
               <div class="notification-list">
-                <div 
+                <div
                   v-if="notificationStore.recentNotifications.length === 0"
                   class="notification-empty"
                 >
@@ -258,7 +258,7 @@
                   </svg>
                   <p>No notifications</p>
                 </div>
-                
+
                 <div
                   v-for="notification in notificationStore.recentNotifications"
                   :key="notification.id"
@@ -296,7 +296,7 @@
                     <div class="notification-message">{{ notification.message }}</div>
                     <div class="notification-time">{{ notificationStore.formatTimeAgo(notification.timestamp) }}</div>
                   </div>
-                  <button 
+                  <button
                     @click.stop="removeNotification(notification.id)"
                     class="notification-remove"
                     title="Remove"
@@ -309,7 +309,7 @@
                   <div v-if="!notification.read" class="notification-unread-indicator"></div>
                 </div>
               </div>
-              
+
               <div v-if="notificationStore.recentNotifications.length > 0" class="notification-footer">
                 <router-link to="/admin/notifications" @click="closeNotificationDropdown" class="view-all-link">
                   View all notifications
@@ -335,6 +335,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAdminAuthStore } from '@/stores/adminAuth'
+import { getAdminAccessToken } from '@/utils/tokenManager'
 import { useNotificationStore } from '@/stores/notifications'
 import { dashboard } from '@/services/adminApi'
 
@@ -351,11 +352,17 @@ const mobileMenuOpen = ref(false)
 const notificationDropdownOpen = ref(false)
 
 // Get admin data from store
-const currentAdmin = computed(() => ({
-  name: adminAuthStore.adminFullName || 'Admin User',
-  role: adminAuthStore.roleName || 'Admin',
-  email: adminAuthStore.admin?.email || 'admin@casavera.com'
-}))
+const currentAdmin = computed(() => {
+  const roleName = adminAuthStore.roleName || 'Admin'
+  // Format role name: replace hyphens/underscores with spaces and uppercase
+  const formattedRole = roleName.replace(/[-_]/g, ' ').toUpperCase()
+
+  return {
+    name: adminAuthStore.adminFullName || 'Admin User',
+    role: formattedRole,
+    email: adminAuthStore.admin?.email || 'admin@casavera.com'
+  }
+})
 
 const isSuperAdmin = computed(() => adminAuthStore.admin?.role?.slug === 'super-admin')
 
@@ -448,19 +455,25 @@ const fetchQuickStats = async () => {
 // ═══════════════════════════════════════════════════
 // LIFECYCLE
 // ═══════════════════════════════════════════════════
-onMounted(() => {
+onMounted(async () => {
   // Check if admin is authenticated
   if (!adminAuthStore.isAuthenticated) {
     router.push('/admin/login')
     return
   }
-  
+
+  // Wait for admin data to be loaded (which ensures refresh is done)
+  // We check for both admin data AND access token to avoid 401s
+  if (!adminAuthStore.admin || !getAdminAccessToken()) {
+    await adminAuthStore.fetchAdmin()
+  }
+
   // Fetch quick stats
   fetchQuickStats()
-  
+
   // Ensure dark mode class is removed
   document.documentElement.classList.remove('dark-mode')
-  
+
   // Close notification dropdown when clicking outside
   const handleClickOutside = (event: MouseEvent) => {
     const target = event.target as HTMLElement
@@ -469,7 +482,7 @@ onMounted(() => {
     }
   }
   document.addEventListener('click', handleClickOutside)
-  
+
   onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside)
   })

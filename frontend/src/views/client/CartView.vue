@@ -218,13 +218,13 @@ const clearCart = async () => {
 
 const proceedToCheckout = async () => {
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CartView.vue:218',message:'proceedToCheckout ENTRY',data:{cartItemsCount:cartItems.value.length,isAuthenticated:authStore.isAuthenticated,hasUser:!!authStore.user},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B'})}).catch(()=>{});
+  
   // #endregion
   
   // Step 1: Validate cart has items
   if (cartItems.value.length === 0) {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CartView.vue:224',message:'Cart empty - early return',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    
     // #endregion
     console.warn('Cannot proceed to checkout: cart is empty')
     return
@@ -234,7 +234,7 @@ const proceedToCheckout = async () => {
   // The router guard will handle deeper authentication verification
   if (!authStore.isAuthenticated || !authStore.user) {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CartView.vue:232',message:'Not authenticated - redirecting to login',data:{isAuthenticated:authStore.isAuthenticated,hasUser:!!authStore.user},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    
     // #endregion
     sessionStorage.setItem('redirectAfterLogin', '/checkout')
     router.push({ name: 'home', query: { login: 'true' } }).catch(() => {})
@@ -258,17 +258,17 @@ const proceedToCheckout = async () => {
   // Step 4: Navigate directly to checkout
   // Let the router guard and CheckoutView handle authentication verification
   // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CartView.vue:250',message:'BEFORE router.push to /checkout',data:{isAuthenticated:authStore.isAuthenticated,hasUser:!!authStore.user,userId:authStore.user?.id,cartItemsCount:cartStore.items.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B'})}).catch(()=>{});
+  
   // #endregion
   
   try {
     await router.push('/checkout')
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CartView.vue:255',message:'router.push SUCCESS',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    
     // #endregion
   } catch (error) {
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/519d2bb1-4823-4c4b-a812-0b4fe5394aa0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CartView.vue:258',message:'router.push ERROR',data:{error:(error as Error)?.message||String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    
     // #endregion
     console.error('Navigation to checkout failed:', error)
     // If navigation fails, redirect to login as fallback

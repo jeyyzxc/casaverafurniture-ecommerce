@@ -72,7 +72,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/register', [ClientAuthController::class, 'register']);
     Route::post('/login', [ClientAuthController::class, 'login']);
     Route::post('/refresh', [ClientAuthController::class, 'refresh']); // Public refresh endpoint
-    
+
     // Google OAuth routes need session middleware for state storage
     Route::middleware('web')->group(function () {
         Route::get('/google', [ClientAuthController::class, 'redirectToGoogle']); // Initiate Google OAuth
@@ -130,7 +130,7 @@ Route::prefix('admin')->group(function () {
     Route::post('/auth/refresh', [AdminAuthController::class, 'refresh']); // Public refresh endpoint
 
     // Protected Admin Routes
-    Route::middleware(['auth:sanctum', 'admin.only'])->group(function () {
+    Route::middleware(['auth:admin', 'admin.only'])->group(function () {
         // Auth
         Route::prefix('auth')->group(function () {
             Route::get('/me', [AdminAuthController::class, 'me']);

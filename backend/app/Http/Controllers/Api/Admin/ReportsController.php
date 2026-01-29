@@ -26,16 +26,24 @@ class ReportsController extends Controller
             $groupBy = $request->input('group_by', 'day'); // day, week, month
 
             $query = Order::where('payment_status', 'paid')
-                ->whereBetween('created_at', [$startDate, $endDate . ' 23:59:59']);
+                ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+
+            $isPostgres = DB::connection()->getDriverName() === 'pgsql';
 
             // Group by period
             $dateFormat = match ($groupBy) {
-                'week' => DB::raw('YEARWEEK(created_at) as period'),
-                'month' => DB::raw('DATE_FORMAT(created_at, "%Y-%m") as period'),
-                default => DB::raw('DATE(created_at) as period'),
+                'week' => $isPostgres
+                    ? DB::raw("to_char(created_at, 'IYYY-IW') as period")
+                    : DB::raw('YEARWEEK(created_at) as period'),
+                'month' => $isPostgres
+                    ? DB::raw("to_char(created_at, 'YYYY-MM') as period")
+                    : DB::raw('DATE_FORMAT(created_at, "%Y-%m") as period'),
+                default => $isPostgres
+                    ? DB::raw('created_at::date as period')
+                    : DB::raw('DATE(created_at) as period'),
             };
 
-            $salesData = $query
+            $salesData = $query->clone()
                 ->select(
                     $dateFormat,
                     DB::raw('SUM(total) as revenue'),
@@ -46,11 +54,11 @@ class ReportsController extends Controller
                 ->orderBy('period')
                 ->get();
 
-            // Calculate totals
+            // Calculate totals using a cloned query to avoid issues with select/groupBy
             $totals = [
-                'total_revenue' => $query->sum('total'),
-                'total_orders' => $query->count(),
-                'average_order_value' => $query->avg('total') ?? 0,
+                'total_revenue' => $query->clone()->sum('total'),
+                'total_orders' => $query->clone()->count(),
+                'average_order_value' => $query->clone()->avg('total') ?? 0,
             ];
 
             return response()->json([
@@ -89,7 +97,7 @@ class ReportsController extends Controller
             $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
             $endDate = $request->input('end_date', now()->toDateString());
 
-            $query = Order::whereBetween('created_at', [$startDate, $endDate . ' 23:59:59']);
+            $query = Order::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
             // Orders by status
             $ordersByStatus = $query->clone()
@@ -103,10 +111,12 @@ class ReportsController extends Controller
                 ->groupBy('payment_status')
                 ->pluck('count', 'payment_status');
 
+            $isPostgres = DB::connection()->getDriverName() === 'pgsql';
+
             // Orders by day
             $ordersByDay = $query->clone()
                 ->select(
-                    DB::raw('DATE(created_at) as date'),
+                    $isPostgres ? DB::raw('created_at::date as date') : DB::raw('DATE(created_at) as date'),
                     DB::raw('COUNT(*) as count')
                 )
                 ->groupBy('date')
@@ -163,7 +173,7 @@ class ReportsController extends Controller
             // Top selling products
             $topProducts = OrderItem::join('orders', 'order_items.order_id', '=', 'orders.id')
                 ->join('products', 'order_items.product_id', '=', 'products.id')
-                ->whereBetween('orders.created_at', [$startDate, $endDate . ' 23:59:59'])
+                ->whereBetween('orders.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                 ->where('orders.payment_status', 'paid')
                 ->select(
                     'products.id',
@@ -185,7 +195,7 @@ class ReportsController extends Controller
                     $query->select('order_items.product_id')
                         ->from('order_items')
                         ->join('orders', 'order_items.order_id', '=', 'orders.id')
-                        ->whereBetween('orders.created_at', [$startDate, $endDate . ' 23:59:59'])
+                        ->whereBetween('orders.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                         ->where('orders.payment_status', 'paid');
                 })
                 ->select('id', 'name', 'sku', 'price', 'order_count')
@@ -228,10 +238,12 @@ class ReportsController extends Controller
             $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
             $endDate = $request->input('end_date', now()->toDateString());
 
+            $isPostgres = DB::connection()->getDriverName() === 'pgsql';
+
             // New users
-            $newUsers = User::whereBetween('created_at', [$startDate, $endDate . ' 23:59:59'])
+            $newUsers = User::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                 ->select(
-                    DB::raw('DATE(created_at) as date'),
+                    $isPostgres ? DB::raw('created_at::date as date') : DB::raw('DATE(created_at) as date'),
                     DB::raw('COUNT(*) as count')
                 )
                 ->groupBy('date')
@@ -239,7 +251,7 @@ class ReportsController extends Controller
                 ->get();
 
             // Top customers by revenue
-            $topCustomers = Order::whereBetween('orders.created_at', [$startDate, $endDate . ' 23:59:59'])
+            $topCustomers = Order::whereBetween('orders.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                 ->where('orders.payment_status', 'paid')
                 ->join('users', 'orders.user_id', '=', 'users.id')
                 ->select(
@@ -280,7 +292,7 @@ class ReportsController extends Controller
                     'new_users' => $newUsers,
                     'top_customers' => $topCustomers,
                     'customer_lifetime_value' => $customerLifetimeValue,
-                    'total_new_users' => User::whereBetween('created_at', [$startDate, $endDate . ' 23:59:59'])->count(),
+                    'total_new_users' => User::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])->count(),
                     'period' => [
                         'start_date' => $startDate,
                         'end_date' => $endDate,
@@ -312,36 +324,36 @@ class ReportsController extends Controller
             $endDate = $request->input('end_date', now()->toDateString());
 
             // Sales statistics
-            $paidOrders = Order::whereBetween('created_at', [$startDate, $endDate . ' 23:59:59'])
-                ->where('payment_status', 'paid');
-
-            $allOrders = Order::whereBetween('created_at', [$startDate, $endDate . ' 23:59:59']);
-
             $stats = [
-                'total_revenue' => $paidOrders->sum('total') ?? 0,
-                'total_orders' => $allOrders->count(),
-                'paid_orders' => $paidOrders->count(),
-                'average_order_value' => $paidOrders->avg('total') ?? 0,
+                'total_revenue' => Order::where('payment_status', 'paid')->sum('total') ?? 0,
+                'total_orders' => Order::count(),
+                'paid_orders' => Order::where('payment_status', 'paid')->count(),
+                'completed_orders' => Order::where('status', 'completed')->count(),
+                'average_order_value' => Order::where('payment_status', 'paid')->avg('total') ?? 0,
                 'total_customers' => User::count(),
-                'new_customers' => User::whereBetween('created_at', [$startDate, $endDate . ' 23:59:59'])->count(),
+                'new_customers' => User::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])->count(),
                 'total_products' => Product::where('status', 'active')->count(),
             ];
 
-            // Top product
+            // Top product (Most bought item by quantity)
             $topProduct = OrderItem::join('orders', 'order_items.order_id', '=', 'orders.id')
                 ->join('products', 'order_items.product_id', '=', 'products.id')
-                ->whereBetween('orders.created_at', [$startDate, $endDate . ' 23:59:59'])
+                ->whereBetween('orders.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                 ->where('orders.payment_status', 'paid')
-                ->select('products.name', DB::raw('SUM(order_items.total) as revenue'))
-                ->groupBy('products.name')
-                ->orderBy('revenue', 'desc')
+                ->select('products.name', DB::raw('SUM(order_items.quantity) as quantity'), DB::raw('SUM(order_items.total) as revenue'))
+                ->groupBy('products.id', 'products.name')
+                ->orderBy('quantity', 'desc')
                 ->first();
 
             return response()->json([
                 'success' => true,
                 'data' => [
                     'stats' => $stats,
-                    'top_product' => $topProduct ? $topProduct->name : 'N/A',
+                    'top_product' => $topProduct ? [
+                        'name' => $topProduct->name,
+                        'quantity' => (int) $topProduct->quantity,
+                        'revenue' => (float) $topProduct->revenue,
+                    ] : null,
                     'period' => [
                         'start_date' => $startDate,
                         'end_date' => $endDate,

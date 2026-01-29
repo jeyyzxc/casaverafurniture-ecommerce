@@ -11,19 +11,22 @@
       <select v-model="filterStatus" class="filter-select">
         <option value="">All Payments</option>
         <option value="pending">Pending</option>
-        <option value="awaiting_verification">Awaiting Verification</option>
-        <option value="verified">Verified</option>
         <option value="confirmed">Confirmed</option>
         <option value="failed">Failed</option>
-        <option value="rejected">Rejected</option>
-        <option value="cancelled">Cancelled</option>
       </select>
       <select v-model="filterMethod" class="filter-select">
         <option value="">All Methods</option>
-        <option v-for="method in paymentMethods" :key="method.id" :value="method.id">
-          {{ method.name }}
-        </option>
+        <option value="online_payment">Online Payment (GCash, Maya, PayPal)</option>
+        <option value="bank_transfer">Bank Transfers (BDO, BPI, Metrobank, Card)</option>
+        <option value="cod">Cash on Delivery</option>
       </select>
+      <button class="btn-reset" @click="resetFilters" title="Reset Filters">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+        Reset
+      </button>
     </div>
 
     <div class="table-card">
@@ -129,21 +132,45 @@
               </div>
             </div>
 
-            <div v-if="selectedPayment.reference_number || selectedPayment.sender_name" class="detail-section">
-              <h3>Payment Details</h3>
-              <div v-if="selectedPayment.reference_number" class="detail-row">
-                <span class="detail-label">Reference Number:</span>
-                <span class="detail-value">{{ selectedPayment.reference_number }}</span>
+            <div class="payment-info-grid">
+              <div class="info-column">
+                <h3>From ({{ selectedPayment.sender_name || selectedPayment.customerName || 'N/A' }})</h3>
+                <div class="detail-row">
+                  <span class="detail-label">Sender Name:</span>
+                  <span class="detail-value">{{ selectedPayment.sender_name || selectedPayment.customerName || 'N/A' }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Account Number:</span>
+                  <span class="detail-value">{{ selectedPayment.sender_account || 'N/A' }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Reference Number:</span>
+                  <span class="detail-value">{{ selectedPayment.reference_number || 'N/A' }}</span>
+                </div>
               </div>
-              <div v-if="selectedPayment.sender_name" class="detail-row">
-                <span class="detail-label">Sender Name:</span>
-                <span class="detail-value">{{ selectedPayment.sender_name }}</span>
+
+              <div class="info-column">
+                <h3>To(Casa Vera Furniture)</h3>
+                <div class="detail-row">
+                  <span class="detail-label">Method:</span>
+                  <span class="detail-value">{{ selectedPayment.payment_method?.name || selectedPayment.method.toUpperCase() }}</span>
+                </div>
+                <div v-if="selectedPayment.payment_method?.account_details?.account_number" class="detail-row">
+                  <span class="detail-label">Account Number:</span>
+                  <span class="detail-value">{{ selectedPayment.payment_method.account_details.account_number }}</span>
+                </div>
+                <div v-if="selectedPayment.payment_method?.account_details?.account_name" class="detail-row">
+                  <span class="detail-label">Account Name:</span>
+                  <span class="detail-value">{{ selectedPayment.payment_method.account_details.account_name }}</span>
+                </div>
               </div>
             </div>
 
-            <div v-if="selectedPayment.proof_image" class="detail-section">
+            <div v-if="selectedPayment.proof_image" class="detail-section proof-section">
               <h3>Proof of Payment</h3>
-              <img :src="selectedPayment.proof_image" alt="Proof of Payment" class="proof-image">
+              <div class="proof-image-container">
+                <img :src="selectedPayment.proof_image" alt="Proof of Payment" class="proof-image">
+              </div>
             </div>
 
             <div v-if="selectedPayment.verification_notes" class="detail-section">
@@ -250,6 +277,7 @@ interface Payment {
   date: Date
   reference_number?: string
   sender_name?: string
+  sender_account?: string
   proof_image?: string
   verification_notes?: string
   verified_at?: string
@@ -309,16 +337,20 @@ const loadPayments = async () => {
     }
 
     if (filterMethod.value) {
-      params.payment_method_id = parseInt(filterMethod.value)
+      if (['online_payment', 'bank_transfer', 'cod'].includes(filterMethod.value)) {
+        params.payment_category = filterMethod.value
+      } else {
+        params.payment_method_id = parseInt(filterMethod.value)
+      }
     }
 
     const response = await paymentsApi.list(params)
-    
+
     if (response.data.success) {
       const data = response.data.data
       // Handle both paginated and direct array responses
       const paymentsData = data.data || data || []
-      
+
       payments.value = paymentsData.map((p: any) => ({
         id: p.id,
         transaction_id: p.transaction_id,
@@ -336,6 +368,7 @@ const loadPayments = async () => {
         date: new Date(p.created_at),
         reference_number: p.reference_number,
         sender_name: p.sender_name,
+        sender_account: p.sender_account,
         proof_image: p.proof_image,
         verification_notes: p.verification_notes,
         verified_at: p.verified_at,
@@ -357,6 +390,13 @@ const loadPayments = async () => {
 
 // Payments are already filtered by API, so we use them directly
 const filteredPayments = computed(() => payments.value)
+
+const resetFilters = () => {
+  filterStatus.value = ''
+  filterMethod.value = ''
+  currentPage.value = 1
+  loadPayments()
+}
 
 const formatPrice = (price: number) => {
   return price.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -410,6 +450,7 @@ const viewDetails = async (id: number) => {
         date: new Date(p.created_at),
         reference_number: p.reference_number,
         sender_name: p.sender_name,
+        sender_account: p.sender_account,
         proof_image: p.proof_image,
         verification_notes: p.verification_notes,
         verified_at: p.verified_at,
@@ -462,10 +503,10 @@ const confirmVerify = async () => {
 
   try {
     const response = await paymentsApi.verify(selectedPayment.value.id, verifyNotes.value || undefined)
-    
+
     if (response.data.success) {
       const transactionId = selectedPayment.value.transactionId
-      
+
       // Update the payment in the list immediately
       const payment = payments.value.find(p => p.id === selectedPayment.value.id)
       if (payment) {
@@ -478,14 +519,14 @@ const confirmVerify = async () => {
           payment.verified_by = updatedPayment.verified_by
         }
       }
-      
+
       closeVerifyModal()
-      
+
       success(
         'Payment Verified',
         `Payment ${transactionId} has been verified and confirmed successfully.`
       )
-      
+
       // Reload payments to ensure consistency
       await loadPayments()
     } else {
@@ -537,10 +578,10 @@ const confirmReject = async () => {
 
   try {
     const response = await paymentsApi.reject(selectedPayment.value.id, rejectReason.value.trim())
-    
+
     if (response.data.success) {
       const transactionId = selectedPayment.value.transactionId
-      
+
       // Update the payment in the list immediately
       const payment = payments.value.find(p => p.id === selectedPayment.value.id)
       if (payment) {
@@ -552,14 +593,14 @@ const confirmReject = async () => {
           payment.failure_code = updatedPayment.failure_code
         }
       }
-      
+
       closeRejectModal()
-      
+
       success(
         'Payment Rejected',
         `Payment ${transactionId} has been rejected.`
       )
-      
+
       // Reload payments to ensure consistency
       await loadPayments()
     } else {
@@ -650,6 +691,32 @@ onUnmounted(() => {
   outline: none;
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(201, 160, 80, 0.1);
+}
+
+.btn-reset {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--gray);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-reset:hover {
+  background: #f9fafb;
+  color: var(--dark);
+  border-color: #d1d5db;
+}
+
+.btn-reset svg {
+  width: 18px;
+  height: 18px;
 }
 
 .table-card {
@@ -868,20 +935,53 @@ onUnmounted(() => {
   margin-bottom: 0;
 }
 
-.detail-section h3 {
-  font-size: 1.1rem;
+.payment-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+.info-column h3 {
+  font-size: 1rem;
   font-weight: 700;
   color: #000000;
   margin: 0 0 1rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid #e5e7eb;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.proof-section {
+  text-align: center;
+}
+
+.proof-image-container {
+  display: inline-block;
+  padding: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.proof-image {
+  display: block;
+  width: 100%;
+  max-width: 450px;
+  height: auto;
+  border-radius: 8px;
 }
 
 .detail-row {
   display: flex;
   justify-content: space-between;
   padding: 0.75rem 0;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .detail-row:last-child {
@@ -896,20 +996,14 @@ onUnmounted(() => {
 .detail-value {
   color: #000000;
   text-align: right;
+  word-break: break-all;
+  padding-left: 1rem;
 }
 
 .detail-value.amount {
   font-weight: 700;
   font-size: 1.1rem;
-  color: var(--gold);
-}
-
-.proof-image {
-  width: 100%;
-  max-width: 400px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  margin-top: 0.5rem;
+  color: #b8860b;
 }
 
 .verification-notes {

@@ -19,30 +19,14 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    private function debugLog($location, $message, $data, $hypothesisId = 'A') {
-        $logPath = base_path('.cursor/debug.log');
-        @file_put_contents($logPath, json_encode([
-            'id' => 'log_' . time() . '_' . uniqid(),
-            'timestamp' => time() * 1000,
-            'location' => $location,
-            'message' => $message,
-            'data' => $data,
-            'sessionId' => 'debug-session',
-            'runId' => 'run1',
-            'hypothesisId' => $hypothesisId
-        ]) . "\n", FILE_APPEND | LOCK_EX);
-    }
     /**
      * List user's orders
      */
     public function index(Request $request): JsonResponse
     {
-        // #region agent log
-        $this->debugLog('OrderController.php:27', 'index() entry', ['user_id' => $request->user()?->id, 'user_type' => get_class($request->user())], 'B');
-        // #endregion
         try {
             $user = $request->user();
-            
+
             // Ensure user is a User model, not Admin
             if (!$user instanceof \App\Models\User) {
                 return response()->json([
@@ -50,9 +34,6 @@ class OrderController extends Controller
                     'message' => 'Invalid user type. Please log in as a customer.',
                 ], 403);
             }
-            // #region agent log
-            $this->debugLog('OrderController.php:30', 'Before query build', ['user_id' => $user?->id], 'B');
-            // #endregion
 
             $query = Order::where('user_id', $user->id)
                 ->with(['items', 'latestPayment.paymentMethod']);
@@ -63,39 +44,13 @@ class OrderController extends Controller
             }
 
             $perPage = $request->input('per_page', 10);
-            // #region agent log
-            $this->debugLog('OrderController.php:38', 'Before paginate', ['per_page' => $perPage], 'B');
-            // #endregion
             $orders = $query->orderBy('created_at', 'desc')->paginate($perPage);
-            // #region agent log
-            $this->debugLog('OrderController.php:39', 'After paginate', ['orders_count' => count($orders->items()), 'first_order_id' => $orders->items()[0]->id ?? null], 'B');
-            // #endregion
-            // #region agent log
-            if(count($orders->items()) > 0) {
-                $firstOrder = $orders->items()[0];
-                $this->debugLog('OrderController.php:42', 'Checking first order relationships', [
-                    'order_id' => $firstOrder->id,
-                    'has_items' => isset($firstOrder->items),
-                    'items_count' => $firstOrder->items->count() ?? 0,
-                    'has_latest_payment' => isset($firstOrder->latestPayment),
-                    'payment_method_id' => $firstOrder->latestPayment->payment_method_id ?? null
-                ], 'B');
-            }
-            // #endregion
 
             return response()->json([
                 'success' => true,
                 'data' => $orders,
             ]);
         } catch (\Exception $e) {
-            // #region agent log
-            $this->debugLog('OrderController.php:45', 'index() exception', [
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => substr($e->getTraceAsString(), 0, 500)
-            ], 'B');
-            // #endregion
             \Log::error('Order index failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'success' => false,
@@ -134,9 +89,6 @@ class OrderController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        // #region agent log
-        $this->debugLog('OrderController.php:75', 'store() entry', ['user_id' => $request->user()?->id, 'user_type' => get_class($request->user())], 'A');
-        // #endregion
         $user = $request->user();
 
         // Check if user is authenticated
@@ -146,7 +98,7 @@ class OrderController extends Controller
                 'message' => 'Authentication required. Please log in to continue.',
             ], 401);
         }
-        
+
         // Ensure user is a User model, not Admin
         if (!$user instanceof \App\Models\User) {
             return response()->json([
@@ -155,33 +107,13 @@ class OrderController extends Controller
             ], 403);
         }
 
-        // #region agent log
-        $this->debugLog('OrderController.php:85', 'Before validation', [
-            'user_id' => $user->id,
-            'has_cart' => Cart::where('user_id', $user->id)->where('status', 'active')->exists()
-        ], 'A');
-        // #endregion
-        // #region agent log
-        $logPath = base_path('.cursor/debug.log');
-        @file_put_contents($logPath, json_encode([
-            'id' => 'log_' . time() . '_' . uniqid(),
-            'timestamp' => time() * 1000,
-            'location' => 'OrderController.php:164',
-            'message' => 'Before validation',
-            'data' => ['request_keys' => array_keys($request->all()), 'request_data' => $request->all()],
-            'sessionId' => 'debug-session',
-            'runId' => 'run1',
-            'hypothesisId' => 'B'
-        ]) . "\n", FILE_APPEND | LOCK_EX);
-        // #endregion
-        
         try {
             $validated = $request->validate([
                 // Address selection (either use saved address ID or provide full address)
                 'shipping_address_id' => ['nullable', 'exists:user_addresses,id'],
                 'billing_address_id' => ['nullable', 'exists:user_addresses,id'],
                 'billing_same_as_shipping' => ['boolean'],
-                
+
                 // Full address details (required if address_id not provided)
                 'shipping_address_line_1' => ['required_without:shipping_address_id', 'nullable', 'string', 'max:255'],
                 'shipping_address_line_2' => ['nullable', 'string', 'max:255'],
@@ -190,16 +122,16 @@ class OrderController extends Controller
                 'shipping_postal_code' => ['required_without:shipping_address_id', 'nullable', 'string', 'max:20'],
                 'shipping_name' => ['required_without:shipping_address_id', 'nullable', 'string', 'max:100'],
                 'shipping_phone' => ['required_without:shipping_address_id', 'nullable', 'string', 'max:20'],
-                
+
                 'billing_address_line_1' => ['exclude_if:billing_same_as_shipping,true', 'required_without:billing_address_id', 'nullable', 'string', 'max:255'],
                 'billing_address_line_2' => ['nullable', 'string', 'max:255'],
                 'billing_city' => ['exclude_if:billing_same_as_shipping,true', 'required_without:billing_address_id', 'nullable', 'string', 'max:100'],
                 'billing_province' => ['exclude_if:billing_same_as_shipping,true', 'required_without:billing_address_id', 'nullable', 'string', 'max:100'],
                 'billing_postal_code' => ['exclude_if:billing_same_as_shipping,true', 'required_without:billing_address_id', 'nullable', 'string', 'max:20'],
-                
+
                 'shipping_zone_id' => ['required', 'exists:shipping_zones,id'],
                 'payment_method_id' => ['required', 'exists:payment_methods,id'],
-                
+
                 // Payment confirmation details
                 'payment_confirmation' => ['nullable', 'array'],
                 'payment_confirmation.sender_name' => ['nullable', 'string', 'max:200'],
@@ -211,45 +143,13 @@ class OrderController extends Controller
                 'payment_confirmation.card_holder_name' => ['nullable', 'string', 'max:200'],
                 'payment_confirmation.card_expiry' => ['nullable', 'string', 'max:10'],
                 'payment_confirmation.card_cvv' => ['nullable', 'string', 'max:4'],
-                
+
                 'notes' => ['nullable', 'string', 'max:500'],
             ]);
-            
-            // #region agent log
-            @file_put_contents($logPath, json_encode([
-                'id' => 'log_' . time() . '_' . uniqid(),
-                'timestamp' => time() * 1000,
-                'location' => 'OrderController.php:200',
-                'message' => 'Validation passed',
-                'data' => ['validated_keys' => array_keys($validated), 'has_shipping_address_id' => isset($validated['shipping_address_id'])],
-                'sessionId' => 'debug-session',
-                'runId' => 'run1',
-                'hypothesisId' => 'B'
-            ]) . "\n", FILE_APPEND | LOCK_EX);
-            // #endregion
+
         } catch (\Illuminate\Validation\ValidationException $e) {
-            // #region agent log
-            @file_put_contents($logPath, json_encode([
-                'id' => 'log_' . time() . '_' . uniqid(),
-                'timestamp' => time() * 1000,
-                'location' => 'OrderController.php:210',
-                'message' => 'Validation failed',
-                'data' => ['errors' => $e->errors(), 'request_data' => $request->all()],
-                'sessionId' => 'debug-session',
-                'runId' => 'run1',
-                'hypothesisId' => 'B'
-            ]) . "\n", FILE_APPEND | LOCK_EX);
-            // #endregion
-            
             throw $e;
         }
-        // #region agent log
-        $this->debugLog('OrderController.php:103', 'After validation', [
-            'validated_keys' => array_keys($validated),
-            'shipping_zone_id' => $validated['shipping_zone_id'] ?? null,
-            'payment_method_id' => $validated['payment_method_id'] ?? null
-        ], 'E');
-        // #endregion
 
         // Get cart - ensure items are loaded
         $cart = Cart::where('user_id', $user->id)
@@ -266,7 +166,7 @@ class OrderController extends Controller
                     ->whereNull('user_id')
                     ->with('items')
                     ->first();
-                
+
                 if ($guestCart && $guestCart->items->isNotEmpty()) {
                     // Create user cart and merge items
                     $cart = Cart::create([
@@ -274,17 +174,17 @@ class OrderController extends Controller
                         'status' => 'active',
                         'last_activity_at' => now(),
                     ]);
-                    
+
                     foreach ($guestCart->items as $item) {
                         $item->update(['cart_id' => $cart->id]);
                     }
-                    
+
                     $guestCart->delete();
                     $cart->recalculate();
                     $cart->load(['items.product', 'items']);
                 }
             }
-            
+
             if (!$cart) {
                 return response()->json([
                     'success' => false,
@@ -295,7 +195,7 @@ class OrderController extends Controller
 
         // Reload items to ensure they're fresh
         $cart->load('items.product');
-        
+
         // Check if cart has items
         if ($cart->items->isEmpty()) {
             return response()->json([
@@ -348,17 +248,17 @@ class OrderController extends Controller
 
         // Get shipping zone and validate it's active
         $shippingZone = ShippingZone::active()->findOrFail($validated['shipping_zone_id']);
-        
+
         if (!$shippingZone->is_active) {
             return response()->json([
                 'success' => false,
                 'message' => 'Selected shipping zone is not available.',
             ], 422);
         }
-        
+
         // Calculate shipping amount based on cart subtotal and zone settings
-        $shippingAmount = $cart->subtotal >= ($shippingZone->free_shipping_threshold ?? PHP_INT_MAX) 
-            ? 0 
+        $shippingAmount = $cart->subtotal >= ($shippingZone->free_shipping_threshold ?? PHP_INT_MAX)
+            ? 0
             : $shippingZone->base_rate;
 
         // Calculate base total (before payment fee)
@@ -366,14 +266,14 @@ class OrderController extends Controller
 
         // Get payment method early to calculate fee
         $paymentMethod = PaymentMethod::find($validated['payment_method_id']);
-        
+
         if (!$paymentMethod) {
             return response()->json([
                 'success' => false,
                 'message' => 'Selected payment method not found.',
             ], 422);
         }
-        
+
         if (!$paymentMethod->is_active) {
             return response()->json([
                 'success' => false,
@@ -383,19 +283,19 @@ class OrderController extends Controller
 
         // Calculate payment fee based on base total
         $paymentFee = $paymentMethod->calculateFee($baseTotal);
-        
+
         // Final total includes payment fee
         $finalTotal = $baseTotal + $paymentFee;
 
         // Handle saved addresses
         $shippingAddress = null;
         $billingAddress = null;
-        
+
         if (!empty($validated['shipping_address_id'])) {
             $shippingAddress = \App\Models\UserAddress::where('user_id', $user->id)
                 ->where('id', $validated['shipping_address_id'])
                 ->first();
-            
+
             if (!$shippingAddress) {
                 return response()->json([
                     'success' => false,
@@ -403,12 +303,12 @@ class OrderController extends Controller
                 ], 422);
             }
         }
-        
+
         if (!empty($validated['billing_address_id'])) {
             $billingAddress = \App\Models\UserAddress::where('user_id', $user->id)
                 ->where('id', $validated['billing_address_id'])
                 ->first();
-            
+
             if (!$billingAddress) {
                 return response()->json([
                     'success' => false,
@@ -416,7 +316,7 @@ class OrderController extends Controller
                 ], 422);
             }
         }
-        
+
         // Prepare shipping address data
         if ($shippingAddress) {
             $shippingData = [
@@ -439,28 +339,10 @@ class OrderController extends Controller
                 'shipping_phone' => $validated['shipping_phone'],
             ];
         }
-        
+
         // Billing address
         $billingSameAsShipping = $validated['billing_same_as_shipping'] ?? true;
-        
-        // #region agent log
-        @file_put_contents($logPath, json_encode([
-            'id' => 'log_' . time() . '_' . uniqid(),
-            'timestamp' => time() * 1000,
-            'location' => 'OrderController.php:330',
-            'message' => 'Billing address logic',
-            'data' => [
-                'billing_same_as_shipping' => $billingSameAsShipping,
-                'has_billing_address_id' => !empty($validated['billing_address_id']),
-                'has_shipping_address_id' => !empty($validated['shipping_address_id']),
-                'has_billing_address' => $billingAddress !== null
-            ],
-            'sessionId' => 'debug-session',
-            'runId' => 'run1',
-            'hypothesisId' => 'B'
-        ]) . "\n", FILE_APPEND | LOCK_EX);
-        // #endregion
-        
+
         if ($billingSameAsShipping) {
             // Map shipping data to billing data
             $billingData = [
@@ -493,18 +375,6 @@ class OrderController extends Controller
                 'billing_phone' => $validated['billing_phone'] ?? $shippingData['shipping_phone'],
             ];
         }
-        
-        // #region agent log
-        $this->debugLog('OrderController.php:243', 'Before transaction', [
-            'cart_id' => $cart->id ?? null,
-            'cart_subtotal' => $cart->subtotal ?? null,
-            'cart_items_count' => $cart->items->count() ?? 0,
-            'shipping_zone_id' => $validated['shipping_zone_id'],
-            'payment_method_id' => $validated['payment_method_id'],
-            'has_shipping_address_id' => !empty($validated['shipping_address_id']),
-            'has_billing_address_id' => !empty($validated['billing_address_id']),
-        ], 'E');
-        // #endregion
 
         DB::beginTransaction();
 
@@ -513,7 +383,7 @@ class OrderController extends Controller
             $customerName = $user->full_name ?? ($user->first_name . ' ' . $user->last_name) ?? 'Customer';
             $customerEmail = $user->email ?? '';
             $customerPhone = $user->phone ?? null;
-            
+
             if (empty($customerEmail)) {
                 DB::rollBack();
                 return response()->json([
@@ -521,32 +391,7 @@ class OrderController extends Controller
                     'message' => 'User email is required. Please update your profile.',
                 ], 422);
             }
-            // #region agent log
-            $this->debugLog('OrderController.php:260', 'Before Order::create', [
-                'customer_email' => $customerEmail,
-                'shipping_zone_id' => $validated['shipping_zone_id'],
-                'payment_method_id' => $validated['payment_method_id']
-            ], 'A');
-            // #endregion
 
-            // #region agent log
-            @file_put_contents($logPath, json_encode([
-                'id' => 'log_' . time() . '_' . uniqid(),
-                'timestamp' => time() * 1000,
-                'location' => 'OrderController.php:500',
-                'message' => 'Before Order::create',
-                'data' => [
-                    'shipping_data' => $shippingData,
-                    'billing_data' => $billingData,
-                    'customer_email' => $customerEmail,
-                    'customer_name' => $customerName
-                ],
-                'sessionId' => 'debug-session',
-                'runId' => 'run1',
-                'hypothesisId' => 'B'
-            ]) . "\n", FILE_APPEND | LOCK_EX);
-            // #endregion
-            
             // Create order
             $order = Order::create([
                 'order_number' => Order::generateOrderNumber(),
@@ -588,18 +433,12 @@ class OrderController extends Controller
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
-            // #region agent log
-            $this->debugLog('OrderController.php:299', 'After Order::create', [
-                'order_id' => $order->id ?? null,
-                'order_number' => $order->order_number ?? null
-            ], 'A');
-            // #endregion
 
             // Create order items
             foreach ($cart->items as $item) {
                 // Reload product to ensure we have latest data
                 $product = $item->product;
-                
+
                 if (!$product) {
                     DB::rollBack();
                     return response()->json([
@@ -634,11 +473,6 @@ class OrderController extends Controller
                 // Update product order count
                 $product->increment('order_count');
             }
-            // #region agent log
-            $this->debugLog('OrderController.php:339', 'After OrderItem creation', [
-                'items_created' => $cart->items->count()
-            ], 'A');
-            // #endregion
 
             // Create status history
             OrderStatusHistory::create([
@@ -678,12 +512,19 @@ class OrderController extends Controller
                         'reference_number' => $confirmation['reference_number'] ?? null,
                         'payment_date' => $confirmation['payment_date'] ?? null,
                     ];
-                    
+
                     // Store proof image if provided (base64 encoded)
                     if (!empty($confirmation['proof_image'])) {
                         $proofImage = $confirmation['proof_image'];
+                        // Handle potential oversized base64 strings if necessary
+                        if (strlen($proofImage) > 10 * 1024 * 1024) { // 10MB limit
+                             \Log::warning('Large proof image received', [
+                                 'order_id' => $order->id,
+                                 'size' => strlen($proofImage)
+                             ]);
+                        }
                     }
-                    
+
                     // Add bank card details if provided
                     if (!empty($confirmation['card_number'])) {
                         $paymentDetails['card'] = [
@@ -694,17 +535,7 @@ class OrderController extends Controller
                         ];
                     }
                 }
-                
-                // #region agent log
-                $this->debugLog('OrderController.php:368', 'Before Payment::create', [
-                    'order_id' => $order->id,
-                    'payment_method_id' => $validated['payment_method_id'],
-                    'payment_method_name' => $paymentMethod->name ?? null,
-                    'final_total' => $finalTotal,
-                    'payment_fee' => $paymentFee,
-                    'has_payment_confirmation' => !empty($validated['payment_confirmation'])
-                ], 'A');
-                // #endregion
+
                 $payment = Payment::create([
                     'transaction_id' => Payment::generateTransactionId(),
                     'order_id' => $order->id,
@@ -723,20 +554,7 @@ class OrderController extends Controller
                     'payment_date' => !empty($paymentDetails['payment_date']) ? $paymentDetails['payment_date'] : null,
                     'proof_image' => $proofImage, // Base64 encoded proof image
                 ]);
-                // #region agent log
-                $this->debugLog('OrderController.php:379', 'After Payment::create', [
-                    'payment_id' => $payment->id ?? null,
-                    'transaction_id' => $payment->transaction_id ?? null
-                ], 'A');
-                // #endregion
             } catch (\Exception $e) {
-                // #region agent log
-                $this->debugLog('OrderController.php:381', 'Payment::create exception', [
-                    'error' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine()
-                ], 'A');
-                // #endregion
                 DB::rollBack();
                 \Log::error('Failed to create payment record', [
                     'order_id' => $order->id ?? null,
@@ -763,26 +581,17 @@ class OrderController extends Controller
             ]);
 
             DB::commit();
-            // #region agent log
-            $this->debugLog('OrderController.php:459', 'Transaction committed', ['order_id' => $order->id], 'A');
-            // #endregion
 
             // Reload order with relationships
-            // #region agent log
-            $this->debugLog('OrderController.php:462', 'Before load relationships', ['order_id' => $order->id], 'B');
-            // #endregion
             $order->load(['items', 'latestPayment.paymentMethod']);
-            // #region agent log
-            $this->debugLog('OrderController.php:463', 'After load relationships', [
-                'order_id' => $order->id,
-                'items_count' => $order->items->count() ?? 0,
-                'has_payment' => !is_null($order->latestPayment)
-            ], 'B');
-            // #endregion
 
             // Broadcast order created event for real-time updates (wrap in try-catch to prevent failures)
             try {
                 event(new OrderCreated($order));
+
+                // Notify admin via notification system
+                $notificationManager = app(\App\Services\NotificationManager::class);
+                $notificationManager->notifyNewOrder($order);
             } catch (\Exception $e) {
                 // Log but don't fail the order creation if broadcasting fails
                 \Log::warning('Failed to broadcast OrderCreated event', [
@@ -803,16 +612,7 @@ class OrderController extends Controller
 
         } catch (\Illuminate\Database\QueryException $e) {
             DB::rollBack();
-            // #region agent log
-            $this->debugLog('OrderController.php:430', 'QueryException caught', [
-                'error' => $e->getMessage(),
-                'code' => $e->getCode(),
-                'sql' => method_exists($e, 'getSql') ? $e->getSql() : 'N/A',
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
-            ], 'A');
-            // #endregion
-            
+
             // Log database errors with more context
             \Log::error('Order creation failed - Database error', [
                 'user_id' => $user->id ?? null,
@@ -825,11 +625,11 @@ class OrderController extends Controller
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             // Provide more specific error messages for common database errors
             $errorMessage = 'Failed to create order due to a database error. Please try again.';
             $errorDetails = null;
-            
+
             if (str_contains($e->getMessage(), 'Integrity constraint violation')) {
                 $errorMessage = 'Order creation failed due to data integrity issue. Please refresh and try again.';
             } elseif (str_contains($e->getMessage(), 'Column cannot be null')) {
@@ -844,7 +644,7 @@ class OrderController extends Controller
                     $errorDetails = "Unknown column: {$matches[1]}";
                 }
             }
-            
+
             return response()->json([
                 'success' => false,
                 'message' => $errorMessage,
@@ -853,27 +653,7 @@ class OrderController extends Controller
             ], 500);
         } catch (\Exception $e) {
             DB::rollBack();
-            // #region agent log
-            $logPath = base_path('.cursor/debug.log');
-            @file_put_contents($logPath, json_encode([
-                'id' => 'log_' . time() . '_' . uniqid(),
-                'timestamp' => time() * 1000,
-                'location' => 'OrderController.php:821',
-                'message' => 'General Exception caught',
-                'data' => [
-                    'error' => $e->getMessage(),
-                    'code' => $e->getCode(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'class' => get_class($e),
-                    'trace' => substr($e->getTraceAsString(), 0, 1000)
-                ],
-                'sessionId' => 'debug-session',
-                'runId' => 'run1',
-                'hypothesisId' => 'B'
-            ]) . "\n", FILE_APPEND | LOCK_EX);
-            // #endregion
-            
+
             // Log the full error for debugging
             \Log::error('Order creation failed - General exception', [
                 'user_id' => $user->id ?? null,
@@ -884,7 +664,7 @@ class OrderController extends Controller
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create order. Please try again.',

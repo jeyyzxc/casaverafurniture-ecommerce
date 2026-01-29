@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { adminAuth } from '@/services/adminApi'
 import { useRouter } from 'vue-router'
-import { setAdminAccessToken, clearAllTokens } from '@/utils/tokenManager'
+import { setAdminAccessToken, clearAllTokens, getAdminAccessToken, refreshAdminToken } from '@/utils/tokenManager'
 
 interface Admin {
   id: number
@@ -35,26 +35,42 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
   const roleName = computed(() => admin.value?.role?.name || '')
   const permissions = computed(() => admin.value?.permissions || [])
 
-  // Initialize from localStorage (admin data only, not tokens)
-  function init() {
-    const storedAdmin = localStorage.getItem('admin')
-
-    if (storedAdmin) {
-      try {
-        admin.value = JSON.parse(storedAdmin)
-        // Token refresh will happen automatically on first API call if needed
-      } catch {
-        admin.value = null
-        localStorage.removeItem('admin')
-      }
-    }
-  }
-
   // Clear auth state (internal helper)
   function clearAuthState() {
     admin.value = null
     clearAllTokens() // Clear tokens from memory
     localStorage.removeItem('admin')
+  }
+
+  // Initialize from localStorage (admin data only, not tokens)
+  async function init() {
+    const storedAdmin = localStorage.getItem('admin')
+
+    if (storedAdmin) {
+      try {
+        // Optimistically set admin data
+        const parsedAdmin = JSON.parse(storedAdmin)
+        admin.value = parsedAdmin
+
+        // If we have admin data but no access token in memory,
+        // try to refresh it immediately to avoid 401s on initial requests
+        if (!getAdminAccessToken()) {
+          console.log('[DEBUG_LOG] Admin data found but no token, attempting proactive refresh')
+          const token = await refreshAdminToken()
+
+          if (!token) {
+            // We do NOT clear auth state here immediately.
+            // We let the API interceptor handle the 401/Refresh logic on the first actual API call.
+            // This prevents logging out the user due to temporary network issues or server glitches during init.
+            console.warn('[DEBUG_LOG] Proactive refresh failed. Token missing, but keeping local session state for resilience.')
+          }
+        }
+      } catch (e) {
+        console.error('Error initializing admin auth:', e)
+        // Only clear if JSON parse fails (corrupted data)
+        clearAuthState()
+      }
+    }
   }
 
   // Check if admin has a specific permission
@@ -85,7 +101,7 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
         if (accessToken) {
           setAdminAccessToken(accessToken)
         }
-        
+
         admin.value = response.data.data.admin
         // Store admin data in localStorage (but not tokens)
         localStorage.setItem('admin', JSON.stringify(admin.value))
@@ -116,6 +132,19 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
 
   async function fetchAdmin() {
     try {
+      // Ensure we have an access token before fetching
+      // If none in memory, refreshAdminToken will try to get one using the cookie
+      const token = getAdminAccessToken()
+      if (!token) {
+        console.log('[DEBUG_LOG] No admin token in memory, attempting refresh before fetchAdmin')
+        const refreshedToken = await refreshAdminToken()
+        if (!refreshedToken) {
+          // If refresh fails here, it might be a real session expiry,
+          // BUT we still let the API call proceed so the interceptor can handle the 401 standard flow
+          console.warn('[DEBUG_LOG] Refresh before fetchAdmin failed, proceeding to trigger interceptor')
+        }
+      }
+
       // Make the request - the interceptor will handle token refresh automatically
       // Access token is managed by tokenManager in memory
       const response = await adminAuth.me()
@@ -124,10 +153,11 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
         // Store admin data in localStorage (but not tokens)
         localStorage.setItem('admin', JSON.stringify(admin.value))
       }
-    } catch {
-      // Token might be invalid - clear auth state
-      clearAuthState()
-      router.push('/admin/login')
+    } catch (err) {
+      console.error('[DEBUG_LOG] fetchAdmin failed:', err)
+      // Only clear auth state if we are sure it's a 401 (handled by interceptor usually, but if it bubbles up)
+      // The interceptor in api.ts already clears tokens on unrecoverable 401.
+      // So we don't need to duplicate that logic here aggressively.
     }
   }
 

@@ -34,6 +34,20 @@
           <option value="auth">Authentication</option>
         </select>
         <input type="date" v-model="filterDate" class="date-input">
+
+        <button
+          class="btn-reset"
+          @click="resetFilters"
+          title="Clear Filters"
+          :disabled="!searchQuery && !filterAction && !filterModule && !filterDate"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+          <span>Reset</span>
+        </button>
+
         <button class="btn-export" @click="exportLogs">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -196,6 +210,15 @@ const loadLogs = async () => {
   }
 }
 
+const resetFilters = () => {
+  searchQuery.value = ''
+  filterAction.value = ''
+  filterModule.value = ''
+  filterDate.value = ''
+  pagination.value.current_page = 1
+  loadLogs()
+}
+
 const formatDateTime = (timestamp: string) => {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
@@ -309,14 +332,46 @@ onMounted(() => {
   min-width: 200px;
 }
 
+.btn-reset {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #f1f5f9;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #64748b;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.btn-reset:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #1a1d29;
+}
+
+.btn-reset:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f8fafc;
+  color: #cbd5e1;
+}
+
+.btn-reset svg {
+  width: 18px;
+  height: 18px;
+}
+
 .btn-export {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: var(--white);
-  color: var(--dark);
-  border: 2px solid #e5e7eb;
+  background: var(--gold);
+  color: var(--white);
+  border: 2px solid var(--gold);
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.9rem;
@@ -325,9 +380,9 @@ onMounted(() => {
 }
 
 .btn-export:hover {
-  background: #f9fafb;
-  border-color: var(--gold);
-  color: var(--gold);
+  background: #b08d44;
+  border-color: #b08d44;
+  color: var(--white);
 }
 
 .btn-export svg {

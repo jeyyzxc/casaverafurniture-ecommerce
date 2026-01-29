@@ -32,9 +32,9 @@
           <circle cx="11" cy="11" r="8"/>
           <path d="m21 21-4.35-4.35"/>
         </svg>
-        <input 
-          type="text" 
-          v-model="searchQuery" 
+        <input
+          type="text"
+          v-model="searchQuery"
           placeholder="Search products..."
           class="search-input"
         >
@@ -150,18 +150,18 @@
 
     <!-- Pagination -->
     <div class="pagination" v-if="totalPages > 1">
-      <button 
-        class="page-btn" 
-        :disabled="currentPage === 1" 
+      <button
+        class="page-btn"
+        :disabled="currentPage === 1"
         @click="goToPreviousPage"
         title="Previous Page"
       >
         Previous
       </button>
       <span class="page-info">Page {{ currentPage }} of {{ totalPages || 1 }}</span>
-      <button 
-        class="page-btn" 
-        :disabled="currentPage >= totalPages" 
+      <button
+        class="page-btn"
+        :disabled="currentPage >= totalPages"
         @click="goToNextPage"
         title="Next Page"
       >
@@ -200,7 +200,7 @@
               </svg>
             </button>
           </div>
-          
+
           <!-- Modal Body -->
           <div class="add-modal-body">
             <form @submit.prevent="saveNewProduct" class="add-form">
@@ -352,7 +352,7 @@
                             <span>or drag and drop</span>
                           </div>
                           <div v-else class="image-preview-grid">
-                            <div v-for="(img, index) in addForm.images" :key="index" class="image-preview-item">
+                            <div v-for="(img, index) in addForm.images" :key="index" class="image-preview-item" @click.stop="triggerImagePicker">
                               <img :src="img.preview || img.url" :alt="`Image ${index + 1}`">
                               <button type="button" class="remove-image-btn" @click.stop="removeImage(index)">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -399,7 +399,7 @@
               </div>
             </form>
           </div>
-          
+
           <!-- Modal Footer -->
           <div class="add-modal-footer">
             <button type="button" class="add-btn-cancel" @click="closeAddModal">
@@ -446,7 +446,7 @@
               </svg>
             </button>
           </div>
-          
+
           <div class="modal-body">
             <form @submit.prevent="saveEditProduct" class="product-form">
               <!-- Basic Information -->
@@ -524,32 +524,51 @@
                     <label class="form-label">Description</label>
                     <textarea v-model="editForm.description" class="form-textarea" rows="4" placeholder="Enter product description..."></textarea>
                   </div>
-                  <div class="form-group">
-                    <label class="form-label">Image URL</label>
-                    <div class="image-input-wrapper">
-                      <input 
-                        type="text" 
-                        v-model="editForm.image" 
-                        class="form-input image-url-input" 
-                        placeholder="/images/products/..."
-                        @click="triggerImagePicker"
-                        readonly
-                      >
-                      <button type="button" class="image-picker-btn" @click="triggerImagePicker">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                          <polyline points="17 8 12 3 7 8"/>
-                          <line x1="12" y1="3" x2="12" y2="15"/>
-                        </svg>
-                        Browse
-                      </button>
-                      <input 
-                        type="file" 
-                        ref="imageFileInput" 
-                        accept="image/*" 
-                        @change="handleImageFileSelect"
-                        style="display: none;"
-                      >
+                  <div class="form-group full-width">
+                    <label class="form-label">Product Images</label>
+                    <div class="image-upload-section">
+                      <div class="image-upload-area" @click="triggerImagePicker">
+                        <input
+                          ref="editImageFileInput"
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          @change="handleImageFileSelect"
+                          style="display: none;"
+                        >
+                        <div v-if="editForm.images.length === 0" class="upload-placeholder">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                          </svg>
+                          <p>Click to upload images</p>
+                        </div>
+                        <div v-else class="image-preview-grid">
+                          <div v-for="(img, index) in editForm.images" :key="index" class="image-preview-item" @click.stop="triggerImagePicker">
+                            <img :src="img.preview || img.url" :alt="`Image ${index + 1}`">
+                            <button type="button" class="remove-image-btn" @click.stop="removeImage(index)">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                              </svg>
+                            </button>
+                            <label class="primary-checkbox">
+                              <input type="radio" :name="'edit-primary-image'" :value="index" v-model="editForm.primaryImageIndex">
+                              <span>Primary</span>
+                            </label>
+                          </div>
+                          <div class="add-more-images" @click.stop="triggerImagePicker">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <circle cx="12" cy="12" r="10"/>
+                              <path d="M12 8v8M8 12h8"/>
+                            </svg>
+                            <span>Add More</span>
+                          </div>
+                        </div>
+                      </div>
+                      <p class="upload-hint" v-if="!isUploadingImages">Upload multiple images. First image will be set as primary by default.</p>
+                      <p class="upload-hint" v-else style="color: var(--gold);">Uploading images...</p>
                     </div>
                   </div>
                   <div class="form-group">
@@ -557,16 +576,20 @@
                     <input type="text" v-model="editForm.material" class="form-input" placeholder="e.g., Velvet, Wood">
                   </div>
                 </div>
-                <div class="form-toggles">
-                  <label class="toggle-label">
-                    <input type="checkbox" v-model="editForm.isFeatured">
-                    <span class="toggle-text">Featured Product</span>
-                  </label>
-                </div>
+                  <div class="form-toggles">
+                    <label class="toggle-label">
+                      <input type="checkbox" v-model="editForm.isFeatured">
+                      <span class="toggle-text">Featured Product</span>
+                    </label>
+                    <label class="toggle-label">
+                      <input type="checkbox" v-model="editForm.isNew">
+                      <span class="toggle-text">New Arrival</span>
+                    </label>
+                  </div>
               </div>
             </form>
           </div>
-          
+
           <div class="modal-footer">
             <button type="button" class="btn-cancel" @click="closeEditModal">Cancel</button>
             <button type="button" class="btn-save" @click="saveEditProduct">
@@ -606,7 +629,7 @@
               </svg>
             </button>
           </div>
-          
+
           <div class="modal-body view-body" v-if="viewingProduct">
             <div class="view-layout">
               <div class="view-image-section">
@@ -616,14 +639,14 @@
                   <span v-if="viewingProduct.stock <= 5" class="view-badge low-stock">Low Stock</span>
                 </div>
               </div>
-              
+
               <div class="view-details-section">
                 <div class="view-header-info">
                   <span class="view-category">{{ viewingProduct.category }}</span>
                   <h3 class="view-product-name">{{ viewingProduct.name }}</h3>
                   <p class="view-product-id">Product ID: #{{ viewingProduct.id }}</p>
                 </div>
-                
+
                 <div class="view-price-section">
                   <div class="view-price-main">₱{{ formatPrice(viewingProduct.price) }}</div>
                   <div v-if="viewingProduct.salePrice" class="view-price-sale">
@@ -646,7 +669,7 @@
                       <span class="info-value" :class="{ 'text-danger': viewingProduct.stock <= 5 }">{{ viewingProduct.stock }} units</span>
                     </div>
                   </div>
-                  
+
                   <div class="view-info-card">
                     <div class="info-icon status">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -692,7 +715,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="modal-footer">
             <button type="button" class="btn-cancel" @click="closeViewModal">Close</button>
             <button type="button" class="btn-edit" @click="openEditFromView">
@@ -724,10 +747,10 @@
                 </svg>
               </div>
             </div>
-            
+
             <h2 class="delete-title">Delete Product</h2>
             <p class="delete-message">
-              Are you sure you want to delete 
+              Are you sure you want to delete
               <strong class="delete-product-name">{{ deletingProduct?.name }}</strong>?
             </p>
             <p class="delete-warning">
@@ -801,7 +824,16 @@ interface Product {
   status: string
   isFeatured: boolean
   image: string
+  images?: Array<{ id: number; image_url: string; image_path: string; is_primary: boolean }>
   description?: string
+  sku?: string
+  isNew?: boolean
+  attributes?: {
+    dimensions?: string
+    weight?: string
+    material?: string
+    color?: string
+  }
 }
 
 interface Category {
@@ -834,6 +866,12 @@ interface ApiProduct {
   }>
   description?: string
   sku?: string
+  attributes?: {
+    dimensions?: string
+    weight?: string
+    material?: string
+    color?: string
+  }
 }
 
 interface ApiError {
@@ -865,6 +903,7 @@ const showDeleteSuccess = ref(false)
 
 // File Input Ref
 const imageFileInput = ref<HTMLInputElement | null>(null)
+const editImageFileInput = ref<HTMLInputElement | null>(null)
 const isUploadingImages = ref(false)
 
 // Add Product Form
@@ -897,10 +936,16 @@ const editForm = ref({
   salePrice: null as number | null,
   stock: null as number | null,
   description: '',
+  dimensions: '',
+  weight: '',
   material: '',
+  color: '',
   image: '',
+  images: [] as Array<{ id?: number; file?: File; preview?: string; url?: string; path?: string; is_primary?: boolean }>,
+  primaryImageIndex: 0 as number,
   status: 'Active',
-  isFeatured: false
+  isFeatured: false,
+  isNew: false
 })
 
 const categories = ref<Category[]>([])
@@ -947,7 +992,7 @@ const loadProducts = async () => {
     }
 
     const response = await productsApi.list(params)
-    
+
     if (response.data.success) {
       const data = response.data.data
       products.value = (data.data || []).map((p: ApiProduct) => ({
@@ -960,9 +1005,17 @@ const loadProducts = async () => {
         stock: p.stock_quantity || 0,
         status: p.status === 'active' ? 'Active' : 'Hidden',
         isFeatured: p.is_featured || false,
-        image: p.primary_image?.image_path || p.images?.[0]?.image_path || '/images/products/placeholder.png',
+        image: p.primary_image?.image_url || p.images?.[0]?.image_url || '/images/products/placeholder.png',
+        images: (p.images || []).map(img => ({
+          id: img.id,
+          image_url: img.image_url,
+          image_path: img.image_path,
+          is_primary: img.is_primary
+        })),
         description: p.description || '',
         sku: p.sku || '',
+        isNew: p.is_new || false,
+        attributes: p.attributes || {},
       }))
       totalProductsCount.value = data.total || 0
     }
@@ -1052,7 +1105,7 @@ const saveNewProduct = async () => {
     showError('Validation Error', 'Please upload at least one product image.')
     return
   }
-  
+
   try {
     // Prepare images array for API
     const primaryIndex = addForm.value.primaryImageIndex ?? 0
@@ -1081,19 +1134,19 @@ const saveNewProduct = async () => {
       },
       images: imagesData,
     }
-    
+
     const response = await productsApi.create(productData)
-    
+
     if (response.data.success) {
       success('Product Created', `Product "${addForm.value.name}" has been created successfully.`)
-      
+
       // Clean up preview URLs
       addForm.value.images.forEach(img => {
         if (img.preview) {
           URL.revokeObjectURL(img.preview)
         }
       })
-      
+
       closeAddModal()
       await loadProducts()
     } else {
@@ -1124,6 +1177,8 @@ const closeViewModal = () => {
   document.body.style.overflow = ''
 }
 
+const originalFormData = ref<Record<string, any>>({})
+
 const editProduct = (id: number) => {
   const product = products.value.find(p => p.id === id)
   if (product) {
@@ -1131,16 +1186,34 @@ const editProduct = (id: number) => {
     editForm.value = {
       name: product.name,
       category: product.categoryId?.toString() || '',
-      sku: '',
+      sku: product.sku || '',
       price: product.price,
       salePrice: product.salePrice,
       stock: product.stock,
       description: product.description || '',
-      material: '',
+      material: product.attributes?.material || '',
+      dimensions: product.attributes?.dimensions || '',
+      weight: product.attributes?.weight || '',
+      color: product.attributes?.color || '',
       image: product.image,
+      images: (product.images || []).map((img) => ({
+        id: img.id,
+        url: img.image_url,
+        path: img.image_path,
+        is_primary: img.is_primary,
+        preview: img.image_url
+      })),
+      primaryImageIndex: (product.images || []).findIndex(img => img.is_primary) >= 0
+        ? (product.images || []).findIndex(img => img.is_primary)
+        : 0,
       status: product.status,
-      isFeatured: product.isFeatured
+      isFeatured: product.isFeatured,
+      isNew: product.isNew || false
     }
+
+    // Store a copy of original data to track changes
+    originalFormData.value = JSON.parse(JSON.stringify(editForm.value))
+
     showEditModal.value = true
     document.body.style.overflow = 'hidden'
   }
@@ -1157,22 +1230,77 @@ const saveEditProduct = async () => {
     alert('Please fill in all required fields')
     return
   }
-  
+
   if (!editingProductId.value) return
-  
+
   try {
-    const productData = {
-      name: editForm.value.name,
-      category_id: typeof editForm.value.category === 'string' ? parseInt(editForm.value.category) : editForm.value.category,
-      sku: editForm.value.sku || undefined,
-      price: editForm.value.price,
-      sale_price: editForm.value.salePrice || null,
-      stock_quantity: editForm.value.stock,
-      description: editForm.value.description || '',
-      status: editForm.value.status.toLowerCase(),
-      is_featured: editForm.value.isFeatured,
+    const productData: Record<string, any> = {}
+    const original = originalFormData.value
+
+    // Helper to check if a value has changed
+    const hasChanged = (key: string, newValue: any) => {
+      return JSON.stringify(newValue) !== JSON.stringify(original[key])
     }
-    
+
+    // Only include fields that have changed
+    if (hasChanged('name', editForm.value.name)) productData.name = editForm.value.name
+
+    const categoryId = typeof editForm.value.category === 'string' ? parseInt(editForm.value.category) : editForm.value.category
+    if (hasChanged('category', editForm.value.category)) productData.category_id = categoryId
+
+    if (hasChanged('sku', editForm.value.sku)) productData.sku = editForm.value.sku || null
+    if (hasChanged('price', editForm.value.price)) productData.price = editForm.value.price
+    if (hasChanged('salePrice', editForm.value.salePrice)) productData.sale_price = editForm.value.salePrice || null
+    if (hasChanged('stock', editForm.value.stock)) productData.stock_quantity = editForm.value.stock
+    if (hasChanged('description', editForm.value.description)) productData.description = editForm.value.description || ''
+
+    const status = editForm.value.status.toLowerCase()
+    if (hasChanged('status', editForm.value.status)) productData.status = status
+
+    if (hasChanged('isFeatured', editForm.value.isFeatured)) productData.is_featured = editForm.value.isFeatured
+    if (hasChanged('isNew', editForm.value.isNew)) productData.is_new = editForm.value.isNew
+
+    // Attributes change detection
+    const currentAttributes = {
+      dimensions: editForm.value.dimensions || '',
+      weight: editForm.value.weight || '',
+      material: editForm.value.material || '',
+      color: editForm.value.color || '',
+    }
+    const originalAttributes = {
+      dimensions: original.dimensions || '',
+      weight: original.weight || '',
+      material: original.material || '',
+      color: original.color || '',
+    }
+
+    if (JSON.stringify(currentAttributes) !== JSON.stringify(originalAttributes)) {
+      productData.attributes = currentAttributes
+    }
+
+    // Images change detection
+    const currentImages = editForm.value.images.map((img, index) => ({
+      id: img.id,
+      image_path: img.path || (img.url && !img.url.startsWith('http') ? img.url : ''),
+      is_primary: index === (editForm.value.primaryImageIndex ?? 0),
+    })).filter(img => img.image_path || img.id)
+
+    const originalImages = (original.images || []).map((img: any, index: number) => ({
+      id: img.id,
+      image_path: img.path || (img.url && !img.url.startsWith('http') ? img.url : ''),
+      is_primary: index === (original.primaryImageIndex ?? 0),
+    })).filter((img: any) => img.image_path || img.id)
+
+    if (JSON.stringify(currentImages) !== JSON.stringify(originalImages)) {
+      productData.images = currentImages
+    }
+
+    // If no changes, just close and return
+    if (Object.keys(productData).length === 0) {
+      closeEditModal()
+      return
+    }
+
     await productsApi.update(editingProductId.value, productData)
     closeEditModal()
     await loadProducts()
@@ -1194,15 +1322,21 @@ const openEditFromView = () => {
 
 // Image Upload Functions
 const triggerImagePicker = () => {
-  if (imageFileInput.value) {
-    imageFileInput.value.click()
+  if (showEditModal.value) {
+    if (editImageFileInput.value) {
+      editImageFileInput.value.click()
+    }
+  } else {
+    if (imageFileInput.value) {
+      imageFileInput.value.click()
+    }
   }
 }
 
 const handleImageFileSelect = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const files = target.files
-  
+
   if (!files || files.length === 0) return
 
   isUploadingImages.value = true
@@ -1212,10 +1346,10 @@ const handleImageFileSelect = async (event: Event) => {
     const uploadPromises = Array.from(files).map(async (file) => {
       // Create preview
       const preview = URL.createObjectURL(file)
-      
+
       // Upload to server
       const response = await uploadApi.image(file, 'products')
-      
+
       if (response.data.success) {
         return {
           file,
@@ -1229,20 +1363,28 @@ const handleImageFileSelect = async (event: Event) => {
     })
 
     const uploadedImages = await Promise.all(uploadPromises)
-    
-    // Add to form images array
-    addForm.value.images.push(...uploadedImages)
-    
-    // Set first image as primary if no primary is set
-    if (addForm.value.primaryImageIndex === null || addForm.value.primaryImageIndex === undefined || addForm.value.primaryImageIndex < 0) {
-      addForm.value.primaryImageIndex = 0
+
+    // Add to appropriate form images array
+    if (showEditModal.value) {
+      editForm.value.images.push(...uploadedImages)
+      if (editForm.value.primaryImageIndex === null || editForm.value.primaryImageIndex === undefined || editForm.value.primaryImageIndex < 0) {
+        editForm.value.primaryImageIndex = 0
+      }
+    } else {
+      addForm.value.images.push(...uploadedImages)
+      if (addForm.value.primaryImageIndex === null || addForm.value.primaryImageIndex === undefined || addForm.value.primaryImageIndex < 0) {
+        addForm.value.primaryImageIndex = 0
+      }
     }
-    
-    // Reset file input
+
+    // Reset file inputs
     if (imageFileInput.value) {
       imageFileInput.value.value = ''
     }
-    
+    if (editImageFileInput.value) {
+      editImageFileInput.value.value = ''
+    }
+
     success('Images Uploaded', `${uploadedImages.length} image(s) uploaded successfully.`)
   } catch (err: unknown) {
     console.error('Failed to upload images:', err)
@@ -1257,26 +1399,27 @@ const handleImageFileSelect = async (event: Event) => {
 }
 
 const removeImage = (index: number) => {
-  const image = addForm.value.images[index]
-  
+  const form = showEditModal.value ? editForm.value : addForm.value
+  const image = form.images[index]
+
   if (!image) return
-  
+
   // Revoke object URL if it exists
   if (image.preview) {
     URL.revokeObjectURL(image.preview)
   }
-  
+
   // Remove from array
-  addForm.value.images.splice(index, 1)
-  
+  form.images.splice(index, 1)
+
   // Adjust primary image index if needed
-  const currentPrimary = addForm.value.primaryImageIndex ?? 0
-  if (currentPrimary >= addForm.value.images.length) {
-    addForm.value.primaryImageIndex = addForm.value.images.length > 0 ? 0 : 0
+  const currentPrimary = form.primaryImageIndex ?? 0
+  if (currentPrimary >= form.images.length) {
+    form.primaryImageIndex = form.images.length > 0 ? 0 : 0
   }
-  
-  // Optionally delete from server
-  if (image.path) {
+
+  // Optionally delete from server (only for new uploads, maybe don't delete existing ones yet)
+  if (image.path && !image.id) {
     uploadApi.deleteFile(image.path).catch((err: unknown) => {
       console.error('Failed to delete image from server:', err)
     })
@@ -1294,23 +1437,23 @@ const deleteProduct = (id: number) => {
 
 const confirmDelete = async () => {
   if (!deletingProduct.value) return
-  
+
   try {
     await productsApi.delete(deletingProduct.value.id)
-    
+
     // Reset to page 1 if current page becomes empty
     if (paginatedProducts.value.length === 0 && currentPage.value > 1) {
       currentPage.value = Math.max(1, currentPage.value - 1)
     }
-    
+
     closeDeleteModal()
-    
+
     // Show success notification
     showDeleteSuccess.value = true
     setTimeout(() => {
       showDeleteSuccess.value = false
     }, 4000)
-    
+
     // Reload products
     await loadProducts()
   } catch (error: unknown) {
@@ -1371,12 +1514,12 @@ const exportProducts = () => {
     p.status,
     p.isFeatured ? 'Yes' : 'No'
   ])
-  
+
   const csvContent = [
     headers.join(','),
     ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
   ].join('\n')
-  
+
   // Create download link
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
@@ -1387,7 +1530,7 @@ const exportProducts = () => {
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
-  
+
   console.log('Products exported successfully')
 }
 
@@ -1414,7 +1557,7 @@ onMounted(async () => {
 
   // Set up real-time listeners using window events
   startListening()
-  
+
   window.addEventListener('realtime:product:created', handleProductCreated)
   window.addEventListener('realtime:product:updated', handleProductUpdated)
   window.addEventListener('realtime:product:deleted', handleProductDeleted)
@@ -2375,7 +2518,7 @@ onUnmounted(() => {
   .add-form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .add-modal-body {
     padding: 1rem 1.5rem;
   }
@@ -2385,15 +2528,15 @@ onUnmounted(() => {
   .input-row {
     grid-template-columns: 1fr;
   }
-  
+
   .add-modal-header {
     padding: 1rem 1.25rem;
   }
-  
+
   .add-modal-footer {
     flex-direction: column;
   }
-  
+
   .add-btn-cancel,
   .add-btn-save {
     width: 100%;
@@ -2434,7 +2577,7 @@ onUnmounted(() => {
   flex-direction: column;
   transform: scale(0.9) translateY(20px);
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 
+  box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.25),
     0 0 0 1px rgba(201, 160, 80, 0.1);
 }
@@ -2891,7 +3034,7 @@ onUnmounted(() => {
 
 .toggle-label {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.75rem;
   cursor: pointer;
   padding: 1rem;
@@ -3251,40 +3394,40 @@ onUnmounted(() => {
   .modal-overlay {
     padding: 1rem;
   }
-  
+
   .modal-container {
     max-height: 95vh;
   }
-  
+
   .modal-header {
     padding: 1.25rem 1.5rem;
   }
-  
+
   .modal-body {
     padding: 1.5rem;
   }
-  
+
   .modal-footer {
     padding: 1rem 1.5rem;
     flex-direction: column;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .form-group.full-width {
     grid-column: span 1;
   }
-  
+
   .view-layout {
     grid-template-columns: 1fr;
   }
-  
+
   .view-image-section {
     padding: 1.5rem;
   }
-  
+
   .view-info-grid {
     grid-template-columns: 1fr;
   }
@@ -3299,7 +3442,7 @@ onUnmounted(() => {
   background: #ffffff;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 
+  box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.25),
     0 0 0 1px rgba(220, 53, 69, 0.1);
 }
@@ -3507,7 +3650,7 @@ onUnmounted(() => {
   padding: 1.25rem 1.5rem;
   background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
   border-radius: 16px;
-  box-shadow: 
+  box-shadow:
     0 10px 25px -5px rgba(0, 0, 0, 0.15),
     0 0 0 1px rgba(16, 185, 129, 0.1);
   border-left: 4px solid #10b981;
@@ -3602,37 +3745,37 @@ onUnmounted(() => {
   .delete-modal-content {
     padding: 2rem 1.5rem;
   }
-  
+
   .delete-icon-circle {
     width: 70px;
     height: 70px;
   }
-  
+
   .delete-icon-circle svg {
     width: 32px;
     height: 32px;
   }
-  
+
   .delete-title {
     font-size: 1.5rem;
   }
-  
+
   .delete-actions {
     flex-direction: column;
   }
-  
+
   .delete-btn-cancel,
   .delete-btn-confirm {
     width: 100%;
     justify-content: center;
   }
-  
+
   .success-notification {
     top: 1rem;
     right: 1rem;
     left: 1rem;
   }
-  
+
   .success-content {
     min-width: auto;
     max-width: none;
@@ -3644,15 +3787,15 @@ onUnmounted(() => {
     max-width: 100%;
     margin: 1rem;
   }
-  
+
   .delete-modal-content {
     padding: 1.5rem 1.25rem;
   }
-  
+
   .delete-title {
     font-size: 1.25rem;
   }
-  
+
   .delete-message {
     font-size: 0.9rem;
   }

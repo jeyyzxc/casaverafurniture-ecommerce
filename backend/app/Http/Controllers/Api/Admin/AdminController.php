@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
@@ -280,7 +281,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Delete admin (Super Admin only)
+     * Delete admin (Super Admin only) - Permanent Delete
      */
     public function destroy(Admin $admin): JsonResponse
     {
@@ -310,23 +311,46 @@ class AdminController extends Controller
             ], 403);
         }
 
-        $adminName = $admin->full_name;
-        $adminEmail = $admin->email;
+        try {
+            DB::beginTransaction();
 
-        // Log activity before deletion
-        ActivityLog::log(
-            'delete',
-            'admins',
-            "Deleted admin account: {$adminName} ({$adminEmail})",
-            $admin
-        );
+            $adminName = $admin->full_name;
+            $adminEmail = $admin->email;
 
-        $admin->delete();
+            // Revoke tokens if using Sanctum
+            $admin->tokens()->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Admin deleted successfully.',
-        ]);
+            // Permanently delete
+            $admin->forceDelete();
+
+            DB::commit();
+
+            // Log activity
+            ActivityLog::log(
+                'delete',
+                'admins',
+                "Permanently deleted admin account: {$adminName} ({$adminEmail})",
+                null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Admin permanently deleted successfully.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            \Log::error('Failed to delete admin', [
+                'admin_id' => $admin->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete admin. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 
     /**

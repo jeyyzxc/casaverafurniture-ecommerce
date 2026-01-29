@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Models\Order;
 use App\Models\RefreshToken;
 use App\Models\ActivityLog;
+use App\Events\UserLogin;
+use App\Events\UserRegistered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -80,6 +82,9 @@ class AuthController extends Controller
 
         // Log activity
         ActivityLog::log('register', 'auth', "New user {$user->full_name} registered", $user);
+
+        // Broadcast user registered event
+        event(new UserRegistered($user));
 
         // Create HTTP-only cookie for refresh token
         $refreshTokenCookie = cookie(
@@ -194,6 +199,9 @@ class AuthController extends Controller
             'created_at' => now(),
         ]);
 
+        // Broadcast user login event
+        event(new UserLogin($user));
+
         // Create HTTP-only cookie for refresh token
         $refreshTokenCookie = cookie(
             'client_refresh_token',
@@ -234,7 +242,7 @@ class AuthController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             if (!$user) {
                 return response()->json([
                     'success' => false,
@@ -300,7 +308,7 @@ class AuthController extends Controller
     public function logout(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         // Revoke all tokens (access and refresh)
         $user->revokeAllTokens();
 
@@ -473,7 +481,7 @@ class AuthController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             if (!$user) {
                 return response()->json([
                     'success' => false,
@@ -490,8 +498,8 @@ class AuthController extends Controller
                 ->sum('total');
 
             // Format member since date
-            $memberSince = $user->created_at 
-                ? $user->created_at->format('M Y') 
+            $memberSince = $user->created_at
+                ? $user->created_at->format('M Y')
                 : '';
 
             return response()->json([
@@ -524,25 +532,25 @@ class AuthController extends Controller
     public function redirectToGoogle(Request $request)
     {
         $clientId = env('GOOGLE_CLIENT_ID');
-        
+
         if (!$clientId) {
             return response()->json([
                 'success' => false,
                 'message' => 'Google OAuth is not configured.',
             ], 500);
         }
-        
+
         $redirectUri = env('GOOGLE_REDIRECT_URI', url('/api/auth/google/callback'));
         $scope = 'openid email profile';
         $state = Str::random(32); // CSRF protection
-        
+
         // Store state in session for verification
         $request->session()->put('google_oauth_state', $state);
-        
+
         // Store intended action (login or signup) in session
         $action = $request->query('action', 'login'); // 'login' or 'signup'
         $request->session()->put('google_oauth_action', $action);
-        
+
         $params = http_build_query([
             'client_id' => $clientId,
             'redirect_uri' => $redirectUri,
@@ -552,9 +560,9 @@ class AuthController extends Controller
             'prompt' => 'select_account', // Show account selection screen
             'state' => $state,
         ]);
-        
+
         $authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' . $params;
-        
+
         return redirect($authUrl);
     }
 
@@ -566,55 +574,55 @@ class AuthController extends Controller
         // Verify state parameter (CSRF protection)
         $sessionState = $request->session()->get('google_oauth_state');
         $requestState = $request->query('state');
-        
+
         if (!$sessionState || $sessionState !== $requestState) {
             return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/?error=invalid_state');
         }
-        
+
         // Clear state from session
         $request->session()->forget('google_oauth_state');
-        
+
         // Get action (login or signup)
         $action = $request->session()->get('google_oauth_action', 'login');
         $request->session()->forget('google_oauth_action');
-        
+
         $code = $request->query('code');
         $error = $request->query('error');
-        
+
         if ($error) {
             return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/?error=' . urlencode($error));
         }
-        
+
         if (!$code) {
             return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/?error=no_code');
         }
-        
+
         try {
             // Exchange authorization code for access token
             $clientId = env('GOOGLE_CLIENT_ID');
             $clientSecret = env('GOOGLE_CLIENT_SECRET');
             $redirectUri = env('GOOGLE_REDIRECT_URI', url('/api/auth/google/callback'));
-            
+
             $tokenResponse = $this->exchangeCodeForToken($code, $clientId, $clientSecret, $redirectUri);
-            
+
             if (!isset($tokenResponse['access_token'])) {
                 return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/?error=token_exchange_failed');
             }
-            
+
             // Get user info from Google
             $userInfo = $this->getGoogleUserInfo($tokenResponse['access_token']);
-            
+
             if (!$userInfo || !isset($userInfo['email'])) {
                 return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/?error=user_info_failed');
             }
-            
+
             // Find or create user
             $user = User::where('email', $userInfo['email'])->first();
-            
+
             if (!$user) {
                 // Create new user
                 $nameParts = $this->parseName($userInfo['name'] ?? '');
-                
+
                 $user = User::create([
                     'first_name' => $nameParts['first_name'],
                     'last_name' => $nameParts['last_name'],
@@ -624,9 +632,12 @@ class AuthController extends Controller
                     'status' => 'active',
                     'email_verified_at' => now(), // Google emails are verified
                 ]);
-                
+
                 // Log activity
                 ActivityLog::log('register', 'auth', "New user {$user->full_name} registered via Google", $user);
+
+                // Broadcast user registered event
+                event(new UserRegistered($user));
             } else {
                 // Update existing user info if needed
                 if ($userInfo['picture'] && !$user->avatar) {
@@ -637,7 +648,7 @@ class AuthController extends Controller
                 }
                 $user->save();
             }
-            
+
             // Check if user is active
             if ($user->status !== 'active') {
                 $message = match ($user->status) {
@@ -648,16 +659,16 @@ class AuthController extends Controller
                 };
                 return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/?error=' . urlencode($message));
             }
-            
+
             // Generate access and refresh tokens
             $tokens = $user->generateTokens('user-token', ['*'], 30);
-            
+
             // Update login info
             $user->update([
                 'last_login_at' => now(),
                 'last_login_ip' => $request->ip(),
             ]);
-            
+
             // Log successful login
             DB::table('user_login_logs')->insert([
                 'user_id' => $user->id,
@@ -667,7 +678,10 @@ class AuthController extends Controller
                 'user_agent' => $request->userAgent(),
                 'created_at' => now(),
             ]);
-            
+
+            // Broadcast user login event
+            event(new UserLogin($user));
+
             // Create HTTP-only cookie for refresh token
             $refreshTokenCookie = cookie(
                 'client_refresh_token',
@@ -680,7 +694,7 @@ class AuthController extends Controller
                 false, // Raw
                 'Lax' // SameSite
             );
-            
+
             // Redirect to frontend with access token in URL fragment (not query string for security)
             // Frontend will extract it and store in memory
             $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
@@ -688,20 +702,20 @@ class AuthController extends Controller
                 'token' => $tokens['access_token'],
                 'action' => $action,
             ]);
-            
+
             return redirect($redirectUrl)->cookie($refreshTokenCookie);
-            
+
         } catch (\Exception $e) {
             \Log::error('Google OAuth callback failed', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
             ]);
-            
+
             return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/?error=' . urlencode('Authentication failed. Please try again.'));
         }
     }
-    
+
     /**
      * Exchange authorization code for access token
      */
@@ -715,22 +729,22 @@ class AuthController extends Controller
                 'redirect_uri' => $redirectUri,
                 'grant_type' => 'authorization_code',
             ]);
-            
+
             if ($response->status() !== 200) {
                 throw new \Exception('Failed to exchange code for token. Status: ' . $response->status());
             }
-            
+
             $data = $response->json();
             if (!$data || !isset($data['access_token'])) {
                 throw new \Exception('Invalid token response from Google');
             }
-            
+
             return $data;
         } catch (\Exception $e) {
             throw new \Exception('Token exchange failed: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * Get user info from Google
      */
@@ -738,29 +752,29 @@ class AuthController extends Controller
     {
         try {
             $response = Http::withToken($accessToken)->get('https://www.googleapis.com/oauth2/v2/userinfo');
-            
+
             if ($response->status() !== 200) {
                 throw new \Exception('Failed to get user info. Status: ' . $response->status());
             }
-            
+
             $data = $response->json();
             if (!$data || !isset($data['email'])) {
                 throw new \Exception('Invalid user info response from Google');
             }
-            
+
             return $data;
         } catch (\Exception $e) {
             throw new \Exception('Failed to get user info: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * Parse full name into first and last name
      */
     private function parseName(string $fullName): array
     {
         $parts = explode(' ', trim($fullName), 2);
-        
+
         return [
             'first_name' => $parts[0] ?? 'User',
             'last_name' => $parts[1] ?? '',

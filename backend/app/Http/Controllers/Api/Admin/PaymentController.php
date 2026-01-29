@@ -45,6 +45,20 @@ class PaymentController extends Controller
             $query->where('payment_method_id', $methodId);
         }
 
+        // Filter by payment category
+        if ($category = $request->input('payment_category')) {
+            $query->whereHas('paymentMethod', function ($pq) use ($category) {
+                if ($category === 'online_payment') {
+                    $pq->whereIn('code', ['gcash', 'maya', 'paypal']);
+                } elseif ($category === 'bank_transfer') {
+                    $pq->whereIn('code', ['bank_bdo', 'bank_bpi', 'bank_metrobank', 'card'])
+                       ->orWhere('code', 'like', 'bank%');
+                } elseif ($category === 'cod') {
+                    $pq->where('code', 'cod');
+                }
+            });
+        }
+
         // Filter by date range
         if ($startDate = $request->input('start_date')) {
             $query->whereDate('created_at', '>=', $startDate);

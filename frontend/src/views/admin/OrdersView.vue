@@ -33,11 +33,18 @@
       </select>
       <select v-model="selectedPayment" @change="loadOrders" class="filter-select">
         <option value="">All Payment Methods</option>
+        <option value="online_payment">Online Payment (GCash, Maya, PayPal)</option>
+        <option value="bank_transfer">Bank Transfers (BDO, BPI, Metrobank, Card)</option>
         <option value="cod">Cash on Delivery</option>
-        <option value="gcash">GCash</option>
-        <option value="bank_transfer">Bank Transfer</option>
       </select>
       <input type="date" v-model="selectedDate" class="filter-select">
+      <button class="btn-reset" @click="resetFilters" title="Reset Filters">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+        Reset
+      </button>
     </div>
 
     <!-- Orders Table -->
@@ -94,8 +101,8 @@
               </span>
             </td>
             <td>
-              <select 
-                :value="order.status" 
+              <select
+                :value="order.status"
                 @change="updateOrderStatus(order.id, ($event.target as HTMLSelectElement).value)"
                 class="status-select"
                 :class="order.status.toLowerCase().replace('_', '-')"
@@ -262,7 +269,7 @@ const filteredOrders = computed(() => {
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    result = result.filter((o: any) => 
+    result = result.filter((o: any) =>
       o.order_number?.toLowerCase().includes(query) ||
       o.customer_name?.toLowerCase().includes(query) ||
       o.customer_email?.toLowerCase().includes(query)
@@ -276,8 +283,17 @@ const filteredOrders = computed(() => {
   if (selectedPayment.value) {
     result = result.filter((o: any) => {
       const payment = o.latest_payment || o.latestPayment
-      const paymentMethod = payment?.payment_method?.code || ''
-      return paymentMethod.toLowerCase() === selectedPayment.value.toLowerCase()
+      const paymentMethod = (payment?.payment_method?.code || payment?.payment_method_name || '').toLowerCase()
+
+      if (selectedPayment.value === 'online_payment') {
+        return ['gcash', 'maya', 'paypal'].includes(paymentMethod)
+      }
+      if (selectedPayment.value === 'bank_transfer') {
+        return ['bank_bdo', 'bank_bpi', 'bank_metrobank', 'card'].includes(paymentMethod) ||
+               paymentMethod.includes('bank') ||
+               paymentMethod === 'bank_transfer'
+      }
+      return paymentMethod === selectedPayment.value
     })
   }
 
@@ -292,25 +308,33 @@ const filteredOrders = computed(() => {
   return result
 })
 
+const resetFilters = () => {
+  searchQuery.value = ''
+  selectedStatus.value = ''
+  selectedPayment.value = ''
+  selectedDate.value = ''
+  loadOrders()
+}
+
 const formatPrice = (price: number) => {
   return price.toLocaleString('en-PH', { minimumFractionDigits: 2 })
 }
 
 const formatDate = (date: string | Date) => {
   const d = typeof date === 'string' ? new Date(date) : date
-  return new Intl.DateTimeFormat('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
     year: 'numeric',
-    hour: '2-digit', 
-    minute: '2-digit' 
+    hour: '2-digit',
+    minute: '2-digit'
   }).format(d)
 }
 
 const getPaymentMethodName = (order: any) => {
   const payment = order.latest_payment || order.latestPayment
   if (!payment) return 'N/A'
-  
+
   // Try both snake_case and camelCase
   const paymentMethod = payment.payment_method || payment.paymentMethod
   if (paymentMethod?.name) {
@@ -329,7 +353,7 @@ const getPaymentMethodName = (order: any) => {
 const getPaymentMethodClass = (order: any) => {
   const payment = order.latest_payment || order.latestPayment
   if (!payment) return 'cod'
-  
+
   // Try both snake_case and camelCase
   const paymentMethod = payment.payment_method || payment.paymentMethod
   const methodCode = paymentMethod?.code || payment.payment_method_name?.toLowerCase() || 'cod'
@@ -359,14 +383,14 @@ const loadOrders = async () => {
     }
 
     const response = await ordersApi.list(params)
-    
+
     if (!response || !response.data) {
       throw new Error('Invalid response from server. Please check your connection.')
     }
-    
+
     if (response.data.success) {
       const data = response.data.data
-      
+
       // Handle paginated response
       let ordersData: any[] = []
       if (data) {
@@ -383,18 +407,18 @@ const loadOrders = async () => {
       } else {
         ordersData = []
       }
-      
+
       // Map orders to ensure consistent structure
       orders.value = ordersData.map((order: any) => {
         // Handle payment data - support both snake_case and camelCase
         const payment = order.latest_payment || order.latestPayment || null
         const paymentMethod = payment?.payment_method || payment?.paymentMethod || null
-        
+
         return {
           id: order.id,
           order_number: order.order_number || `#${order.id}`,
-          customer_name: order.customer_name || 
-            (order.user ? `${order.user.first_name || ''} ${order.user.last_name || ''}`.trim() : '') || 
+          customer_name: order.customer_name ||
+            (order.user ? `${order.user.first_name || ''} ${order.user.last_name || ''}`.trim() : '') ||
             'Guest',
           customer_email: order.customer_email || order.user?.email || '',
           status: order.status || 'pending',
@@ -455,7 +479,7 @@ const updateOrderStatus = async (orderId: number, status: string) => {
 
   try {
     const response = await ordersApi.updateStatus(orderId, status, undefined, false)
-    
+
     if (response.data.success) {
       // Update order with latest data from response
       const updatedOrder = response.data.data
@@ -470,7 +494,7 @@ const updateOrderStatus = async (orderId: number, status: string) => {
         'Order Status Updated',
         `Order ${order.order_number} status has been updated from ${previousStatus} to ${status}.`
       )
-      
+
       // Reload to get latest data and relationships
       await loadOrders()
     } else {
@@ -505,16 +529,16 @@ const viewOrder = async (orderId: number) => {
     const response = await ordersApi.get(orderId)
     if (response.data && response.data.success) {
       const data = response.data.data
-      
+
       // Map order details similar to how we map orders in the list
       const payment = data.latest_payment || data.latestPayment || null
       const paymentMethod = payment?.payment_method || payment?.paymentMethod || null
-      
+
       orderDetails.value = {
         id: data.id,
         order_number: data.order_number || `#${data.id}`,
-        customer_name: data.customer_name || 
-          (data.user ? `${data.user.first_name || ''} ${data.user.last_name || ''}`.trim() : '') || 
+        customer_name: data.customer_name ||
+          (data.user ? `${data.user.first_name || ''} ${data.user.last_name || ''}`.trim() : '') ||
           'Guest',
         customer_email: data.customer_email || data.user?.email || '',
         status: data.status || 'pending',
@@ -566,7 +590,7 @@ const exportOrders = async () => {
 
     if (response.data.success) {
       const ordersData = response.data.data.data || response.data.data || []
-      
+
       // Convert to CSV
       const headers = ['Order Number', 'Customer Name', 'Customer Email', 'Status', 'Total', 'Payment Method', 'Date']
       const rows = ordersData.map((order: any) => [
@@ -674,7 +698,7 @@ watch([selectedStatus, selectedPayment, selectedDate], () => {
 onMounted(() => {
   loadOrders()
   startPolling()
-  
+
   // Set up real-time listeners
   startListening()
   window.addEventListener('realtime:admin:order:created', handleOrderCreated as EventListener)
@@ -743,14 +767,15 @@ onUnmounted(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  border: 2px solid #e5e7eb;
-  background: var(--white);
-  color: var(--dark);
+  border: 2px solid var(--gold);
+  background: var(--gold);
+  color: var(--white);
 }
 
 .btn-secondary:hover {
-  border-color: var(--gold);
-  color: var(--gold);
+  background: #b08d44;
+  border-color: #b08d44;
+  color: var(--white);
 }
 
 .btn-secondary svg {
@@ -808,6 +833,32 @@ onUnmounted(() => {
 
 .filter-select:focus {
   border-color: var(--gold);
+}
+
+.btn-reset {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--gray);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-reset:hover {
+  background: #f9fafb;
+  color: var(--dark);
+  border-color: #d1d5db;
+}
+
+.btn-reset svg {
+  width: 18px;
+  height: 18px;
 }
 
 .table-card {

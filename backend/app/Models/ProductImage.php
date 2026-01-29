@@ -22,6 +22,21 @@ class ProductImage extends Model
         ];
     }
 
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if (!$this->image_path) {
+            return null;
+        }
+
+        if (filter_var($this->image_path, FILTER_VALIDATE_URL)) {
+            return $this->image_path;
+        }
+
+        return url(\Storage::url($this->image_path));
+    }
+
     public function product()
     {
         return $this->belongsTo(Product::class);

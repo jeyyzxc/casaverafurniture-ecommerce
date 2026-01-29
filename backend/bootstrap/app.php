@@ -17,7 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin.only' => \App\Http\Middleware\AdminOnly::class,
         ]);
-        
+
+        // Redirect guest users to a JSON response instead of a named route
+        $middleware->redirectTo(
+            guests: fn () => response()->json(['message' => 'Unauthenticated.'], 401)
+        );
+
         // No stateful API - using pure token-based authentication
         // This avoids CSRF requirements for API routes
     })

@@ -24,7 +24,7 @@ class AdminSeeder extends Seeder
             'email' => 'admin@casavera.com',
             'email_verified_at' => $now,
             'password' => Hash::make('password'), // Default password: password
-            'phone' => '+63 912 345 6789',
+            'phone' => '0917-155-2913',
             'role_id' => $superAdminRole->id,
             'status' => 'active',
             'two_factor_enabled' => false,
@@ -34,7 +34,7 @@ class AdminSeeder extends Seeder
 
         // Create additional test admin (for development)
         $adminRole = DB::table('roles')->where('slug', 'admin')->first();
-        
+
         DB::table('admins')->insert([
             'first_name' => 'Test',
             'last_name' => 'Admin',

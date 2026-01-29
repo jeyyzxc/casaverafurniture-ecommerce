@@ -38,7 +38,7 @@ class WishlistController extends Controller
                     'current_price' => $product->current_price,
                     'is_on_sale' => $product->isOnSale(),
                     'stock_status' => $product->stock_status,
-                    'image' => $product->primaryImage?->image_path,
+                    'image' => $product->primaryImage?->image_url,
                     'category' => $product->category ? [
                         'id' => $product->category->id,
                         'name' => $product->category->name,
