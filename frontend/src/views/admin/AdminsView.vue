@@ -321,6 +321,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { admins as adminsApi } from '@/services/adminApi'
 import { useAdminAuthStore } from '@/stores/adminAuth'
+import { useNotification } from '@/composables/useNotification'
+
+const { success, error: showError } = useNotification()
 
 // Types
 interface Admin {
@@ -393,6 +396,19 @@ const isSuperAdmin = computed(() => adminAuthStore.admin?.role?.slug === 'super-
 const currentAdminId = computed(() => adminAuthStore.admin?.id)
 
 // Methods
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    const err = error as { response?: { data?: { message?: string } } };
+    if (typeof err.response?.data?.message === 'string') {
+      return err.response.data.message;
+    }
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return 'An unexpected error occurred.';
+};
+
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 const debouncedSearch = () => {
   if (searchTimeout) clearTimeout(searchTimeout)
@@ -424,7 +440,7 @@ const loadAdmins = async () => {
         total: response.data.data.total || 0,
       }
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     error.value = 'Failed to load admins.'
     console.error(err)
   } finally {
@@ -513,8 +529,8 @@ const saveAdmin = async () => {
         formError.value = res.data.message
       }
     }
-  } catch (err: any) {
-    formError.value = err.response?.data?.message || 'Failed to save.'
+  } catch (error: unknown) {
+    formError.value = getErrorMessage(error) || 'Failed to save.'
   } finally {
     isSaving.value = false
   }
@@ -541,8 +557,8 @@ const confirmDelete = async () => {
       setTimeout(() => showDeleteSuccess.value = false, 3000)
       await loadAdmins()
     }
-  } catch (err: any) {
-    alert(err.response?.data?.message || 'Failed to delete.')
+  } catch (error: unknown) {
+    showError('Delete Failed', getErrorMessage(error) || 'Failed to delete admin.')
   } finally {
     isDeleting.value = false
   }
