@@ -45,8 +45,12 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Set Composer memory limit to unlimited
+ENV COMPOSER_MEMORY_LIMIT=-1
+
+# Install PHP dependencies and Cloudinary
+# We use 'require' here to force the installation of Cloudinary and update the lock file dynamically
+RUN composer require cloudinary-labs/cloudinary-laravel --no-interaction --optimize-autoloader
 
 # Expose port (Render will provide PORT env var)
 EXPOSE 8080
@@ -62,6 +66,10 @@ if [ -z "$APP_KEY" ]; then\n\
     echo "WARNING: APP_KEY is not set. Generating one..."\n\
     php artisan key:generate --force || true\n\
 fi\n\
+\n\
+# Publish Cloudinary configuration\n\
+echo "Publishing Cloudinary config..."\n\
+php artisan vendor:publish --provider="CloudinaryLabs\\CloudinaryLaravel\\CloudinaryServiceProvider" --tag="cloudinary-laravel-config" --force || echo "Cloudinary publish failed"\n\
 \n\
 # Run migrations (only if not already run)\n\
 echo "Running database migrations..."\n\
