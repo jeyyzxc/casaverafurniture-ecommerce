@@ -17,7 +17,7 @@
       <slot></slot>
     </div>
     
-    <!-- Scroll Indicator (only for full-height hero) -->
+    
     <div v-if="size === 'full'" class="scroll-indicator">
       <div class="scroll-mouse">
         <div class="scroll-wheel"></div>
@@ -30,12 +30,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
-// Import default hero images
+
 import heroImg1 from '@/assets/images/f2.png'
 import heroImg2 from '@/assets/images/f3.png'
 import heroImg3 from '@/assets/images/f4.png'
 
-// Props
+
 interface Props {
   title: string
   subtitle: string
@@ -49,15 +49,15 @@ const props = withDefaults(defineProps<Props>(), {
   images: () => []
 })
 
-// Use custom images or default
+
 const slides = computed(() => {
   return props.images.length > 0 ? props.images : [heroImg1, heroImg2, heroImg3]
 })
 
-// Size class
+
 const sizeClass = computed(() => `hero--${props.size}`)
 
-// Slider state
+
 const currentSlide = ref(0)
 let sliderInterval: ReturnType<typeof setInterval> | null = null
 

@@ -7,7 +7,6 @@
     />
 
     <div class="orders-container">
-      <!-- Order Count Display -->
       <div v-if="!isLoading" class="orders-header rise-up">
         <h2 class="orders-title">My Orders</h2>
         <div class="order-count-badge">
@@ -95,7 +94,6 @@
       </div>
     </div>
 
-    <!-- Cancel Order Confirmation Modal -->
     <Teleport to="body">
       <div v-if="showCancelModal" class="modal-overlay" @click.self="showCancelModal = false">
         <div class="modal-container">
@@ -107,7 +105,7 @@
               </svg>
             </button>
           </div>
-          
+
           <div class="modal-body">
             <div class="warning-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -162,13 +160,10 @@ const selectedOrderNumber = ref<string | null>(null)
 const isCancelling = ref(false)
 let pollInterval: number | null = null
 
-// Real-time updates
 const { startListening, stopListening } = useRealtimeOrders()
 
-// Computed order count
 const totalOrderCount = computed(() => orders.value.length)
 
-// Methods
 const formatPrice = (price: number) => {
   return price.toLocaleString('en-PH', { minimumFractionDigits: 2 })
 }
@@ -204,13 +199,10 @@ const loadOrders = async () => {
 
   isLoading.value = true
   try {
-    // Fetch all user orders by using a very high per_page value
     const response = await ordersApi.list({ per_page: 10000 })
     if (response.data.success) {
-      // Handle paginated response
       if (response.data.data.data) {
         orders.value = response.data.data.data
-        // Update order count in composable
         updateOrderCount(response.data.data.meta?.total || response.data.data.data.length)
       } else if (Array.isArray(response.data.data)) {
         orders.value = response.data.data
@@ -240,11 +232,11 @@ const cancelOrder = async () => {
 
   try {
     const response = await ordersApi.cancel(selectedOrderNumber.value)
-    
+
     if (response.data.success) {
       showCancelModal.value = false
       success('Order Cancelled', `Order #${selectedOrderNumber.value} has been cancelled successfully.`)
-      await loadOrders() // Refresh orders
+      await loadOrders()
       selectedOrderNumber.value = null
     } else {
       showError('Cancellation Failed', response.data.message || 'Failed to cancel order. Please try again.')
@@ -257,28 +249,20 @@ const cancelOrder = async () => {
   }
 }
 
-// Real-time event handler
 const handleOrderStatusUpdate = (event: CustomEvent) => {
   const orderData = event.detail
   const order = orders.value.find(o => o.order_number === orderData.order_number)
   if (order) {
     order.status = orderData.new_status
-    // Show notification
     console.log(`Order ${orderData.order_number} status updated to ${orderData.new_status}`)
   } else {
-    // Reload orders if not found
     loadOrders()
   }
 }
 
-// Real-time polling for order status updates (fallback)
-// Only poll if real-time updates are not working (poll less frequently)
 const startPolling = () => {
-  // Poll every 30 seconds instead of 5 seconds to reduce continuous loading
-  // Only poll if user is authenticated and has orders
   pollInterval = window.setInterval(() => {
     if (authStore.isAuthenticated && orders.value.length > 0 && !isLoading.value) {
-      // Silently refresh orders in background without showing loading state
       ordersApi.list({ per_page: 10000 })
         .then((response) => {
           if (response.data.success) {
@@ -290,10 +274,9 @@ const startPolling = () => {
           }
         })
         .catch(() => {
-          // Silently fail - don't show errors for background polling
         })
     }
-  }, 30000) // Poll every 30 seconds instead of 5
+  }, 30000)
 }
 
 const stopPolling = () => {
@@ -303,7 +286,6 @@ const stopPolling = () => {
   }
 }
 
-// Watch for order count changes and update composable
 watch(() => orders.value.length, (newCount) => {
   updateOrderCount(newCount)
 }, { immediate: true })
@@ -311,8 +293,7 @@ watch(() => orders.value.length, (newCount) => {
 onMounted(() => {
   loadOrders()
   startPolling()
-  
-  // Set up real-time listeners
+
   if (authStore.isAuthenticated) {
     startListening()
     window.addEventListener('realtime:order:status:updated', handleOrderStatusUpdate as EventListener)
@@ -618,7 +599,6 @@ onUnmounted(() => {
   100% { transform: rotate(360deg); }
 }
 
-/* Cancel Order Modal */
 .modal-overlay {
   position: fixed;
   top: 0;

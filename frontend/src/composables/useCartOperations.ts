@@ -46,7 +46,7 @@ export function useCartOperations() {
   const buyNow = async (product: Product, quantity: number = 1) => {
     const result = await addToCart(product, quantity)
     if (result.success) {
-      // Redirect will be handled by the component
+      
       return { success: true }
     }
     return result

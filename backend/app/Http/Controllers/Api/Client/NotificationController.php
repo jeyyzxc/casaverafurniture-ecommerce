@@ -16,9 +16,6 @@ class NotificationController extends Controller
         private NotificationRepository $notificationRepository
     ) {}
 
-    /**
-     * Get all notifications for the authenticated user
-     */
     public function index(Request $request): JsonResponse
     {
         try {
@@ -32,7 +29,6 @@ class NotificationController extends Controller
             $perPage = $request->input('per_page', 20);
             $notifications = $this->notificationRepository->getUserNotifications($user, $filters, $perPage);
 
-            // Transform notifications
             $transformed = $notifications->getCollection()->map(function ($notification) {
                 return NotificationTransformer::transformUserNotification($notification);
             });
@@ -60,9 +56,6 @@ class NotificationController extends Controller
         }
     }
 
-    /**
-     * Get unread notifications count
-     */
     public function unreadCount(): JsonResponse
     {
         try {
@@ -88,9 +81,6 @@ class NotificationController extends Controller
         }
     }
 
-    /**
-     * Get recent notifications (last 10)
-     */
     public function recent(): JsonResponse
     {
         try {
@@ -116,9 +106,6 @@ class NotificationController extends Controller
         }
     }
 
-    /**
-     * Mark notification as read
-     */
     public function markAsRead(string $id): JsonResponse
     {
         try {
@@ -151,9 +138,6 @@ class NotificationController extends Controller
         }
     }
 
-    /**
-     * Mark all notifications as read
-     */
     public function markAllAsRead(): JsonResponse
     {
         try {
@@ -180,9 +164,6 @@ class NotificationController extends Controller
         }
     }
 
-    /**
-     * Delete notification
-     */
     public function delete(string $id): JsonResponse
     {
         try {

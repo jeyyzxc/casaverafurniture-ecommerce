@@ -19,15 +19,12 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    /**
-     * List user's orders
-     */
+
     public function index(Request $request): JsonResponse
     {
         try {
             $user = $request->user();
 
-            // Ensure user is a User model, not Admin
             if (!$user instanceof \App\Models\User) {
                 return response()->json([
                     'success' => false,
@@ -38,7 +35,6 @@ class OrderController extends Controller
             $query = Order::where('user_id', $user->id)
                 ->with(['items', 'latestPayment.paymentMethod']);
 
-            // Filter by status
             if ($status = $request->input('status')) {
                 $query->where('status', $status);
             }
@@ -60,9 +56,6 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Get single order
-     */
     public function show(Request $request, string $orderNumber): JsonResponse
     {
         $user = $request->user();
@@ -84,14 +77,10 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Create order (checkout)
-     */
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        // Check if user is authenticated
         if (!$user) {
             return response()->json([
                 'success' => false,
@@ -99,7 +88,6 @@ class OrderController extends Controller
             ], 401);
         }
 
-        // Ensure user is a User model, not Admin
         if (!$user instanceof \App\Models\User) {
             return response()->json([
                 'success' => false,
@@ -109,12 +97,11 @@ class OrderController extends Controller
 
         try {
             $validated = $request->validate([
-                // Address selection (either use saved address ID or provide full address)
+
                 'shipping_address_id' => ['nullable', 'exists:user_addresses,id'],
                 'billing_address_id' => ['nullable', 'exists:user_addresses,id'],
                 'billing_same_as_shipping' => ['boolean'],
 
-                // Full address details (required if address_id not provided)
                 'shipping_address_line_1' => ['required_without:shipping_address_id', 'nullable', 'string', 'max:255'],
                 'shipping_address_line_2' => ['nullable', 'string', 'max:255'],
                 'shipping_city' => ['required_without:shipping_address_id', 'nullable', 'string', 'max:100'],
@@ -132,14 +119,13 @@ class OrderController extends Controller
                 'shipping_zone_id' => ['required', 'exists:shipping_zones,id'],
                 'payment_method_id' => ['required', 'exists:payment_methods,id'],
 
-                // Payment confirmation details
                 'payment_confirmation' => ['nullable', 'array'],
                 'payment_confirmation.sender_name' => ['nullable', 'string', 'max:200'],
                 'payment_confirmation.sender_account' => ['nullable', 'string', 'max:100'],
                 'payment_confirmation.reference_number' => ['nullable', 'string', 'max:100'],
                 'payment_confirmation.payment_date' => ['nullable', 'date'],
-                'payment_confirmation.proof_image' => ['nullable', 'string'], // Base64 encoded image
-                'payment_confirmation.card_number' => ['nullable', 'string', 'max:20'], // Last 4 digits for bank cards
+                'payment_confirmation.proof_image' => ['nullable', 'string'],
+                'payment_confirmation.card_number' => ['nullable', 'string', 'max:20'],
                 'payment_confirmation.card_holder_name' => ['nullable', 'string', 'max:200'],
                 'payment_confirmation.card_expiry' => ['nullable', 'string', 'max:10'],
                 'payment_confirmation.card_cvv' => ['nullable', 'string', 'max:4'],
@@ -151,14 +137,13 @@ class OrderController extends Controller
             throw $e;
         }
 
-        // Get cart - ensure items are loaded
         $cart = Cart::where('user_id', $user->id)
             ->where('status', 'active')
             ->with(['items.product', 'items'])
             ->first();
 
         if (!$cart) {
-            // Try to merge guest cart if session ID exists
+
             $sessionId = $request->header('X-Session-ID') ?? $request->input('session_id');
             if ($sessionId) {
                 $guestCart = Cart::where('session_id', $sessionId)
@@ -168,7 +153,7 @@ class OrderController extends Controller
                     ->first();
 
                 if ($guestCart && $guestCart->items->isNotEmpty()) {
-                    // Create user cart and merge items
+
                     $cart = Cart::create([
                         'user_id' => $user->id,
                         'status' => 'active',
@@ -193,10 +178,8 @@ class OrderController extends Controller
             }
         }
 
-        // Reload items to ensure they're fresh
         $cart->load('items.product');
 
-        // Check if cart has items
         if ($cart->items->isEmpty()) {
             return response()->json([
                 'success' => false,
@@ -204,11 +187,9 @@ class OrderController extends Controller
             ], 422);
         }
 
-        // Ensure cart is recalculated
         $cart->recalculate();
         $cart->refresh();
 
-        // Validate cart subtotal
         if (!$cart->subtotal || $cart->subtotal <= 0) {
             \Log::error('Cart subtotal is invalid', [
                 'user_id' => $user->id,
@@ -221,7 +202,6 @@ class OrderController extends Controller
             ], 422);
         }
 
-        // Log cart info for debugging
         \Log::info('Order creation attempt', [
             'user_id' => $user->id,
             'cart_id' => $cart->id,
@@ -230,7 +210,6 @@ class OrderController extends Controller
             'cart_discount' => $cart->discount_amount ?? 0,
         ]);
 
-        // Validate stock
         foreach ($cart->items as $item) {
             if (!$item->product || $item->product->status !== 'active') {
                 return response()->json([
@@ -246,7 +225,6 @@ class OrderController extends Controller
             }
         }
 
-        // Get shipping zone and validate it's active
         $shippingZone = ShippingZone::active()->findOrFail($validated['shipping_zone_id']);
 
         if (!$shippingZone->is_active) {
@@ -256,15 +234,12 @@ class OrderController extends Controller
             ], 422);
         }
 
-        // Calculate shipping amount based on cart subtotal and zone settings
         $shippingAmount = $cart->subtotal >= ($shippingZone->free_shipping_threshold ?? PHP_INT_MAX)
             ? 0
             : $shippingZone->base_rate;
 
-        // Calculate base total (before payment fee)
         $baseTotal = $cart->subtotal - $cart->discount_amount + $shippingAmount;
 
-        // Get payment method early to calculate fee
         $paymentMethod = PaymentMethod::find($validated['payment_method_id']);
 
         if (!$paymentMethod) {
@@ -281,13 +256,10 @@ class OrderController extends Controller
             ], 422);
         }
 
-        // Calculate payment fee based on base total
         $paymentFee = $paymentMethod->calculateFee($baseTotal);
 
-        // Final total includes payment fee
         $finalTotal = $baseTotal + $paymentFee;
 
-        // Handle saved addresses
         $shippingAddress = null;
         $billingAddress = null;
 
@@ -317,7 +289,6 @@ class OrderController extends Controller
             }
         }
 
-        // Prepare shipping address data
         if ($shippingAddress) {
             $shippingData = [
                 'shipping_name' => $shippingAddress->recipient_name,
@@ -340,11 +311,9 @@ class OrderController extends Controller
             ];
         }
 
-        // Billing address
         $billingSameAsShipping = $validated['billing_same_as_shipping'] ?? true;
 
         if ($billingSameAsShipping) {
-            // Map shipping data to billing data
             $billingData = [
                 'billing_name' => $shippingData['shipping_name'],
                 'billing_address_line_1' => $shippingData['shipping_address_line_1'],
@@ -379,7 +348,6 @@ class OrderController extends Controller
         DB::beginTransaction();
 
         try {
-            // Ensure user has required fields
             $customerName = $user->full_name ?? ($user->first_name . ' ' . $user->last_name) ?? 'Customer';
             $customerEmail = $user->email ?? '';
             $customerPhone = $user->phone ?? null;
@@ -392,7 +360,6 @@ class OrderController extends Controller
                 ], 422);
             }
 
-            // Create order
             $order = Order::create([
                 'order_number' => Order::generateOrderNumber(),
                 'user_id' => $user->id,
@@ -419,8 +386,8 @@ class OrderController extends Controller
                 'subtotal' => $cart->subtotal ?? 0,
                 'discount_amount' => $cart->discount_amount ?? 0,
                 'shipping_amount' => $shippingAmount,
-                'tax_amount' => 0, // Can be calculated later if needed
-                'total' => $finalTotal, // Total including payment fee
+                'tax_amount' => 0,
+                'total' => $finalTotal,
                 'currency' => 'PHP',
                 'promotion_id' => $cart->promotion_id,
                 'coupon_code' => $cart->coupon_code,
@@ -434,9 +401,7 @@ class OrderController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
 
-            // Create order items
             foreach ($cart->items as $item) {
-                // Reload product to ensure we have latest data
                 $product = $item->product;
 
                 if (!$product) {
@@ -452,29 +417,26 @@ class OrderController extends Controller
                     'product_id' => $item->product_id,
                     'product_name' => $item->product_name,
                     'product_sku' => $item->product_sku ?? $product->sku,
-                    'product_image' => $item->product_image,
+                    'product_image' => $product->primaryImage?->image_url ?? $item->product_image,
                     'product_description' => $product->short_description ?? null,
                     'product_options' => $item->options ?? null,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price ?? $product->price,
                     'sale_price' => $item->sale_price,
-                    'discount_amount' => 0, // Can be calculated if needed
-                    'tax_amount' => 0, // Can be calculated if needed
+                    'discount_amount' => 0,
+                    'tax_amount' => 0,
                     'subtotal' => $item->subtotal,
                     'total' => $item->subtotal,
                     'status' => 'pending',
                 ]);
 
-                // Decrement stock
                 if ($product->track_inventory) {
                     $product->decrementStock($item->quantity);
                 }
 
-                // Update product order count
                 $product->increment('order_count');
             }
 
-            // Create status history
             OrderStatusHistory::create([
                 'order_id' => $order->id,
                 'status' => 'pending',
@@ -482,7 +444,6 @@ class OrderController extends Controller
                 'changed_by_type' => 'customer',
             ]);
 
-            // Record promotion usage
             if ($cart->promotion_id) {
                 PromotionUsage::create([
                     'promotion_id' => $cart->promotion_id,
@@ -492,16 +453,13 @@ class OrderController extends Controller
                     'code_used' => $cart->coupon_code,
                 ]);
 
-                // Increment promotion used count (reload promotion to ensure it exists)
                 $promotion = Promotion::find($cart->promotion_id);
                 if ($promotion) {
                     $promotion->increment('used_count');
                 }
             }
 
-            // Create payment record (payment method already validated above)
             try {
-                // Prepare payment details from confirmation
                 $paymentDetails = [];
                 $proofImage = null;
                 if (!empty($validated['payment_confirmation'])) {
@@ -513,11 +471,10 @@ class OrderController extends Controller
                         'payment_date' => $confirmation['payment_date'] ?? null,
                     ];
 
-                    // Store proof image if provided (base64 encoded)
                     if (!empty($confirmation['proof_image'])) {
                         $proofImage = $confirmation['proof_image'];
-                        // Handle potential oversized base64 strings if necessary
-                        if (strlen($proofImage) > 10 * 1024 * 1024) { // 10MB limit
+
+                        if (strlen($proofImage) > 10 * 1024 * 1024) {
                              \Log::warning('Large proof image received', [
                                  'order_id' => $order->id,
                                  'size' => strlen($proofImage)
@@ -525,13 +482,11 @@ class OrderController extends Controller
                         }
                     }
 
-                    // Add bank card details if provided
                     if (!empty($confirmation['card_number'])) {
                         $paymentDetails['card'] = [
                             'last_four' => substr($confirmation['card_number'], -4),
                             'holder_name' => $confirmation['card_holder_name'] ?? null,
                             'expiry' => $confirmation['card_expiry'] ?? null,
-                            // Note: CVV is never stored for security
                         ];
                     }
                 }
@@ -542,9 +497,9 @@ class OrderController extends Controller
                     'user_id' => $user->id,
                     'payment_method_id' => $validated['payment_method_id'],
                     'payment_method_name' => $paymentMethod->name,
-                    'amount' => $finalTotal, // Total including fee
+                    'amount' => $finalTotal,
                     'fee_amount' => $paymentFee,
-                    'net_amount' => $baseTotal, // Amount before fee (what merchant receives)
+                    'net_amount' => $baseTotal,
                     'status' => 'pending',
                     'currency' => 'PHP',
                     'payment_details' => !empty($paymentDetails) ? $paymentDetails : null,
@@ -552,7 +507,7 @@ class OrderController extends Controller
                     'sender_account' => $paymentDetails['sender_account'] ?? null,
                     'reference_number' => $paymentDetails['reference_number'] ?? null,
                     'payment_date' => !empty($paymentDetails['payment_date']) ? $paymentDetails['payment_date'] : null,
-                    'proof_image' => $proofImage, // Base64 encoded proof image
+                    'proof_image' => $proofImage,
                 ]);
             } catch (\Exception $e) {
                 DB::rollBack();
@@ -568,13 +523,11 @@ class OrderController extends Controller
                 ], 500);
             }
 
-            // Update user stats (only if user is a User model, not Admin)
             if ($user instanceof \App\Models\User) {
                 $user->increment('order_count');
                 $user->update(['last_order_at' => now()]);
             }
 
-            // Mark cart as converted
             $cart->update([
                 'status' => 'converted',
                 'converted_at' => now(),
@@ -582,18 +535,14 @@ class OrderController extends Controller
 
             DB::commit();
 
-            // Reload order with relationships
             $order->load(['items', 'latestPayment.paymentMethod']);
 
-            // Broadcast order created event for real-time updates (wrap in try-catch to prevent failures)
             try {
                 event(new OrderCreated($order));
 
-                // Notify admin via notification system
                 $notificationManager = app(\App\Services\NotificationManager::class);
                 $notificationManager->notifyNewOrder($order);
             } catch (\Exception $e) {
-                // Log but don't fail the order creation if broadcasting fails
                 \Log::warning('Failed to broadcast OrderCreated event', [
                     'order_id' => $order->id,
                     'error' => $e->getMessage(),
@@ -613,7 +562,6 @@ class OrderController extends Controller
         } catch (\Illuminate\Database\QueryException $e) {
             DB::rollBack();
 
-            // Log database errors with more context
             \Log::error('Order creation failed - Database error', [
                 'user_id' => $user->id ?? null,
                 'cart_id' => $cart->id ?? null,
@@ -626,7 +574,6 @@ class OrderController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            // Provide more specific error messages for common database errors
             $errorMessage = 'Failed to create order due to a database error. Please try again.';
             $errorDetails = null;
 
@@ -634,7 +581,7 @@ class OrderController extends Controller
                 $errorMessage = 'Order creation failed due to data integrity issue. Please refresh and try again.';
             } elseif (str_contains($e->getMessage(), 'Column cannot be null')) {
                 $errorMessage = 'Order creation failed due to missing required information. Please check your form and try again.';
-                // Extract which column is null
+
                 if (preg_match("/Column '([^']+)' cannot be null/", $e->getMessage(), $matches)) {
                     $errorDetails = "Missing required field: {$matches[1]}";
                 }
@@ -654,7 +601,6 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            // Log the full error for debugging
             \Log::error('Order creation failed - General exception', [
                 'user_id' => $user->id ?? null,
                 'cart_id' => $cart->id ?? null,
@@ -674,9 +620,6 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Submit payment proof
-     */
     public function submitPayment(Request $request, string $orderNumber): JsonResponse
     {
         $user = $request->user();
@@ -698,7 +641,7 @@ class OrderController extends Controller
             'sender_account' => ['nullable', 'string', 'max:50'],
             'reference_number' => ['required', 'string', 'max:100'],
             'payment_date' => ['required', 'date'],
-            'proof_image' => ['nullable', 'string'], // Base64 encoded image
+            'proof_image' => ['nullable', 'string'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -722,9 +665,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Cancel order
-     */
     public function cancel(Request $request, string $orderNumber): JsonResponse
     {
         $user = $request->user();
@@ -752,14 +692,12 @@ class OrderController extends Controller
             'cancellation_reason' => $validated['reason'] ?? 'Cancelled by customer',
         ]);
 
-        // Restore stock
         foreach ($order->items as $item) {
             if ($item->product) {
                 $item->product->incrementStock($item->quantity);
             }
         }
 
-        // Create status history
         OrderStatusHistory::create([
             'order_id' => $order->id,
             'status' => 'cancelled',
@@ -774,9 +712,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Get available shipping zones
-     */
     public function shippingZones(): JsonResponse
     {
         $zones = ShippingZone::active()
@@ -791,9 +726,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Get available payment methods
-     */
     public function paymentMethods(): JsonResponse
     {
         $methods = PaymentMethod::active()

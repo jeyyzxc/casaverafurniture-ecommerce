@@ -28,9 +28,6 @@ class RefreshToken extends Model
         'token_hash',
     ];
 
-    /**
-     * Generate a new refresh token
-     */
     public static function generateToken($tokenable, int $days = 30): string
     {
         $token = Str::random(64);
@@ -39,18 +36,15 @@ class RefreshToken extends Model
         self::create([
             'tokenable_type' => get_class($tokenable),
             'tokenable_id' => $tokenable->id,
-            'token_hash' => $tokenHash, // Only store hash, never plain token
+            'token_hash' => $tokenHash, 
             'expires_at' => now()->addDays($days),
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
         ]);
 
-        return $token; // Return plain token only for initial response
+        return $token; 
     }
 
-    /**
-     * Find token by plain text token
-     */
     public static function findToken(string $token): ?self
     {
         $tokenHash = hash('sha256', $token);
@@ -59,8 +53,6 @@ class RefreshToken extends Model
             ->where('expires_at', '>', now())
             ->first();
 
-        // If not found, check if it was recently deleted (race condition handling)
-        // We allow a 10 second grace period for a token that was just exchanged
         if (!$token) {
             $token = self::onlyTrashed()
                 ->where('token_hash', $tokenHash)
@@ -71,17 +63,11 @@ class RefreshToken extends Model
         return $token;
     }
 
-    /**
-     * Revoke token
-     */
     public function revoke(): void
     {
         $this->delete();
     }
 
-    /**
-     * Revoke all tokens for a tokenable
-     */
     public static function revokeAllFor($tokenable): void
     {
         self::where('tokenable_type', get_class($tokenable))
@@ -89,17 +75,11 @@ class RefreshToken extends Model
             ->delete();
     }
 
-    /**
-     * Clean up expired tokens
-     */
     public static function cleanupExpired(): int
     {
         return self::where('expires_at', '<', now())->delete();
     }
 
-    /**
-     * Relationship to tokenable (User or Admin)
-     */
     public function tokenable()
     {
         return $this->morphTo();

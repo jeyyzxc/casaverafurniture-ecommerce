@@ -16,7 +16,7 @@ import DashboardView from '../views/admin/DashboardView.vue'
 import AdminProductsView from '../views/admin/ProductsView.vue'
 import AdminOrdersView from '../views/admin/OrdersView.vue'
 
-// Lazy load admin views for better performance
+
 const AdminCategoriesView = () => import('../views/admin/CategoriesView.vue')
 const AdminUsersView = () => import('../views/admin/UsersView.vue')
 const AdminInventoryView = () => import('../views/admin/InventoryView.vue')
@@ -34,7 +34,7 @@ const AdminProfileView = () => import('../views/admin/ProfileView.vue')
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // CLIENT ROUTES
+    
     {
       path: '/',
       component: ClientLayout,
@@ -52,7 +52,7 @@ const router = createRouter({
         {
           path: 'products/:id',
           name: 'product-detail',
-          component: ProductsView // TODO: Create ProductDetailView
+          component: ProductsView 
         },
         {
           path: 'collection',
@@ -114,7 +114,7 @@ const router = createRouter({
         }
       ]
     },
-    // ADMIN ROUTES
+    
     {
       path: '/admin/login',
       name: 'admin-login',
@@ -241,16 +241,16 @@ const router = createRouter({
   }
 })
 
-// Navigation guard for admin and client routes
+
 router.beforeEach(async (to, from, next) => {
-  // Check if route requires admin auth
+  
   if (to.meta.requiresAuth && to.path.includes('/admin')) {
     const { useAdminAuthStore } = await import('@/stores/adminAuth')
     const adminStore = useAdminAuthStore()
 
-    // Check if admin data exists (token is in memory, not localStorage)
+    
     if (!adminStore.isAuthenticated) {
-      // Try to fetch admin data (will trigger token refresh if refresh token exists)
+      
       try {
         await adminStore.fetchAdmin()
         if (adminStore.isAuthenticated) {
@@ -258,64 +258,64 @@ router.beforeEach(async (to, from, next) => {
           return
         }
       } catch {
-        // Fetch failed, redirect to login
+        
       }
-      // Not authenticated, redirect to login
+      
       next('/admin/login')
     } else {
       next()
     }
   }
-  // Check if route requires client auth
+  
   else if (to.meta.requiresAuth && !to.path.includes('/admin')) {
-    // #region agent log
+    
 
-    // #endregion
+    
     const { useAuthStore } = await import('@/stores/auth')
     const authStore = useAuthStore()
 
-    // #region agent log
+    
 
-    // #endregion
+    
 
-    // Check if user data exists (token is in memory, not localStorage)
+    
     if (!authStore.isAuthenticated) {
-      // #region agent log
+      
 
-      // #endregion
-      // Try to fetch user data (will trigger token refresh if refresh token exists)
+      
+      
       try {
         const result = await authStore.fetchUser()
-        // #region agent log
+        
 
-        // #endregion
+        
         if (result.success && authStore.isAuthenticated) {
-          // #region agent log
+          
 
-          // #endregion
+          
           next()
           return
         }
       } catch {
-        // #region agent log
+        
 
-        // #endregion
-        // Fetch failed, redirect to login
+        
+        
       }
-      // #region agent log
+      
 
-      // #endregion
-      // Not authenticated, redirect to home with login prompt
+      
+      
       next({ name: 'home', query: { login: 'true' } })
     } else {
-      // #region agent log
+      
 
-      // #endregion
+      
       next()
     }
   }
   else if (to.name === 'admin-login') {
-    // If already logged in, redirect to dashboard
+    
     const { useAdminAuthStore } = await import('@/stores/adminAuth')
     const adminStore = useAdminAuthStore()
     if (adminStore.isAuthenticated) {

@@ -13,10 +13,10 @@ class HomepageUpdated implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public function __construct(
-        public string $type, // 'banner', 'section', 'featured_products', 'settings'
+        public string $type, 
         public array $data = []
     ) {
-        //
+        
     }
 
     public function broadcastOn(): array

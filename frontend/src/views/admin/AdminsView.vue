@@ -1,6 +1,5 @@
 <template>
   <div class="admin-page-container">
-    <!-- Header -->
     <div class="page-header">
       <div class="header-text">
         <h1 class="title">Admin Users</h1>
@@ -15,7 +14,6 @@
       </button>
     </div>
 
-    <!-- Controls / Filters -->
     <div class="controls-panel">
       <div class="search-control">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -57,7 +55,6 @@
       </div>
     </div>
 
-    <!-- Error State -->
     <div v-if="error" class="alert-error">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"></circle>
@@ -67,7 +64,6 @@
       {{ error }}
     </div>
 
-    <!-- Main Table -->
     <div class="content-card">
       <div class="table-wrapper">
         <table class="admin-table">
@@ -82,7 +78,6 @@
             </tr>
           </thead>
           <tbody>
-            <!-- Loading -->
             <tr v-if="isLoading && admins.length === 0">
               <td colspan="6" class="state-cell">
                 <div class="spinner"></div>
@@ -90,14 +85,12 @@
               </td>
             </tr>
 
-            <!-- Empty -->
             <tr v-else-if="admins.length === 0">
               <td colspan="6" class="state-cell">
                 <p>No admins found.</p>
               </td>
             </tr>
 
-            <!-- Data -->
             <tr v-else v-for="admin in admins" :key="admin.id">
               <td>
                 <div class="user-info">
@@ -153,7 +146,6 @@
         </table>
       </div>
 
-      <!-- Pagination -->
       <div class="pagination" v-if="pagination.last_page > 1">
         <span class="page-count">
           Page {{ pagination.current_page }} of {{ pagination.last_page }}
@@ -175,9 +167,7 @@
       </div>
     </div>
 
-    <!-- Modals (Delete & Edit) -->
     <Teleport to="body">
-      <!-- Delete Modal -->
       <div v-if="showDeleteModal" class="modal-backdrop" @click.self="closeDeleteModal">
         <div class="modal-container delete-modal">
           <div class="delete-modal-content">
@@ -220,7 +210,6 @@
         </div>
       </div>
 
-      <!-- Edit/Add Modal -->
       <div v-if="showModal" class="modal-backdrop" @click.self="closeModal">
         <div class="modal-card">
           <div class="modal-head">
@@ -309,7 +298,6 @@
         </div>
       </div>
 
-      <!-- Success Toast -->
       <div v-if="showDeleteSuccess" class="toast-success">
         Admin permanently deleted.
       </div>
@@ -325,7 +313,6 @@ import { useNotification } from '@/composables/useNotification'
 
 const { success, error: showError } = useNotification()
 
-// Types
 interface Admin {
   id: number
   first_name: string
@@ -347,7 +334,6 @@ interface Role {
   slug: string
 }
 
-// Store & State
 const adminAuthStore = useAdminAuthStore()
 const admins = ref<Admin[]>([])
 const roles = ref<Role[]>([])
@@ -357,7 +343,6 @@ const searchQuery = ref('')
 const filterRole = ref<number | string>('')
 const filterStatus = ref<string>('')
 
-// Modals State
 const showModal = ref(false)
 const editingAdmin = ref<Admin | null>(null)
 const isSaving = ref(false)
@@ -367,11 +352,9 @@ const deletingAdmin = ref<Admin | null>(null)
 const isDeleting = ref(false)
 const showDeleteSuccess = ref(false)
 
-// Password Visibility State
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 
-// Pagination
 const pagination = ref({
   current_page: 1,
   last_page: 1,
@@ -379,7 +362,6 @@ const pagination = ref({
   total: 0,
 })
 
-// Form Data
 const formData = ref({
   first_name: '',
   last_name: '',
@@ -391,11 +373,9 @@ const formData = ref({
   status: 'active' as 'active' | 'inactive',
 })
 
-// Computed
 const isSuperAdmin = computed(() => adminAuthStore.admin?.role?.slug === 'super-admin')
 const currentAdminId = computed(() => adminAuthStore.admin?.id)
 
-// Methods
 const getErrorMessage = (error: unknown): string => {
   if (typeof error === 'object' && error !== null && 'response' in error) {
     const err = error as { response?: { data?: { message?: string } } };
@@ -461,7 +441,6 @@ const formatDate = (date: string) => {
 
 const getRoleClass = (slug?: string) => slug || ''
 
-// Modal Actions
 const openAddModal = () => {
   editingAdmin.value = null
   formData.value = { first_name: '', last_name: '', email: '', password: '', password_confirmation: '', phone: '', role_id: null, status: 'active' }

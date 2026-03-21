@@ -8,17 +8,13 @@ use Carbon\Carbon;
 
 class SiteSettingsSeeder extends Seeder
 {
-    /**
-     * Seed site settings.
-     */
+    
     public function run(): void
     {
         $now = Carbon::now();
 
         $settings = [
-            // ===========================================
-            // GENERAL SETTINGS
-            // ===========================================
+
             [
                 'key' => 'site_name',
                 'group' => 'general',
@@ -74,9 +70,6 @@ class SiteSettingsSeeder extends Seeder
                 'is_public' => true,
             ],
 
-            // ===========================================
-            // PAYMENT INFORMATION (BUSINESS)
-            // ===========================================
             [
                 'key' => 'business_payment_gcash_name',
                 'group' => 'payment',
@@ -96,9 +89,6 @@ class SiteSettingsSeeder extends Seeder
                 'is_public' => true,
             ],
 
-            // ===========================================
-            // CONTACT INFORMATION
-            // ===========================================
             [
                 'key' => 'contact_email',
                 'group' => 'contact',
@@ -153,9 +143,6 @@ class SiteSettingsSeeder extends Seeder
                 'is_public' => true,
             ],
 
-            // ===========================================
-            // SOCIAL MEDIA
-            // ===========================================
             [
                 'key' => 'social_facebook',
                 'group' => 'social',
@@ -202,9 +189,6 @@ class SiteSettingsSeeder extends Seeder
                 'is_public' => true,
             ],
 
-            // ===========================================
-            // SEO SETTINGS
-            // ===========================================
             [
                 'key' => 'seo_title',
                 'group' => 'seo',
@@ -242,9 +226,6 @@ class SiteSettingsSeeder extends Seeder
                 'is_public' => true,
             ],
 
-            // ===========================================
-            // ORDER SETTINGS
-            // ===========================================
             [
                 'key' => 'order_prefix',
                 'group' => 'orders',
@@ -291,9 +272,6 @@ class SiteSettingsSeeder extends Seeder
                 'is_public' => false,
             ],
 
-            // ===========================================
-            // NOTIFICATION SETTINGS
-            // ===========================================
             [
                 'key' => 'notify_new_order',
                 'group' => 'notifications',
@@ -331,9 +309,6 @@ class SiteSettingsSeeder extends Seeder
                 'is_public' => false,
             ],
 
-            // ===========================================
-            // MAINTENANCE SETTINGS
-            // ===========================================
             [
                 'key' => 'maintenance_mode',
                 'group' => 'maintenance',

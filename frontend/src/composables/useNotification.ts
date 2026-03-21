@@ -8,7 +8,7 @@ export interface Notification {
   duration?: number
 }
 
-// Singleton notifications array shared across all components
+
 export const notifications = ref<Notification[]>([])
 
 const showNotification = (notification: Omit<Notification, 'id'>) => {
@@ -21,7 +21,7 @@ const showNotification = (notification: Omit<Notification, 'id'>) => {
 
   notifications.value.push(newNotification)
 
-  // Auto remove after duration
+  
   if (newNotification.duration && newNotification.duration > 0) {
     setTimeout(() => {
       removeNotification(id)

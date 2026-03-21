@@ -10,9 +10,7 @@ use Illuminate\Http\Request;
 
 class WishlistController extends Controller
 {
-    /**
-     * Get user's wishlist
-     */
+    
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -23,7 +21,6 @@ class WishlistController extends Controller
             }])
             ->get();
 
-        // Filter out deleted/inactive products
         $items = $wishlists->filter(fn($w) => $w->product !== null)->map(function ($wishlist) {
             $product = $wishlist->product;
             return [
@@ -55,9 +52,6 @@ class WishlistController extends Controller
         ]);
     }
 
-    /**
-     * Add product to wishlist
-     */
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -66,7 +60,6 @@ class WishlistController extends Controller
             'product_id' => ['required', 'exists:products,id'],
         ]);
 
-        // Check if product is active
         $product = Product::active()->published()->find($validated['product_id']);
         if (!$product) {
             return response()->json([
@@ -75,7 +68,6 @@ class WishlistController extends Controller
             ], 404);
         }
 
-        // Check if already in wishlist
         $existing = Wishlist::where('user_id', $user->id)
             ->where('product_id', $validated['product_id'])
             ->first();
@@ -98,9 +90,6 @@ class WishlistController extends Controller
         ]);
     }
 
-    /**
-     * Remove product from wishlist
-     */
     public function destroy(Request $request, int $productId): JsonResponse
     {
         $user = $request->user();
@@ -122,9 +111,6 @@ class WishlistController extends Controller
         ]);
     }
 
-    /**
-     * Check if product is in wishlist
-     */
     public function check(Request $request, int $productId): JsonResponse
     {
         $user = $request->user();
@@ -141,9 +127,6 @@ class WishlistController extends Controller
         ]);
     }
 
-    /**
-     * Move item from wishlist to cart
-     */
     public function moveToCart(Request $request, int $productId): JsonResponse
     {
         $user = $request->user();
@@ -159,12 +142,10 @@ class WishlistController extends Controller
             ], 404);
         }
 
-        // Add to cart using CartController logic
         $cartController = new CartController();
         $request->merge(['product_id' => $productId, 'quantity' => 1]);
         $response = $cartController->addItem($request);
 
-        // Remove from wishlist if added to cart successfully
         $responseData = json_decode($response->getContent(), true);
         if ($responseData['success'] ?? false) {
             $wishlist->delete();

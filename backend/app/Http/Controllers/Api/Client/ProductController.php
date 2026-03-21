@@ -10,9 +10,7 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    /**
-     * List products with filters
-     */
+    
     public function index(Request $request): JsonResponse
     {
         try {
@@ -20,7 +18,6 @@ class ProductController extends Controller
                 ->published()
                 ->with(['primaryImage', 'category:id,name,slug']);
 
-        // Search
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -29,11 +26,10 @@ class ProductController extends Controller
             });
         }
 
-        // Filter by category
         if ($categorySlug = $request->input('category')) {
             $category = Category::where('slug', $categorySlug)->first();
             if ($category) {
-                // Include subcategories
+                
                 $categoryIds = [$category->id];
                 $childIds = Category::where('parent_id', $category->id)->pluck('id')->toArray();
                 $categoryIds = array_merge($categoryIds, $childIds);
@@ -41,7 +37,6 @@ class ProductController extends Controller
             }
         }
 
-        // Filter by price range
         if ($minPrice = $request->input('min_price')) {
             $query->where('price', '>=', $minPrice);
         }
@@ -49,12 +44,10 @@ class ProductController extends Controller
             $query->where('price', '<=', $maxPrice);
         }
 
-        // Filter by stock
         if ($request->boolean('in_stock')) {
             $query->inStock();
         }
 
-        // Filter by tags
         if ($tags = $request->input('tags')) {
             $tagArray = is_array($tags) ? $tags : explode(',', $tags);
             $query->whereHas('tags', function ($q) use ($tagArray) {
@@ -62,17 +55,14 @@ class ProductController extends Controller
             });
         }
 
-        // Filter by material
         if ($material = $request->input('material')) {
             $query->where('material', $material);
         }
 
-        // Filter by color
         if ($color = $request->input('color')) {
             $query->where('color', $color);
         }
 
-        // Filter featured/new/bestseller
         if ($request->boolean('featured')) {
             $query->featured();
         }
@@ -83,7 +73,6 @@ class ProductController extends Controller
             $query->where('is_bestseller', true);
         }
 
-        // Sorting
         $sortBy = $request->input('sort_by', 'created_at');
         $sortOrder = $request->input('sort_order', 'desc');
 
@@ -110,11 +99,9 @@ class ProductController extends Controller
                 $query->orderBy($sortBy, $sortOrder);
         }
 
-            // Pagination
             $perPage = min($request->input('per_page', 12), 48);
             $products = $query->paginate($perPage);
 
-            // Transform products
             $products->getCollection()->transform(function ($product) {
                 return $this->formatProduct($product);
             });
@@ -137,9 +124,6 @@ class ProductController extends Controller
         }
     }
 
-    /**
-     * Get single product
-     */
     public function show(string $slug): JsonResponse
     {
         $product = Product::active()
@@ -157,10 +141,8 @@ class ProductController extends Controller
             ])
             ->firstOrFail();
 
-        // Increment view count
         $product->increment('view_count');
 
-        // Get related products
         $relatedProducts = Product::active()
             ->published()
             ->where('id', '!=', $product->id)
@@ -236,9 +218,6 @@ class ProductController extends Controller
         ]);
     }
 
-    /**
-     * Get category with products
-     */
     public function category(string $slug, Request $request): JsonResponse
     {
         $category = Category::visible()
@@ -246,7 +225,6 @@ class ProductController extends Controller
             ->with('children')
             ->firstOrFail();
 
-        // Include subcategories products
         $categoryIds = [$category->id];
         $childIds = $category->children->pluck('id')->toArray();
         $categoryIds = array_merge($categoryIds, $childIds);
@@ -256,7 +234,6 @@ class ProductController extends Controller
             ->whereIn('category_id', $categoryIds)
             ->with(['primaryImage']);
 
-        // Sorting
         $sortBy = $request->input('sort_by', 'newest');
         switch ($sortBy) {
             case 'price_low':
@@ -298,9 +275,6 @@ class ProductController extends Controller
         ]);
     }
 
-    /**
-     * Format product for list view
-     */
     private function formatProduct($product): array
     {
         return [

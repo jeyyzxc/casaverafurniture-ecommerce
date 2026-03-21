@@ -1,23 +1,19 @@
 <template>
   <div class="cart-page">
-    <!-- Hero Section -->
     <HeroSection
       title="Shopping Cart"
       subtitle="Review your curated masterpieces before securing your order."
       size="large"
     />
 
-    <!-- Cart Content -->
     <section class="cart-section">
       <div class="cart-container">
-        <!-- Main Cart Content -->
         <div v-if="!orderSuccess" class="cart-layout">
-          <!-- Cart Items -->
           <div class="cart-items-wrapper rise-up">
             <div class="cart-header">
               <h3 class="cart-title">Selected Items ({{ cartItems.length }})</h3>
-              <button 
-                v-if="cartItems.length > 0" 
+              <button
+                v-if="cartItems.length > 0"
                 class="clear-btn"
                 @click="clearCart"
               >
@@ -25,11 +21,10 @@
               </button>
             </div>
 
-            <!-- Cart Items List -->
             <div v-if="!isEmpty && !isLoading && cartItems.length > 0" class="cart-items">
-              <div 
-                v-for="(item, index) in cartItems" 
-                :key="item.id" 
+              <div
+                v-for="(item, index) in cartItems"
+                :key="item.id"
                 class="cart-item"
                 :class="`rise-up-delay-${Math.min(index + 1, 5)}`"
               >
@@ -63,14 +58,12 @@
                 </div>
               </div>
             </div>
-            
-            <!-- Loading State -->
+
             <div v-if="isLoading" class="cart-loading">
               <div class="spinner"></div>
               <p>Loading cart...</p>
             </div>
 
-            <!-- Empty Cart - Only show when cart is actually empty and not loading -->
             <div v-else-if="isEmpty && !isLoading && cartItems.length === 0" class="empty-cart">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
@@ -83,7 +76,6 @@
             </div>
           </div>
 
-          <!-- Order Summary -->
           <div class="order-summary rise-up-delay-2" v-if="cartItems.length > 0">
             <div class="summary-card">
               <div class="summary-header">
@@ -113,7 +105,7 @@
                   <span class="value gold">₱{{ formatPrice(total) }}</span>
                 </div>
 
-                <button 
+                <button
                   class="btn-checkout"
                   @click="proceedToCheckout"
                   :disabled="isEmpty || isLoading"
@@ -126,7 +118,6 @@
           </div>
         </div>
 
-        <!-- Order Success -->
         <div v-else class="order-success">
           <div class="success-icon">
             <svg viewBox="0 0 24 24" fill="currentColor">
@@ -135,7 +126,7 @@
           </div>
           <h2>Payment Successful!</h2>
           <p>Thank you for your purchase. Your order has been confirmed.</p>
-          
+
           <div class="order-details">
             <div class="detail-row">
               <span>Order Reference:</span>
@@ -162,7 +153,6 @@
       </div>
     </section>
 
-    <!-- Payment Modal -->
   </div>
 </template>
 
@@ -177,13 +167,13 @@ const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 
-// Payment state
+
 const orderSuccess = ref(false)
 const orderRef = ref('')
 const orderDate = ref('')
 const paymentMethod = ref('')
 
-// Computed
+
 const cartItems = computed(() => cartStore.items)
 const subtotal = computed(() => cartStore.subtotal)
 const discount = computed(() => cartStore.discount)
@@ -191,7 +181,7 @@ const total = computed(() => cartStore.total)
 const isEmpty = computed(() => cartStore.isEmpty)
 const isLoading = computed(() => cartStore.isLoading)
 
-// Methods
+
 const formatPrice = (price: number) => {
   return price.toLocaleString('en-PH', { minimumFractionDigits: 2 })
 }
@@ -217,67 +207,67 @@ const clearCart = async () => {
 }
 
 const proceedToCheckout = async () => {
-  // #region agent log
-  
-  // #endregion
-  
-  // Step 1: Validate cart has items
+
+
+
+
+
   if (cartItems.value.length === 0) {
-    // #region agent log
-    
-    // #endregion
+
+
+
     console.warn('Cannot proceed to checkout: cart is empty')
     return
   }
-  
-  // Step 2: Check authentication - if not authenticated, redirect to login
-  // The router guard will handle deeper authentication verification
+
+
+
   if (!authStore.isAuthenticated || !authStore.user) {
-    // #region agent log
-    
-    // #endregion
+
+
+
     sessionStorage.setItem('redirectAfterLogin', '/checkout')
     router.push({ name: 'home', query: { login: 'true' } }).catch(() => {})
     return
   }
-  
-  // Step 3: Ensure cart is fresh before checkout
+
+
   try {
     await cartStore.fetchCart()
-    
-    // Double-check cart still has items after refresh
+
+
     if (cartStore.items.length === 0) {
       console.warn('Cart is empty after refresh, cannot proceed')
       return
     }
   } catch (error) {
     console.error('Failed to refresh cart:', error)
-    // Continue anyway - cart might still be valid
+
   }
-  
-  // Step 4: Navigate directly to checkout
-  // Let the router guard and CheckoutView handle authentication verification
-  // #region agent log
-  
-  // #endregion
-  
+
+
+
+
+
+
+
   try {
     await router.push('/checkout')
-    // #region agent log
-    
-    // #endregion
+
+
+
   } catch (error) {
-    // #region agent log
-    
-    // #endregion
+
+
+
     console.error('Navigation to checkout failed:', error)
-    // If navigation fails, redirect to login as fallback
+
     sessionStorage.setItem('redirectAfterLogin', '/checkout')
     router.push({ name: 'home', query: { login: 'true' } }).catch(() => {})
   }
 }
 
-// Load cart on mount
+
 onMounted(() => {
   cartStore.fetchCart()
 })
@@ -291,7 +281,7 @@ onMounted(() => {
   --white: #ffffff;
   --light: #f8f8f8;
   --gray: #666;
-  
+
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -316,7 +306,6 @@ onMounted(() => {
   align-items: start;
 }
 
-/* Cart Items */
 .cart-items-wrapper {
   background: var(--white);
   border-radius: 20px;
@@ -488,7 +477,6 @@ onMounted(() => {
   color: var(--dark);
 }
 
-/* Empty Cart */
 .empty-cart {
   text-align: center;
   padding: 4rem 2rem;
@@ -529,7 +517,6 @@ onMounted(() => {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
-/* Order Summary */
 .order-summary {
   position: sticky;
   top: 120px;
@@ -655,7 +642,6 @@ onMounted(() => {
   100% { transform: skewX(-20deg) translateX(300%); }
 }
 
-/* Order Success */
 .order-success {
   text-align: center;
   padding: 4rem 2rem;
@@ -735,7 +721,6 @@ onMounted(() => {
   color: var(--gold);
 }
 
-/* Payment Modal */
 .payment-overlay {
   position: fixed;
   inset: 0;
@@ -900,7 +885,6 @@ onMounted(() => {
   background: #c82333;
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
   .cart-layout {
     grid-template-columns: 1fr;

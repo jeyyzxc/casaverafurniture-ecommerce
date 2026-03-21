@@ -14,15 +14,12 @@ use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
-    /**
-     * List all admins
-     */
+    
     public function index(Request $request): JsonResponse
     {
         $query = Admin::with(['role:id,name,slug'])
             ->orderBy('created_at', 'desc');
 
-        // Search
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
@@ -31,21 +28,17 @@ class AdminController extends Controller
             });
         }
 
-        // Filter by role
         if ($roleId = $request->input('role_id')) {
             $query->where('role_id', $roleId);
         }
 
-        // Filter by status
         if ($status = $request->input('status')) {
             $query->where('status', $status);
         }
 
-        // Pagination
         $perPage = min($request->input('per_page', 15), 50);
         $admins = $query->paginate($perPage);
 
-        // Transform admins for frontend
         $admins->getCollection()->transform(function ($admin) {
             return [
                 'id' => $admin->id,
@@ -75,9 +68,6 @@ class AdminController extends Controller
         ]);
     }
 
-    /**
-     * Get single admin
-     */
     public function show(Admin $admin): JsonResponse
     {
         $admin->load(['role:id,name,slug,description']);
@@ -108,12 +98,9 @@ class AdminController extends Controller
         ]);
     }
 
-    /**
-     * Create new admin (Super Admin only)
-     */
     public function store(Request $request): JsonResponse
     {
-        // Check if current user is super-admin
+        
         $currentAdmin = $request->user();
         if (!$currentAdmin || $currentAdmin->role->slug !== 'super-admin') {
             return response()->json([
@@ -132,7 +119,6 @@ class AdminController extends Controller
             'status' => ['sometimes', Rule::in(['active', 'inactive'])],
         ]);
 
-        // Prevent creating another super-admin (optional security measure)
         $role = Role::findOrFail($validated['role_id']);
         if ($role->slug === 'super-admin' && $currentAdmin->id !== 1) {
             return response()->json([
@@ -153,7 +139,6 @@ class AdminController extends Controller
 
         $admin->load(['role:id,name,slug']);
 
-        // Log activity
         ActivityLog::log(
             'create',
             'admins',
@@ -182,14 +167,10 @@ class AdminController extends Controller
         ], 201);
     }
 
-    /**
-     * Update admin (Super Admin only, or self for profile updates)
-     */
     public function update(Request $request, Admin $admin): JsonResponse
     {
         $currentAdmin = $request->user();
 
-        // Check permissions: Super Admin can update anyone, others can only update themselves
         $isSuperAdmin = $currentAdmin->role->slug === 'super-admin';
         $isSelf = $currentAdmin->id === $admin->id;
 
@@ -200,7 +181,6 @@ class AdminController extends Controller
             ], 403);
         }
 
-        // If not super-admin, restrict what can be updated
         $allowedFields = ['first_name', 'last_name', 'phone', 'avatar'];
         if ($isSuperAdmin) {
             $allowedFields = array_merge($allowedFields, ['email', 'role_id', 'status']);
@@ -216,7 +196,6 @@ class AdminController extends Controller
             'status' => $isSuperAdmin ? ['sometimes', Rule::in(['active', 'inactive'])] : ['prohibited'],
         ]);
 
-        // Prevent changing super-admin role (except by first super-admin)
         if (isset($validated['role_id']) && $admin->role->slug === 'super-admin') {
             if ($currentAdmin->id !== 1 || $validated['role_id'] !== $admin->role_id) {
                 return response()->json([
@@ -226,7 +205,6 @@ class AdminController extends Controller
             }
         }
 
-        // Prevent making another admin super-admin (except first super-admin)
         if (isset($validated['role_id'])) {
             $newRole = Role::findOrFail($validated['role_id']);
             if ($newRole->slug === 'super-admin' && $currentAdmin->id !== 1) {
@@ -241,7 +219,6 @@ class AdminController extends Controller
         $admin->update($validated);
         $admin->load(['role:id,name,slug']);
 
-        // Log activity
         $changes = [];
         foreach ($validated as $key => $value) {
             if (isset($oldValues[$key]) && $oldValues[$key] != $value) {
@@ -280,14 +257,10 @@ class AdminController extends Controller
         ]);
     }
 
-    /**
-     * Delete admin (Super Admin only) - Permanent Delete
-     */
     public function destroy(Admin $admin): JsonResponse
     {
         $currentAdmin = request()->user();
 
-        // Only super-admin can delete
         if (!$currentAdmin || $currentAdmin->role->slug !== 'super-admin') {
             return response()->json([
                 'success' => false,
@@ -295,7 +268,6 @@ class AdminController extends Controller
             ], 403);
         }
 
-        // Prevent deleting self
         if ($currentAdmin->id === $admin->id) {
             return response()->json([
                 'success' => false,
@@ -303,7 +275,6 @@ class AdminController extends Controller
             ], 403);
         }
 
-        // Prevent deleting super-admin (except by first super-admin)
         if ($admin->role->slug === 'super-admin' && $currentAdmin->id !== 1) {
             return response()->json([
                 'success' => false,
@@ -317,15 +288,12 @@ class AdminController extends Controller
             $adminName = $admin->full_name;
             $adminEmail = $admin->email;
 
-            // Revoke tokens if using Sanctum
             $admin->tokens()->delete();
 
-            // Permanently delete
             $admin->forceDelete();
 
             DB::commit();
 
-            // Log activity
             ActivityLog::log(
                 'delete',
                 'admins',
@@ -353,9 +321,6 @@ class AdminController extends Controller
         }
     }
 
-    /**
-     * Get available roles (for dropdown)
-     */
     public function roles(): JsonResponse
     {
         $roles = Role::select('id', 'name', 'slug', 'description')

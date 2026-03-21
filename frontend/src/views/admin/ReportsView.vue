@@ -59,13 +59,11 @@
       </div>
     </div>
 
-    <!-- Loading State -->
     <div v-if="isLoading" class="loading-container">
       <div class="spinner"></div>
       <p>Loading report data...</p>
     </div>
 
-    <!-- Error State -->
     <div v-else-if="error" class="error-container">
       <div class="error-icon">⚠️</div>
       <h3>Failed to Load Report</h3>
@@ -73,7 +71,6 @@
       <button class="btn-primary" @click="generateReport">Try Again</button>
     </div>
 
-    <!-- Summary Report -->
     <div v-else-if="reportType === 'summary' && summaryData" class="reports-content">
       <div class="report-summary">
         <div class="summary-card revenue">
@@ -127,7 +124,6 @@
       </div>
     </div>
 
-    <!-- Sales Report -->
     <div v-else-if="reportType === 'sales' && salesData" class="reports-content">
       <div class="report-summary">
         <div class="summary-card">
@@ -173,7 +169,6 @@
       </div>
     </div>
 
-    <!-- Orders Report -->
     <div v-else-if="reportType === 'orders' && ordersData" class="reports-content">
       <div class="report-summary">
         <div class="summary-card">
@@ -231,7 +226,6 @@
       </div>
     </div>
 
-    <!-- Products Report -->
     <div v-else-if="reportType === 'products' && productsData" class="reports-content">
       <div class="table-section">
         <div class="table-card">
@@ -262,7 +256,6 @@
       </div>
     </div>
 
-    <!-- Users Report -->
     <div v-else-if="reportType === 'users' && usersData" class="reports-content">
       <div class="report-summary">
         <div class="summary-card">
@@ -299,7 +292,6 @@
       </div>
     </div>
 
-    <!-- Empty State -->
     <div v-else-if="!isLoading && !error" class="empty-state">
       <div class="empty-icon">📊</div>
       <h3>No Data Available</h3>
@@ -315,7 +307,6 @@ import { useNotification } from '@/composables/useNotification'
 
 const { success: originalSuccess, error: originalError, info: originalInfo } = useNotification()
 
-// Notification deduplication: Track shown notifications to prevent duplicates
 interface NotificationSignature {
   title: string
   message: string
@@ -323,14 +314,12 @@ interface NotificationSignature {
 }
 
 const shownNotifications = ref<Map<string, NotificationSignature>>(new Map())
-const NOTIFICATION_COOLDOWN = 5000 // 5 seconds - don't show same notification again within this time
+const NOTIFICATION_COOLDOWN = 5000
 
-// Create a unique key for a notification
 const getNotificationKey = (title: string, message: string): string => {
   return `${title}:${message}`
 }
 
-// Check if notification was shown recently
 const wasNotificationShownRecently = (title: string, message: string): boolean => {
   const key = getNotificationKey(title, message)
   const existing = shownNotifications.value.get(key)
@@ -341,7 +330,6 @@ const wasNotificationShownRecently = (title: string, message: string): boolean =
   return timeSinceShown < NOTIFICATION_COOLDOWN
 }
 
-// Track a notification as shown
 const trackNotification = (title: string, message: string): void => {
   const key = getNotificationKey(title, message)
   shownNotifications.value.set(key, {
@@ -350,17 +338,15 @@ const trackNotification = (title: string, message: string): void => {
     timestamp: Date.now()
   })
 
-  // Clean up old entries (older than cooldown period)
   setTimeout(() => {
     shownNotifications.value.delete(key)
-  }, NOTIFICATION_COOLDOWN + 1000) // Add 1 second buffer
+  }, NOTIFICATION_COOLDOWN + 1000)
 }
 
-// Wrapper functions that check for duplicates before showing
 const success = (title: string, message?: string) => {
   const msg = message || ''
   if (wasNotificationShownRecently(title, msg)) {
-    return // Don't show duplicate notification
+    return
   }
   trackNotification(title, msg)
   return originalSuccess(title, msg)
@@ -369,7 +355,7 @@ const success = (title: string, message?: string) => {
 const showError = (title: string, message?: string) => {
   const msg = message || ''
   if (wasNotificationShownRecently(title, msg)) {
-    return // Don't show duplicate notification
+    return
   }
   trackNotification(title, msg)
   return originalError(title, msg)
@@ -378,7 +364,7 @@ const showError = (title: string, message?: string) => {
 const info = (title: string, message?: string) => {
   const msg = message || ''
   if (wasNotificationShownRecently(title, msg)) {
-    return // Don't show duplicate notification
+    return
   }
   trackNotification(title, msg)
   return originalInfo(title, msg)
@@ -401,11 +387,9 @@ const hasData = computed(() => {
   return summaryData.value || salesData.value || ordersData.value || productsData.value || usersData.value
 })
 
-// Initialize date range (current month)
 const initializeDates = () => {
   const now = new Date()
   const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
-  // Use local date strings to avoid timezone shift issues with toISOString()
   const formatDateForInput = (date: Date) => {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -454,7 +438,6 @@ const getBarHeight = (value: number, max: number): number => {
 }
 
 const onReportTypeChange = () => {
-  // Clear previous data when changing report type
   summaryData.value = null
   salesData.value = null
   ordersData.value = null
@@ -535,7 +518,6 @@ const generateReport = async () => {
         throw new Error(response.data.message || 'Failed to load users report')
       }
     } else {
-      // Summary
       reportName = 'Summary Report'
       const response = await reportsApi.summary(params)
       if (response.data.success) {
@@ -567,7 +549,6 @@ const resetFilters = () => {
   info('Filters Reset', 'All filters have been reset to default values.')
 }
 
-// Export report to CSV
 const exportToCSV = (data: any[], filename: string) => {
   try {
     if (!data || data.length === 0) {
@@ -575,16 +556,13 @@ const exportToCSV = (data: any[], filename: string) => {
       return
     }
 
-    // Get headers from first object
     const headers = Object.keys(data[0])
 
-    // Create CSV content
     const csvContent = [
       headers.join(','),
       ...data.map(row =>
         headers.map(header => {
           const value = row[header]
-          // Handle values with commas, quotes, or newlines
           if (value === null || value === undefined) return ''
           const stringValue = String(value).replace(/"/g, '""')
           return `"${stringValue}"`
@@ -592,7 +570,6 @@ const exportToCSV = (data: any[], filename: string) => {
       )
     ].join('\n')
 
-    // Create blob and download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
@@ -623,7 +600,6 @@ const exportReport = () => {
     let filename = ''
 
     if (reportType.value === 'summary' && summaryData.value) {
-      // Export summary as key-value pairs
       exportData = [
         { Metric: 'Total Revenue', Value: `₱${formatPrice(summaryData.value.stats.total_revenue)}` },
         { Metric: 'Total Orders', Value: summaryData.value.stats.total_orders },
@@ -692,11 +668,9 @@ const exportReport = () => {
 
 onMounted(async () => {
   initializeDates()
-  // Auto-generate report on mount, but don't show error if it fails
   try {
     await generateReport()
   } catch (err) {
-    // Silently fail on initial load - user can manually generate
     console.log('Initial report generation skipped')
   }
 })

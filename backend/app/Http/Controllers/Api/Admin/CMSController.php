@@ -12,9 +12,7 @@ use Illuminate\Support\Str;
 
 class CMSController extends Controller
 {
-    /**
-     * Get all homepage sections
-     */
+    
     public function getSections(Request $request): JsonResponse
     {
         try {
@@ -41,9 +39,6 @@ class CMSController extends Controller
         }
     }
 
-    /**
-     * Get single homepage section
-     */
     public function getSection(HomepageSection $section): JsonResponse
     {
         try {
@@ -60,9 +55,6 @@ class CMSController extends Controller
         }
     }
 
-    /**
-     * Create or update homepage section
-     */
     public function saveSection(Request $request, ?HomepageSection $section = null): JsonResponse
     {
         try {
@@ -83,10 +75,9 @@ class CMSController extends Controller
             ]);
 
             if (!$section) {
-                // Create new section
-                $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);
                 
-                // Ensure unique slug
+                $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);
+
                 $baseSlug = $validated['slug'];
                 $counter = 1;
                 while (HomepageSection::where('slug', $validated['slug'])->exists()) {
@@ -109,7 +100,7 @@ class CMSController extends Controller
                     'data' => $section,
                 ], 201);
             } else {
-                // Update existing section
+                
                 $oldValues = $section->toArray();
                 $section->update($validated);
                 
@@ -149,9 +140,6 @@ class CMSController extends Controller
         }
     }
 
-    /**
-     * Delete homepage section
-     */
     public function deleteSection(HomepageSection $section): JsonResponse
     {
         try {
@@ -182,9 +170,6 @@ class CMSController extends Controller
         }
     }
 
-    /**
-     * Get all banners
-     */
     public function getBanners(Request $request): JsonResponse
     {
         try {
@@ -217,9 +202,6 @@ class CMSController extends Controller
         }
     }
 
-    /**
-     * Get single banner
-     */
     public function getBanner(Banner $banner): JsonResponse
     {
         try {
@@ -236,9 +218,6 @@ class CMSController extends Controller
         }
     }
 
-    /**
-     * Create or update banner
-     */
     public function saveBanner(Request $request, ?Banner $banner = null): JsonResponse
     {
         try {
@@ -261,7 +240,6 @@ class CMSController extends Controller
                 'ends_at' => ['nullable', 'date', 'after:starts_at'],
             ]);
 
-            // Map link_text to button_text if provided
             if (isset($validated['link_text']) && !isset($validated['button_text'])) {
                 $validated['button_text'] = $validated['link_text'];
             }
@@ -319,9 +297,6 @@ class CMSController extends Controller
         }
     }
 
-    /**
-     * Delete banner
-     */
     public function deleteBanner(Banner $banner): JsonResponse
     {
         try {

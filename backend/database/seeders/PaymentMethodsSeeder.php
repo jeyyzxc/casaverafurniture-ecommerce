@@ -8,9 +8,7 @@ use Carbon\Carbon;
 
 class PaymentMethodsSeeder extends Seeder
 {
-    /**
-     * Seed payment methods.
-     */
+    
     public function run(): void
     {
         $now = Carbon::now();
@@ -116,10 +114,10 @@ class PaymentMethodsSeeder extends Seeder
                 'type' => 'cod',
                 'requires_verification' => false,
                 'requires_proof_of_payment' => false,
-                'fee_fixed' => 100, // COD handling fee
+                'fee_fixed' => 100, 
                 'fee_percentage' => 0,
                 'min_amount' => 1000,
-                'max_amount' => 50000, // COD limit
+                'max_amount' => 50000, 
                 'payment_instructions' => "• Prepare the exact amount for faster delivery\n• Our delivery partner will collect payment upon delivery\n• You will receive a receipt after payment\n• COD fee of ₱100 applies",
                 'account_details' => null,
                 'is_active' => true,
@@ -136,7 +134,7 @@ class PaymentMethodsSeeder extends Seeder
                 'requires_verification' => false,
                 'requires_proof_of_payment' => false,
                 'fee_fixed' => 0,
-                'fee_percentage' => 3.5, // PayPal fee
+                'fee_percentage' => 3.5, 
                 'min_amount' => 500,
                 'max_amount' => 200000,
                 'payment_instructions' => "1. Click 'Pay with PayPal' button\n2. You will be redirected to PayPal login\n3. Log in to your PayPal account\n4. Review and confirm payment\n5. You will be redirected back to complete your order",
@@ -198,7 +196,6 @@ class PaymentMethodsSeeder extends Seeder
             ],
         ];
 
-        // Insert payment methods only if they don't exist
         foreach ($paymentMethods as $method) {
             DB::table('payment_methods')->updateOrInsert(
                 ['code' => $method['code']],

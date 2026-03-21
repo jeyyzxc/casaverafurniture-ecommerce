@@ -7,9 +7,7 @@ use Illuminate\Support\Collection;
 
 class NotificationTransformer
 {
-    /**
-     * Transform user notification to API format
-     */
+    
     public static function transformUserNotification(Model $notification): array
     {
         $data = $notification->data ?? [];
@@ -32,9 +30,6 @@ class NotificationTransformer
         ];
     }
 
-    /**
-     * Transform admin notification to API format
-     */
     public static function transformAdminNotification(Model $notification): array
     {
         return [
@@ -57,9 +52,6 @@ class NotificationTransformer
         ];
     }
 
-    /**
-     * Transform collection of user notifications
-     */
     public static function transformUserNotifications(Collection $notifications): array
     {
         return $notifications->map(function ($notification) {
@@ -67,9 +59,6 @@ class NotificationTransformer
         })->toArray();
     }
 
-    /**
-     * Transform collection of admin notifications
-     */
     public static function transformAdminNotifications(Collection $notifications): array
     {
         return $notifications->map(function ($notification) {

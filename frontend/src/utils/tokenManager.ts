@@ -5,11 +5,11 @@
  */
 import api from '@/services/api'
 
-// Initialize tokens from localStorage to persist across reloads
+
 let clientAccessToken: string | null = localStorage.getItem('client_access_token')
 let adminAccessToken: string | null = localStorage.getItem('admin_access_token')
 
-// Track refresh attempts to prevent loops
+
 let isRefreshingClient = false
 let isRefreshingAdmin = false
 let clientRefreshPromise: Promise<string | null> | null = null

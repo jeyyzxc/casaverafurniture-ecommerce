@@ -14,10 +14,10 @@ export interface Notification {
 }
 
 export const useNotificationStore = defineStore('notifications', () => {
-  // State - Empty initially as requested to replace static contexts with real-time
+  
   const notifications = ref<Notification[]>([])
 
-  // Computed
+  
   const unreadCount = computed(() =>
     notifications.value.filter(n => !n.read).length
   )
@@ -32,7 +32,7 @@ export const useNotificationStore = defineStore('notifications', () => {
       .slice(0, 10)
   )
 
-  // Methods
+  
   const markAsRead = (id: number) => {
     const notification = notifications.value.find(n => n.id === id)
     if (notification) {
@@ -87,7 +87,7 @@ export const useNotificationStore = defineStore('notifications', () => {
     }
   }
 
-  // Real-time stock alert handler
+  
   const handleStockAlert = (event: CustomEvent) => {
     const stockData = event.detail
     if (stockData.type === 'low_stock') {
@@ -109,7 +109,7 @@ export const useNotificationStore = defineStore('notifications', () => {
     }
   }
 
-  // Real-time order handler
+  
   const handleOrderCreated = (event: CustomEvent) => {
     const orderData = event.detail
     addNotification({
@@ -223,7 +223,7 @@ export const useNotificationStore = defineStore('notifications', () => {
     return icons[type] || 'bell'
   }
 
-  // Set up real-time listeners for admin notifications
+  
   if (typeof window !== 'undefined') {
     onMounted(() => {
       window.addEventListener('realtime:admin:stock:changed', handleStockAlert as EventListener)

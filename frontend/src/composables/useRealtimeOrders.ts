@@ -12,15 +12,15 @@ export function useRealtimeOrders() {
 
     switch (event) {
       case 'order.created':
-        // Emit event for order creation
+        
         window.dispatchEvent(new CustomEvent('realtime:order:created', { detail: data }))
-        // If it's the current user's order, also emit user-specific event
+        
         if (authStore.user && data.user_id === authStore.user.id) {
           window.dispatchEvent(new CustomEvent('realtime:order:created:user', { detail: data }))
         }
         break
       case 'order.status.updated':
-        // Only update if it's the current user's order
+        
         if (authStore.user && data.user_id === authStore.user.id) {
           window.dispatchEvent(new CustomEvent('realtime:order:status:updated', { detail: data }))
         }
@@ -31,7 +31,7 @@ export function useRealtimeOrders() {
   const startListening = () => {
     realtimeService.listenToOrders(handleOrderEvent)
     
-    // Also listen to private user channel if authenticated
+    
     if (authStore.user) {
       realtimeService.listenToUser(authStore.user.id, handleOrderEvent)
     }

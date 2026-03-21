@@ -1,13 +1,11 @@
 <template>
   <div class="legal-page">
-    <!-- Hero Section -->
     <HeroSection
       title="Terms of Service"
       subtitle="Please read these terms carefully before utilizing our services."
       size="large"
     />
 
-    <!-- Content Section -->
     <section class="legal-content">
       <div class="legal-container">
         <div class="legal-section" v-for="(section, index) in sections" :key="index" :class="`rise-up-delay-${Math.min(index + 1, 5)}`">
@@ -49,13 +47,12 @@ const sections = ref([
   --gold-light: #d4af37;
   --dark: #1a1a1a;
   --white: #ffffff;
-  
+
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
-/* Content Section */
 .legal-content {
   background: var(--white);
   padding: 5rem 0;

@@ -1,4 +1,4 @@
-// Philippine Provinces and Cities Data
+
 export interface Province {
   name: string
   code: string
@@ -431,21 +431,21 @@ export const philippineProvinces: Province[] = [
   }
 ]
 
-// Helper function to get cities by province
+
 export const getCitiesByProvince = (provinceName: string): string[] => {
   const province = philippineProvinces.find(p => p.name === provinceName)
   return province ? province.cities : []
 }
 
-// Helper function to get all province names
+
 export const getProvinceNames = (): string[] => {
   return philippineProvinces.map(p => p.name)
 }
 
-// Postal code mapping by province and city
-// Format: 'Province|City' => 'PostalCode'
+
+
 export const postalCodeMap: Record<string, string> = {
-  // Metro Manila
+  
   'Metro Manila|Manila': '1000',
   'Metro Manila|Quezon City': '1100',
   'Metro Manila|Caloocan': '1400',
@@ -464,7 +464,7 @@ export const postalCodeMap: Record<string, string> = {
   'Metro Manila|Taguig': '1630',
   'Metro Manila|Valenzuela': '1440',
   
-  // Cavite (Calabarzon)
+  
   'Cavite|Bacoor': '4102',
   'Cavite|Imus': '4103',
   'Cavite|Dasmariñas': '4114',
@@ -488,7 +488,7 @@ export const postalCodeMap: Record<string, string> = {
   'Cavite|Naic': '4110',
   'Cavite|Noveleta': '4105',
   
-  // Laguna (Calabarzon)
+  
   'Laguna|Calamba': '4027',
   'Laguna|San Pedro': '4023',
   'Laguna|Santa Rosa': '4026',
@@ -520,7 +520,7 @@ export const postalCodeMap: Record<string, string> = {
   'Laguna|Siniloan': '4019',
   'Laguna|Victoria': '4011',
   
-  // Batangas (Calabarzon)
+  
   'Batangas|Batangas City': '4200',
   'Batangas|Lipa': '4217',
   'Batangas|Tanauan': '4232',
@@ -556,7 +556,7 @@ export const postalCodeMap: Record<string, string> = {
   'Batangas|Tingloy': '4203',
   'Batangas|Tuy': '4214',
   
-  // Rizal (Calabarzon)
+  
   'Rizal|Antipolo': '1870',
   'Rizal|Taytay': '1920',
   'Rizal|Cainta': '1900',
@@ -572,7 +572,7 @@ export const postalCodeMap: Record<string, string> = {
   'Rizal|Tanay': '1980',
   'Rizal|Teresa': '1880',
   
-  // Bulacan (Central Luzon)
+  
   'Bulacan|Malolos': '3000',
   'Bulacan|San Jose del Monte': '3023',
   'Bulacan|Meycauayan': '3020',
@@ -598,7 +598,7 @@ export const postalCodeMap: Record<string, string> = {
   'Bulacan|Santa Maria': '3022',
   'Bulacan|Angat': '3012',
   
-  // Pampanga (Central Luzon)
+  
   'Pampanga|San Fernando': '2000',
   'Pampanga|Angeles': '2009',
   'Pampanga|Mabalacat': '2010',
@@ -622,7 +622,7 @@ export const postalCodeMap: Record<string, string> = {
   'Pampanga|Santo Tomas': '2020',
   'Pampanga|Sasmuan': '2004',
   
-  // Cebu (Central Visayas)
+  
   'Cebu|Cebu City': '6000',
   'Cebu|Lapu-Lapu': '6015',
   'Cebu|Mandaue': '6014',
@@ -677,7 +677,7 @@ export const postalCodeMap: Record<string, string> = {
   'Cebu|Tuburan': '6043',
   'Cebu|Tudela': '6051',
   
-  // Davao del Sur (Davao Region)
+  
   'Davao del Sur|Davao City': '8000',
   'Davao del Sur|Digos': '8002',
   'Davao del Sur|Bansalan': '8005',
@@ -695,7 +695,7 @@ export const postalCodeMap: Record<string, string> = {
   'Davao del Sur|Sarangani': '8015',
   'Davao del Sur|Sulop': '8009',
   
-  // Default postal codes for common provinces (fallback)
+  
   'Quezon|Lucena': '4301',
   'Quezon|Tayabas': '4327',
   'Quezon|Sariaya': '4322',
@@ -704,7 +704,7 @@ export const postalCodeMap: Record<string, string> = {
   'Quezon|San Pablo': '4000',
 }
 
-// Helper function to get postal code by province and city
+
 export const getPostalCode = (province: string, city: string): string | null => {
   if (!province || !city) return null
   const key = `${province}|${city}`

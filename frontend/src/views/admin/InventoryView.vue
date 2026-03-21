@@ -260,13 +260,13 @@ const isSaving = ref(false)
 const error = ref<string | null>(null)
 const { startListening, stopListening } = useRealtimeProducts()
 
-// Stock History Modal
+
 const showHistoryModal = ref(false)
 const historyProductId = ref<number | null>(null)
 const stockHistory = ref<any[]>([])
 const isLoadingHistory = ref(false)
 
-// Load inventory from products API
+
 const loadInventory = async () => {
   isLoading.value = true
   error.value = null
@@ -285,25 +285,25 @@ const loadInventory = async () => {
 
     if (response.data.success) {
       const data = response.data.data
-      // Handle both paginated and direct array responses
+      
       const productsData = data.data || data || []
 
       inventory.value = productsData.map((p: any) => {
-        // Handle image path - check multiple possible locations
+        
         let imagePath = '/images/products/placeholder.png'
 
-        // Priority order for image discovery:
-        // 1. primary_image.image_url (from backend formatProduct)
-        // 2. p.image (direct image URL from client API)
-        // 3. p.primary_image.image_path (original backend structure)
-        // 4. p.images[0].image_url or image_path
+        
+        
+        
+        
+        
 
         if (p.primary_image?.image_url) {
           imagePath = p.primary_image.image_url
         } else if (p.image) {
           imagePath = p.image
         } else if (p.primary_image?.image_path) {
-          // If it's a relative path, we might need to fix it, but usually the API returns full URLs for image or image_url
+          
           imagePath = p.primary_image.image_path
         } else if (p.images && Array.isArray(p.images) && p.images.length > 0) {
           imagePath = p.images[0].image_url || p.images[0].image_path || imagePath
@@ -311,11 +311,11 @@ const loadInventory = async () => {
           imagePath = p.image_path
         }
 
-        // Ensure imagePath is a proper URL if it's a relative path from storage
+        
         if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('/images') && !imagePath.startsWith('blob:')) {
-          // If it looks like a storage path (e.g. "products/abc.jpg"), it might need a prefix
-          // But usually the backend should provide the full URL.
-          // If it's just a path, we'll try to let the browser handle it or use the placeholder
+          
+          
+          
         }
 
         return {
@@ -346,7 +346,7 @@ const lowStockItems = computed(() =>
   inventory.value.filter(item => item.stock <= item.lowStockThreshold)
 )
 
-// Inventory is already filtered by API, so we use it directly
+
 const filteredInventory = computed(() => inventory.value)
 
 const getStockStatus = (item: InventoryItem) => {
@@ -396,9 +396,9 @@ const adjustStock = (item: InventoryItem) => {
 }
 
 const closeAdjustModal = (force = false) => {
-  // Allow closing if force is true (e.g., after successful save)
+  
   if (!force && isSaving.value) {
-    // Don't close if currently saving (unless forced)
+    
     return
   }
   showAdjustModal.value = false
@@ -410,7 +410,7 @@ const closeAdjustModal = (force = false) => {
 const saveAdjustment = async () => {
   if (!adjustingItem.value) return
 
-  // Validation
+  
   if (adjustmentForm.value.quantity <= 0) {
     showError('Invalid Quantity', 'Quantity must be greater than 0.')
     return
@@ -436,23 +436,23 @@ const saveAdjustment = async () => {
       const newQty = response.data.data.new_quantity
       const productName = adjustingItem.value.name
 
-      // Update the item in the inventory list immediately
+      
       const item = inventory.value.find(i => i.id === adjustingItem.value.id)
       if (item) {
         item.stock = newQty
         item.lastUpdated = new Date()
       }
 
-      // Close modal first
+      
       closeAdjustModal(true)
 
-      // Show success notification
+      
       success(
         'Stock Adjusted Successfully',
         `Stock for "${productName}" has been updated from ${oldQty} to ${newQty}.`
       )
 
-      // Reload inventory to ensure consistency
+      
       await loadInventory()
     } else {
       throw new Error(response.data.message || 'Failed to adjust stock')
@@ -486,13 +486,13 @@ const loadStockHistory = async (productId: number) => {
   try {
     const response = await productsApi.getStockHistory(productId, { per_page: 50 })
     if (response.data.success) {
-      // Handle both paginated and direct array responses
+      
       const data = response.data.data
       if (data.data && Array.isArray(data.data)) {
-        // Paginated response
+        
         stockHistory.value = data.data
       } else if (Array.isArray(data)) {
-        // Direct array response
+        
         stockHistory.value = data
       } else {
         stockHistory.value = []
@@ -519,7 +519,7 @@ const closeHistoryModal = () => {
   document.body.style.overflow = ''
 }
 
-// Real-time event handlers
+
 const handleStockChanged = (event: Event) => {
   const customEvent = event as CustomEvent
   const data = customEvent.detail
@@ -530,13 +530,13 @@ const handleStockChanged = (event: Event) => {
   loadInventory()
 }
 
-// Watch for filter changes and search changes
+
 watch([searchQuery, stockFilter], () => {
   loadInventory()
 })
 
 onMounted(async () => {
-  // Check for search query in URL
+  
   const urlParams = new URLSearchParams(window.location.search)
   const searchParam = urlParams.get('search')
   if (searchParam) {
@@ -545,7 +545,7 @@ onMounted(async () => {
 
   await loadInventory()
 
-  // Set up real-time listeners
+  
   startListening()
   window.addEventListener('realtime:stock:changed', handleStockChanged)
 })

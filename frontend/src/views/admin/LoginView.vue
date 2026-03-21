@@ -10,24 +10,26 @@
         <form @submit.prevent="handleLogin" class="login-form">
           <div class="form-group">
             <label class="form-label">Email Address</label>
-            <input 
-              type="email" 
-              v-model="form.email" 
+            <input
+              type="email"
+              v-model="form.email"
               class="form-input"
               placeholder="admin@casavera.com"
               required
+              @input="handleEmailInput"
             >
           </div>
 
           <div class="form-group">
             <label class="form-label">Password</label>
             <div class="input-wrapper">
-              <input 
-                :type="showPassword ? 'text' : 'password'" 
+              <input
+                :type="showPassword ? 'text' : 'password'"
                 v-model="form.password"
                 class="form-input"
                 placeholder="Enter your password"
                 required
+                @input="handlePasswordInput"
               >
               <button type="button" class="password-toggle" @click="showPassword = !showPassword">
                 <svg v-if="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -91,20 +93,38 @@ const error = ref('')
 
 const currentYear = computed(() => new Date().getFullYear())
 
+const handleEmailInput = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  form.value.email = input.value.replace(/\s/g, '')
+}
+
+const handlePasswordInput = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  form.value.password = input.value.replace(/\s/g, '')
+}
+
 const handleLogin = async () => {
   error.value = ''
   isLoading.value = true
 
   try {
     const result = await adminAuthStore.login(form.value.email, form.value.password, rememberMe.value)
-    
+
     if (result.success) {
       router.push('/admin/dashboard')
     } else {
-      error.value = result.message
+      if (result.message && result.message.includes('401')) {
+        error.value = 'Invalid email or password'
+      } else {
+        error.value = result.message
+      }
     }
-  } catch (err) {
-    error.value = 'An error occurred. Please try again.'
+  } catch (err: any) {
+    if (err.response && err.response.status === 401) {
+      error.value = 'Invalid email or password'
+    } else {
+      error.value = 'An error occurred. Please try again.'
+    }
     console.error('Login error:', err)
   } finally {
     isLoading.value = false

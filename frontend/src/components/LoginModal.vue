@@ -16,9 +16,9 @@
         <form @submit.prevent="handleLogin" class="modal-form" novalidate>
           <div class="form-group">
             <div class="input-wrapper" :class="{ focused: emailFocused || form.email, error: errors.email }">
-              <input 
-                type="email" 
-                v-model="form.email" 
+              <input
+                type="email"
+                v-model="form.email"
                 @input="handleEmailInput"
                 @keydown="preventSpaceInEmail"
                 @focus="emailFocused = true"
@@ -32,8 +32,8 @@
 
           <div class="form-group">
             <div class="input-wrapper" :class="{ focused: passwordFocused || form.password, error: errors.password }">
-              <input 
-                :type="showPassword ? 'text' : 'password'" 
+              <input
+                :type="showPassword ? 'text' : 'password'"
                 v-model="form.password"
                 @input="handlePasswordInput"
                 @focus="passwordFocused = true"
@@ -131,7 +131,7 @@ const isLoading = ref(false)
 
 const togglePassword = () => {
   showPassword.value = !showPassword.value
-  // Auto-hide after 1 second
+
   if (showPassword.value) {
     setTimeout(() => {
       showPassword.value = false
@@ -139,70 +139,70 @@ const togglePassword = () => {
   }
 }
 
-// Strictly prevent spaces in email field
+
 const preventSpaceInEmail = (event: KeyboardEvent) => {
-  // Prevent space key from being entered at all in email field
+
   if (event.key === ' ') {
     event.preventDefault()
   }
 }
 
-// Handle email input - remove any spaces that might have been pasted
+
 const handleEmailInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   let value = target.value
-  
-  // Remove all spaces from email (in case user pastes text with spaces)
+
+
   value = value.replace(/\s/g, '')
-  
+
   form.email = value
   errors.email = ''
 }
 
-// Password: allow spaces but prevent leading spaces
+
 const handlePasswordInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   let value = target.value
-  
-  // Remove leading spaces only
+
+
   if (value.startsWith(' ')) {
     value = value.trimStart()
   }
-  
-  // Allow single spaces in password, but prevent consecutive spaces
+
+
   value = value.replace(/\s{2,}/g, ' ')
-  
+
   form.password = value
 }
 
 const validateEmail = () => {
   errors.email = ''
-  
-  // Check if field is empty
+
+
   if (!form.email.trim()) {
     errors.email = 'Email Address is required'
     return false
   }
-  
-  // Check if email contains any spaces (strictly not allowed)
+
+
   if (/\s/.test(form.email)) {
     errors.email = 'Email Address cannot contain spaces'
     return false
   }
-  
-  // Check if starts with a letter (not a space or number)
+
+
   if (form.email.trim().length > 0 && !/^[a-zA-Z]/.test(form.email.trim())) {
     errors.email = 'Email Address must start with a letter'
     return false
   }
-  
-  // Email format validation
+
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(form.email.trim())) {
     errors.email = 'Please enter a valid email address'
     return false
   }
-  
+
   return true
 }
 
@@ -225,12 +225,12 @@ const validateForm = () => {
   errors.password = ''
   errors.general = ''
 
-  // Validate email
+
   if (!validateEmail()) {
     isValid = false
   }
 
-  // Validate password
+
   if (!validatePassword()) {
     isValid = false
   }
@@ -239,16 +239,16 @@ const validateForm = () => {
 }
 
 const handleLogin = async () => {
-  // Immediately validate all fields and show ALL errors at once
+
   errors.general = ''
   let isValid = true
-  
-  // Validate email - set error immediately if empty
+
+
   if (!form.email || !form.email.trim()) {
     errors.email = 'Email Address is required'
     isValid = false
   } else {
-    // Field has content, validate it
+
     if (/\s/.test(form.email)) {
       errors.email = 'Email Address cannot contain spaces'
       isValid = false
@@ -265,13 +265,13 @@ const handleLogin = async () => {
       }
     }
   }
-  
-  // Validate password - set error immediately if empty
+
+
   if (!form.password || form.password.trim() === '') {
     errors.password = 'Password is required'
     isValid = false
   } else {
-    // Field has content, validate it
+
     if (form.password.trim().startsWith(' ')) {
       errors.password = 'Password cannot start with a space'
       isValid = false
@@ -279,8 +279,8 @@ const handleLogin = async () => {
       errors.password = ''
     }
   }
-  
-  // If validation fails, prevent submission (all errors are already set above)
+
+
   if (!isValid) {
     return
   }
@@ -298,7 +298,7 @@ const handleLogin = async () => {
       })
       close()
     } else {
-      // Handle specific error messages
+
       if (result.message?.toLowerCase().includes('password')) {
         errors.password = result.message || 'Incorrect password'
       } else if (result.message?.toLowerCase().includes('email') || result.message?.toLowerCase().includes('invalid')) {
@@ -335,24 +335,19 @@ const switchToSignup = () => {
   emit('switch-to-signup')
 }
 
-// Handle Google OAuth login
+
 const handleGoogleLogin = () => {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
-  // Redirect to backend Google OAuth endpoint
   window.location.href = `${apiUrl}/auth/google?action=login`
 }
 
-// Lock body scroll when modal is open
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
-    // Lock body scroll
     document.body.style.overflow = 'hidden'
-    document.body.style.paddingRight = '0px' // Prevent layout shift
+    document.body.style.paddingRight = '0px'
   } else {
-    // Unlock body scroll
     document.body.style.overflow = ''
     document.body.style.paddingRight = ''
-    // Reset form
     form.email = ''
     form.password = ''
     errors.email = ''
@@ -361,7 +356,7 @@ watch(() => props.isOpen, (newVal) => {
   }
 })
 
-// Cleanup on unmount
+
 onUnmounted(() => {
   document.body.style.overflow = ''
   document.body.style.paddingRight = ''

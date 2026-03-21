@@ -12,9 +12,7 @@ use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
 {
-    /**
-     * List all payments
-     */
+    
     public function index(Request $request): JsonResponse
     {
         $query = Payment::with([
@@ -23,7 +21,6 @@ class PaymentController extends Controller
             'paymentMethod:id,name,code',
         ]);
 
-        // Search
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('transaction_id', 'like', "%{$search}%")
@@ -35,17 +32,14 @@ class PaymentController extends Controller
             });
         }
 
-        // Filter by status
         if ($status = $request->input('status')) {
             $query->where('status', $status);
         }
 
-        // Filter by payment method
         if ($methodId = $request->input('payment_method_id')) {
             $query->where('payment_method_id', $methodId);
         }
 
-        // Filter by payment category
         if ($category = $request->input('payment_category')) {
             $query->whereHas('paymentMethod', function ($pq) use ($category) {
                 if ($category === 'online_payment') {
@@ -59,7 +53,6 @@ class PaymentController extends Controller
             });
         }
 
-        // Filter by date range
         if ($startDate = $request->input('start_date')) {
             $query->whereDate('created_at', '>=', $startDate);
         }
@@ -67,12 +60,10 @@ class PaymentController extends Controller
             $query->whereDate('created_at', '<=', $endDate);
         }
 
-        // Sorting
         $sortBy = $request->input('sort_by', 'created_at');
         $sortOrder = $request->input('sort_order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
-        // Pagination
         $perPage = $request->input('per_page', 15);
         $payments = $query->paginate($perPage);
 
@@ -82,9 +73,6 @@ class PaymentController extends Controller
         ]);
     }
 
-    /**
-     * Get single payment
-     */
     public function show(Payment $payment): JsonResponse
     {
         $payment->load([
@@ -101,9 +89,6 @@ class PaymentController extends Controller
         ]);
     }
 
-    /**
-     * Verify payment
-     */
     public function verify(Request $request, Payment $payment): JsonResponse
     {
         if (!in_array($payment->status, ['pending', 'awaiting_verification'])) {
@@ -126,7 +111,6 @@ class PaymentController extends Controller
             'verification_notes' => $validated['notes'] ?? null,
         ]);
 
-        // Create status history
         PaymentStatusHistory::create([
             'payment_id' => $payment->id,
             'status' => 'confirmed',
@@ -136,7 +120,6 @@ class PaymentController extends Controller
             'admin_id' => auth()->id(),
         ]);
 
-        // Update order payment status
         $payment->order->update([
             'payment_status' => 'paid',
             'paid_at' => now(),
@@ -151,9 +134,6 @@ class PaymentController extends Controller
         ]);
     }
 
-    /**
-     * Reject payment
-     */
     public function reject(Request $request, Payment $payment): JsonResponse
     {
         if (!in_array($payment->status, ['pending', 'awaiting_verification'])) {
@@ -175,7 +155,6 @@ class PaymentController extends Controller
             'failure_code' => 'admin_rejected',
         ]);
 
-        // Create status history
         PaymentStatusHistory::create([
             'payment_id' => $payment->id,
             'status' => 'failed',
@@ -194,9 +173,6 @@ class PaymentController extends Controller
         ]);
     }
 
-    /**
-     * Get payment statistics
-     */
     public function statistics(): JsonResponse
     {
         $stats = [

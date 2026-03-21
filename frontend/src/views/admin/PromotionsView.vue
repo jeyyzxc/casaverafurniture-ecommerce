@@ -16,13 +16,11 @@
       </div>
     </div>
 
-    <!-- Loading State -->
     <div v-if="isLoading" class="loading-container">
       <div class="spinner"></div>
       <p>Loading promotions...</p>
     </div>
 
-    <!-- Error State -->
     <div v-else-if="error" class="error-container">
       <div class="error-icon">⚠️</div>
       <h3>Failed to Load Promotions</h3>
@@ -30,7 +28,6 @@
       <button class="btn-primary" @click="loadPromotions">Try Again</button>
     </div>
 
-    <!-- Promotions Grid -->
     <div v-else-if="!isLoading && !error" class="promotions-grid">
       <div v-if="promotions.length === 0" class="empty-state">
         <div class="empty-icon">🎁</div>
@@ -82,7 +79,6 @@
       </template>
     </div>
 
-    <!-- Add/Edit Promotion Modal -->
     <Teleport to="body">
       <div v-if="showAddModal || editingPromo" class="modal-overlay" @click="closeModal">
         <div class="modal-container" @click.stop>
@@ -193,11 +189,10 @@
       </div>
     </Teleport>
 
-    <!-- Delete Confirmation Modal -->
     <Teleport to="body">
-      <div 
-        v-if="showDeleteModal" 
-        class="modal-overlay delete-modal-overlay" 
+      <div
+        v-if="showDeleteModal"
+        class="modal-overlay delete-modal-overlay"
         @click.self="closeDeleteModal"
         @keydown.esc="closeDeleteModal"
       >
@@ -222,10 +217,10 @@
               This action cannot be undone. All promotion data will be permanently removed.
             </p>
             <div class="delete-actions">
-              <button 
-                type="button" 
-                class="delete-btn-cancel" 
-                @click.stop="closeDeleteModal" 
+              <button
+                type="button"
+                class="delete-btn-cancel"
+                @click.stop="closeDeleteModal"
                 :disabled="isDeleting"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -234,10 +229,10 @@
                 </svg>
                 Cancel
               </button>
-              <button 
-                type="button" 
-                class="delete-btn-confirm" 
-                @click.stop="confirmDelete" 
+              <button
+                type="button"
+                class="delete-btn-confirm"
+                @click.stop="confirmDelete"
                 :disabled="isDeleting"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -331,7 +326,6 @@ const formatDate = (dateString: string): string => {
 const loadPromotions = async () => {
   isLoading.value = true
   error.value = null
-  // Close any open modals
   showAddModal.value = false
   showDeleteModal.value = false
   editingPromo.value = null
@@ -341,13 +335,10 @@ const loadPromotions = async () => {
   try {
     const response = await promotionsApi.list({ per_page: 100 })
     if (response.data.success) {
-      // Handle both paginated and non-paginated responses
       const data = response.data.data
       if (data.data && Array.isArray(data.data)) {
-        // Paginated response
         promotions.value = data.data
       } else if (Array.isArray(data)) {
-        // Direct array response
         promotions.value = data
       } else {
         promotions.value = []
@@ -358,7 +349,6 @@ const loadPromotions = async () => {
   } catch (err: any) {
     console.error('Failed to load promotions:', err)
     error.value = err.response?.data?.message || err.message || 'Failed to load promotions. Please try again.'
-    // Don't show error notification on initial load to avoid spam
     if (promotions.value.length > 0) {
       showError('Failed to Load', error.value)
     }
@@ -369,7 +359,6 @@ const loadPromotions = async () => {
 
 const openAddModal = () => {
   editingPromo.value = null
-  // Set default start date to current date/time
   const now = new Date()
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
@@ -377,7 +366,7 @@ const openAddModal = () => {
   const hours = String(now.getHours()).padStart(2, '0')
   const minutes = String(now.getMinutes()).padStart(2, '0')
   const defaultStartDate = `${year}-${month}-${day}T${hours}:${minutes}`
-  
+
   promoForm.value = {
     name: '',
     code: '',
@@ -397,13 +386,11 @@ const openAddModal = () => {
     autoApply: false,
   }
   showAddModal.value = true
-  // Prevent body scroll when modal is open
   document.body.style.overflow = 'hidden'
 }
 
 const editPromo = (promo: Promotion) => {
   editingPromo.value = promo
-  // Format dates for datetime-local input
   const formatDateForInput = (dateString: string | undefined): string => {
     if (!dateString) return ''
     const date = new Date(dateString)
@@ -414,7 +401,7 @@ const editPromo = (promo: Promotion) => {
     const minutes = String(date.getMinutes()).padStart(2, '0')
     return `${year}-${month}-${day}T${hours}:${minutes}`
   }
-  
+
   promoForm.value = {
     name: promo.name,
     code: promo.code,
@@ -434,31 +421,26 @@ const editPromo = (promo: Promotion) => {
     autoApply: promo.autoApply || false,
   }
   showAddModal.value = true
-  // Prevent body scroll when modal is open
   document.body.style.overflow = 'hidden'
 }
 
 const closeModal = () => {
   showAddModal.value = false
   editingPromo.value = null
-  // Restore body scroll
   document.body.style.overflow = ''
 }
 
 const savePromotion = async () => {
-  // Validate required fields
   if (!promoForm.value.name || !promoForm.value.code || !promoForm.value.discountType || !promoForm.value.startDate) {
     showError('Validation Failed', 'Please fill in all required fields (Name, Code, Discount Type, and Start Date).')
     return
   }
 
-  // Validate discount value
   if (!promoForm.value.value || promoForm.value.value <= 0) {
     showError('Validation Failed', 'Discount value must be greater than 0.')
     return
   }
 
-  // Validate code format (alphanumeric and uppercase)
   const codeRegex = /^[A-Z0-9]+$/
   if (!codeRegex.test(promoForm.value.code.toUpperCase())) {
     showError('Validation Failed', 'Promotion code must contain only letters and numbers.')
@@ -468,7 +450,6 @@ const savePromotion = async () => {
   isSaving.value = true
 
   try {
-    // Convert datetime-local to ISO format for backend
     const startDate = promoForm.value.startDate ? new Date(promoForm.value.startDate).toISOString() : null
     const endDate = promoForm.value.endDate ? new Date(promoForm.value.endDate).toISOString() : null
 
@@ -534,9 +515,8 @@ const savePromotion = async () => {
 }
 
 const deletePromo = (id: number) => {
-  // Prevent opening delete modal if already deleting
   if (isDeleting.value) return
-  
+
   const promo = promotions.value.find(p => p.id === id)
   if (promo) {
     deletingPromo.value = promo
@@ -574,7 +554,6 @@ const confirmDelete = async () => {
 
 const closeDeleteModal = () => {
   if (isDeleting.value) {
-    // Prevent closing while deleting
     return
   }
   showDeleteModal.value = false
@@ -583,16 +562,13 @@ const closeDeleteModal = () => {
 }
 
 const togglePromo = async (promo: Promotion) => {
-  // Store original state
   const originalState = promo.isActive
-  
-  // Optimistically update UI
+
   promo.isActive = !promo.isActive
-  
+
   try {
     const response = await promotionsApi.toggle(promo.id)
     if (response.data.success) {
-      // Update local state with server response
       const index = promotions.value.findIndex(p => p.id === promo.id)
       if (index !== -1) {
         promotions.value[index] = response.data.data
@@ -602,19 +578,16 @@ const togglePromo = async (promo: Promotion) => {
         `Promotion "${promo.name}" has been ${response.data.data.isActive ? 'activated' : 'deactivated'}.`
       )
     } else {
-      // Revert on failure
       promo.isActive = originalState
       throw new Error(response.data.message || 'Failed to toggle promotion')
     }
   } catch (err: any) {
     console.error('Failed to toggle promotion:', err)
-    // Revert toggle on error
     promo.isActive = originalState
     showError('Failed to Update', err.response?.data?.message || err.message || 'Failed to update promotion status. Please try again.')
   }
 }
 
-// Cleanup function
 const cleanup = () => {
   showAddModal.value = false
   showDeleteModal.value = false
@@ -624,15 +597,12 @@ const cleanup = () => {
 }
 
 onMounted(() => {
-  // Ensure all modals are closed on mount
   cleanup()
-  
-  // Load promotions
+
   loadPromotions()
 })
 
 onBeforeUnmount(() => {
-  // Cleanup on component unmount
   cleanup()
 })
 </script>

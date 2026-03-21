@@ -16,19 +16,17 @@ class CartUpdated implements ShouldBroadcast
 
     public function __construct(
         public Cart $cart,
-        public string $action = 'update' // 'add', 'update', 'remove', 'clear'
+        public string $action = 'update' 
     ) {}
 
     public function broadcastOn(): array
     {
         $channels = [new Channel('cart')];
 
-        // If cart has a user, also broadcast to private user channel
         if ($this->cart->user_id) {
             $channels[] = new PrivateChannel('user.' . $this->cart->user_id);
         }
 
-        // If cart has a session ID, broadcast to session channel
         if ($this->cart->session_id) {
             $channels[] = new Channel('cart.session.' . $this->cart->session_id);
         }

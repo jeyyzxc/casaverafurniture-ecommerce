@@ -44,7 +44,6 @@ class ActivityLog extends Model
         return $this->morphTo();
     }
 
-    // Helper to create log entry
     public static function log(
         string $action,
         string $module,
@@ -57,7 +56,6 @@ class ActivityLog extends Model
         $causer = auth('admin')->user() ?? auth()->user();
         $request = request();
 
-        // Get subject name if available
         $subjectName = null;
         if ($subject) {
             if (method_exists($subject, 'name')) {

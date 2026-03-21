@@ -12,15 +12,12 @@ use Illuminate\Support\Facades\Auth;
 
 class PromotionController extends Controller
 {
-    /**
-     * Get all promotions
-     */
+    
     public function index(Request $request): JsonResponse
     {
         try {
             $query = Promotion::query();
 
-            // Search
             if ($search = $request->input('search')) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -29,26 +26,21 @@ class PromotionController extends Controller
                 });
             }
 
-            // Filter by status
             if ($request->has('is_active')) {
                 $query->where('is_active', $request->boolean('is_active'));
             }
 
-            // Filter by discount type
             if ($type = $request->input('discount_type')) {
                 $query->where('discount_type', $type);
             }
 
-            // Sorting
             $sortBy = $request->input('sort_by', 'created_at');
             $sortOrder = $request->input('sort_order', 'desc');
             $query->orderBy($sortBy, $sortOrder);
 
-            // Pagination
             $perPage = $request->input('per_page', 15);
             $promotions = $query->paginate($perPage);
 
-            // Transform data for frontend
             $promotions->getCollection()->transform(function ($promotion) {
                 return $this->transformPromotion($promotion);
             });
@@ -72,9 +64,6 @@ class PromotionController extends Controller
         }
     }
 
-    /**
-     * Get single promotion
-     */
     public function show(Promotion $promotion): JsonResponse
     {
         try {
@@ -91,9 +80,6 @@ class PromotionController extends Controller
         }
     }
 
-    /**
-     * Create promotion
-     */
     public function store(Request $request): JsonResponse
     {
         try {
@@ -128,10 +114,8 @@ class PromotionController extends Controller
                 'combinable_with_other_promotions' => ['nullable', 'boolean'],
             ]);
 
-            // Normalize code to uppercase
             $validated['code'] = strtoupper($validated['code']);
 
-            // Set created by
             $validated['created_by_admin_id'] = Auth::id();
 
             $promotion = Promotion::create($validated);
@@ -167,9 +151,6 @@ class PromotionController extends Controller
         }
     }
 
-    /**
-     * Update promotion
-     */
     public function update(Request $request, Promotion $promotion): JsonResponse
     {
         try {
@@ -204,7 +185,6 @@ class PromotionController extends Controller
                 'combinable_with_other_promotions' => ['nullable', 'boolean'],
             ]);
 
-            // Normalize code to uppercase if provided
             if (isset($validated['code'])) {
                 $validated['code'] = strtoupper($validated['code']);
             }
@@ -245,9 +225,6 @@ class PromotionController extends Controller
         }
     }
 
-    /**
-     * Delete promotion
-     */
     public function destroy(Promotion $promotion): JsonResponse
     {
         try {
@@ -279,9 +256,6 @@ class PromotionController extends Controller
         }
     }
 
-    /**
-     * Toggle promotion active status
-     */
     public function toggle(Promotion $promotion): JsonResponse
     {
         try {
@@ -313,9 +287,6 @@ class PromotionController extends Controller
         }
     }
 
-    /**
-     * Transform promotion for frontend
-     */
     private function transformPromotion(Promotion $promotion): array
     {
         $now = now();

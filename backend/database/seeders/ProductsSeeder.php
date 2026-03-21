@@ -9,12 +9,10 @@ use Illuminate\Database\Seeder;
 
 class ProductsSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
+    
     public function run(): void
     {
-        // Get categories
+        
         $sofas = Category::where('slug', 'sofas')->first();
         $chairs = Category::where('slug', 'chairs')->first();
         $tables = Category::where('slug', 'tables')->first();
@@ -23,7 +21,6 @@ class ProductsSeeder extends Seeder
         $lighting = Category::where('slug', 'lighting')->first();
         $decor = Category::where('slug', 'decor')->first();
 
-        // Furniture products
         $products = [
             [
                 'name' => 'Cloud Comfort Sofa',
@@ -305,7 +302,6 @@ class ProductsSeeder extends Seeder
 
             $product = Product::create($productData);
 
-            // Create product image
             if ($image) {
                 ProductImage::create([
                     'product_id' => $product->id,

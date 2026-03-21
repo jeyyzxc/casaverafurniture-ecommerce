@@ -15,12 +15,9 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 
-// Initialize auth stores after pinia is installed
 const authStore = useAuthStore()
 const adminAuthStore = useAdminAuthStore()
 
-// We only fetch on initial load if we're on a non-admin/client-protected route
-// navigation guards will handle fetching on protected routes to avoid double calls
 const isProtectedRoute = router.currentRoute.value.meta?.requiresAuth
 const isAdminPath = window.location.pathname.includes('/admin')
 

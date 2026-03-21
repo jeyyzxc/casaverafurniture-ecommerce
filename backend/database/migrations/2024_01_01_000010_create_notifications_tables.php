@@ -6,27 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     * 
-     * NOTIFICATIONS TABLES
-     * Real-time notifications for admin and clients
-     */
+    
     public function up(): void
     {
-        // User Notifications (for clients)
+        
         Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            
-            // Polymorphic relation (can notify users or admins)
+
             $table->string('notifiable_type');
             $table->unsignedBigInteger('notifiable_id');
-            
-            // Notification content
-            $table->string('type'); // Class name of notification
-            $table->text('data'); // JSON data
-            
-            // Read status
+
+            $table->string('type'); 
+            $table->text('data'); 
+
             $table->timestamp('read_at')->nullable();
             
             $table->timestamps();
@@ -34,30 +26,24 @@ return new class extends Migration
             $table->index(['notifiable_type', 'notifiable_id', 'read_at']);
         });
 
-        // Admin Notifications (specifically for admin panel)
         Schema::create('admin_notifications', function (Blueprint $table) {
             $table->id();
-            
-            // Target admin(s)
-            $table->foreignId('admin_id')->nullable()->constrained()->onDelete('cascade'); // null = all admins
-            
-            // Notification details
+
+            $table->foreignId('admin_id')->nullable()->constrained()->onDelete('cascade'); 
+
             $table->string('title', 255);
             $table->text('message');
-            $table->string('type', 50); // order, payment, stock, user, system
+            $table->string('type', 50); 
             $table->enum('priority', ['low', 'normal', 'high', 'urgent'])->default('normal');
-            
-            // Related entity
-            $table->string('related_type', 100)->nullable(); // order, payment, product, user
+
+            $table->string('related_type', 100)->nullable(); 
             $table->unsignedBigInteger('related_id')->nullable();
-            $table->string('action_url')->nullable(); // Link to relevant page
-            
-            // Status
+            $table->string('action_url')->nullable(); 
+
             $table->boolean('is_read')->default(false);
             $table->timestamp('read_at')->nullable();
             $table->boolean('is_dismissed')->default(false);
-            
-            // Icon/styling
+
             $table->string('icon', 50)->nullable();
             $table->string('color', 20)->nullable();
             
@@ -68,7 +54,6 @@ return new class extends Migration
             $table->index(['priority', 'is_read']);
         });
 
-        // Stock Alerts (low stock notifications)
         Schema::create('stock_alerts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
@@ -76,13 +61,11 @@ return new class extends Migration
             $table->enum('alert_type', ['low_stock', 'out_of_stock', 'back_in_stock'])->default('low_stock');
             $table->unsignedInteger('current_quantity');
             $table->unsignedInteger('threshold_quantity');
-            
-            // Alert status
+
             $table->boolean('is_acknowledged')->default(false);
             $table->foreignId('acknowledged_by_admin_id')->nullable()->constrained('admins')->onDelete('set null');
             $table->timestamp('acknowledged_at')->nullable();
-            
-            // Notification sent
+
             $table->boolean('email_sent')->default(false);
             $table->timestamp('email_sent_at')->nullable();
             
@@ -92,30 +75,24 @@ return new class extends Migration
             $table->index(['is_acknowledged', 'created_at']);
         });
 
-        // Email Queue / Email Logs
         Schema::create('email_logs', function (Blueprint $table) {
             $table->id();
-            
-            // Recipient
+
             $table->string('recipient_email');
             $table->string('recipient_name')->nullable();
-            $table->string('recipient_type', 50)->nullable(); // user, admin, guest
+            $table->string('recipient_type', 50)->nullable(); 
             $table->unsignedBigInteger('recipient_id')->nullable();
-            
-            // Email content
+
             $table->string('subject', 255);
             $table->string('template', 100)->nullable();
             $table->longText('body')->nullable();
             $table->json('template_data')->nullable();
-            
-            // Email type/category
-            $table->string('type', 50); // order_confirmation, shipping, newsletter, etc.
-            
-            // Related entity
+
+            $table->string('type', 50); 
+
             $table->string('related_type', 100)->nullable();
             $table->unsignedBigInteger('related_id')->nullable();
-            
-            // Status
+
             $table->enum('status', ['pending', 'sent', 'failed', 'bounced'])->default('pending');
             $table->timestamp('sent_at')->nullable();
             $table->text('error_message')->nullable();
@@ -129,9 +106,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('email_logs');

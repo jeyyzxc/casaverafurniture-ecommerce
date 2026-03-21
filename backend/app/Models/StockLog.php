@@ -34,17 +34,11 @@ class StockLog extends Model
         ];
     }
 
-    /**
-     * Get the product that owns the stock log
-     */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
-    /**
-     * Get the admin who made the change
-     */
     public function admin(): BelongsTo
     {
         return $this->belongsTo(Admin::class);

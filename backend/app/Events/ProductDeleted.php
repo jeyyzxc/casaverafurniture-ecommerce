@@ -16,7 +16,7 @@ class ProductDeleted implements ShouldBroadcast
         public int $productId,
         public string $productSlug
     ) {
-        //
+        
     }
 
     public function broadcastOn(): array

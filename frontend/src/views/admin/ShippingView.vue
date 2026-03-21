@@ -60,7 +60,6 @@
       </div>
     </div>
 
-    <!-- Add/Edit Modal -->
     <Teleport to="body">
       <div v-if="showAddModal || showEditModal" class="modal-overlay" @click.self="editingZone ? closeEditModal() : closeAddModal()">
         <div class="modal-content" @click.stop>
@@ -169,7 +168,6 @@
       </div>
     </Teleport>
 
-    <!-- Delete Confirmation Modal -->
     <Teleport to="body">
       <div v-if="showDeleteModal" class="modal-overlay delete-modal-overlay" @click.self="closeDeleteModal">
         <div class="modal-container delete-modal">
@@ -186,7 +184,7 @@
             </div>
             <h2 class="delete-title">Delete Shipping Zone</h2>
             <p class="delete-message">
-              Are you sure you want to delete 
+              Are you sure you want to delete
               <strong class="delete-item-name">{{ deletingZone?.name }}</strong>?
             </p>
             <p class="delete-warning">
@@ -245,7 +243,6 @@ const shippingZones = ref<ShippingZone[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
-// Modal States
 const showAddModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteModal = ref(false)
@@ -254,7 +251,6 @@ const deletingZone = ref<ShippingZone | null>(null)
 const isSaving = ref(false)
 const isDeleting = ref(false)
 
-// Form Data
 const zoneForm = ref({
   name: '',
   type: 'national' as 'local' | 'national' | 'international',
@@ -267,13 +263,12 @@ const zoneForm = ref({
   display_order: 0,
 })
 
-// Load shipping zones from API
 const loadShippingZones = async () => {
   isLoading.value = true
   error.value = null
   try {
     const response = await shippingApi.list()
-    
+
     if (response.data.success) {
       shippingZones.value = (response.data.data || []).map((z: any) => ({
         id: z.id,
@@ -323,7 +318,6 @@ const openAddModal = () => {
 }
 
 const closeAddModal = (force = false) => {
-  // Allow closing if force is true (e.g., after successful save)
   if (!force && isSaving.value) return
   showAddModal.value = false
   document.body.style.overflow = ''
@@ -347,7 +341,6 @@ const editZone = (zone: ShippingZone) => {
 }
 
 const closeEditModal = (force = false) => {
-  // Allow closing if force is true (e.g., after successful save)
   if (!force && isSaving.value) return
   showEditModal.value = false
   editingZone.value = null
@@ -355,7 +348,6 @@ const closeEditModal = (force = false) => {
 }
 
 const saveZone = async () => {
-  // Validation
   if (!zoneForm.value.name.trim()) {
     showError('Validation Error', 'Zone name is required.')
     return
@@ -398,23 +390,20 @@ const saveZone = async () => {
     if (response.data.success) {
       const zoneName = data.name
       const isEdit = !!editingZone.value
-      
-      // Close modal first, then show notification and reload
-      isSaving.value = false // Allow modal to close
-      
+
+      isSaving.value = false
+
       if (isEdit) {
-        closeEditModal(true) // Force close after successful save
+        closeEditModal(true)
       } else {
-        closeAddModal(true) // Force close after successful save
+        closeAddModal(true)
       }
-      
-      // Show success notification
+
       success(
         isEdit ? 'Zone Updated' : 'Zone Created',
         `Shipping zone "${zoneName}" has been ${isEdit ? 'updated' : 'created'} successfully.`
       )
-      
-      // Reload zones to reflect changes
+
       await loadShippingZones()
     } else {
       throw new Error(response.data.message || `Failed to ${editingZone.value ? 'update' : 'create'} shipping zone`)
@@ -446,7 +435,7 @@ const confirmDelete = async () => {
 
   try {
     const response = await shippingApi.delete(deletingZone.value.id)
-    
+
     if (response.data.success) {
       success(
         'Zone Deleted',
@@ -1066,23 +1055,23 @@ onUnmounted(() => {
   .delete-modal-content {
     padding: 2rem 1.5rem;
   }
-  
+
   .delete-actions {
     flex-direction: column;
   }
-  
+
   .delete-btn-cancel,
   .delete-btn-confirm {
     width: 100%;
     justify-content: center;
   }
-  
+
   .success-notification {
     top: 1rem;
     right: 1rem;
     left: 1rem;
   }
-  
+
   .success-content {
     min-width: auto;
     max-width: none;

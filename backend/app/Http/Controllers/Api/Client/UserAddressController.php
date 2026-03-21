@@ -11,9 +11,7 @@ use Illuminate\Support\Facades\Log;
 
 class UserAddressController extends Controller
 {
-    /**
-     * List user's addresses
-     */
+    
     public function index(Request $request): JsonResponse
     {
         try {
@@ -52,9 +50,6 @@ class UserAddressController extends Controller
         }
     }
 
-    /**
-     * Create new address
-     */
     public function store(Request $request): JsonResponse
     {
         try {
@@ -81,9 +76,8 @@ class UserAddressController extends Controller
                 'is_default_billing' => ['sometimes', 'boolean'],
             ]);
 
-            // Use transaction to ensure data consistency
             return DB::transaction(function () use ($user, $validated) {
-                // If setting as default, unset other defaults
+                
                 if (!empty($validated['is_default_shipping'])) {
                     UserAddress::where('user_id', $user->id)
                         ->where('is_default_shipping', true)
@@ -96,13 +90,11 @@ class UserAddressController extends Controller
                         ->update(['is_default_billing' => false]);
                 }
 
-                // Prepare data for creation with defaults
                 $createData = array_merge($validated, [
                     'user_id' => $user->id,
                     'country' => $validated['country'] ?? 'Philippines',
                 ]);
-                
-                // Ensure booleans are actual booleans (not strings)
+
                 if (isset($createData['is_default_shipping'])) {
                     $createData['is_default_shipping'] = filter_var($createData['is_default_shipping'], FILTER_VALIDATE_BOOLEAN);
                 }
@@ -140,13 +132,10 @@ class UserAddressController extends Controller
         }
     }
 
-    /**
-     * Update address
-     */
     public function update(Request $request, $userAddress): JsonResponse
     {
         try {
-            // Handle route model binding - if it's an ID, fetch the model
+            
             if (!($userAddress instanceof UserAddress)) {
                 $userAddress = UserAddress::findOrFail($userAddress);
             }
@@ -160,7 +149,6 @@ class UserAddressController extends Controller
                 ], 401);
             }
 
-            // Ensure address belongs to user
             if ($userAddress->user_id !== $user->id) {
                 return response()->json([
                     'success' => false,
@@ -182,9 +170,8 @@ class UserAddressController extends Controller
                 'is_default_billing' => ['sometimes', 'boolean'],
             ]);
 
-            // Use transaction to ensure data consistency
             return DB::transaction(function () use ($user, $userAddress, $validated) {
-                // If setting as default, unset other defaults
+                
                 if (isset($validated['is_default_shipping']) && $validated['is_default_shipping']) {
                     UserAddress::where('user_id', $user->id)
                         ->where('id', '!=', $userAddress->id)
@@ -199,7 +186,6 @@ class UserAddressController extends Controller
                         ->update(['is_default_billing' => false]);
                 }
 
-                // Ensure booleans are actual booleans
                 if (isset($validated['is_default_shipping'])) {
                     $validated['is_default_shipping'] = filter_var($validated['is_default_shipping'], FILTER_VALIDATE_BOOLEAN);
                 }
@@ -242,13 +228,10 @@ class UserAddressController extends Controller
         }
     }
 
-    /**
-     * Delete address
-     */
     public function destroy(Request $request, $userAddress): JsonResponse
     {
         try {
-            // Handle route model binding - if it's an ID, fetch the model
+            
             if (!($userAddress instanceof UserAddress)) {
                 $userAddress = UserAddress::findOrFail($userAddress);
             }
@@ -262,7 +245,6 @@ class UserAddressController extends Controller
                 ], 401);
             }
 
-            // Ensure address belongs to user
             if ($userAddress->user_id !== $user->id) {
                 return response()->json([
                     'success' => false,
@@ -297,13 +279,10 @@ class UserAddressController extends Controller
         }
     }
 
-    /**
-     * Set default shipping address
-     */
     public function setDefaultShipping(Request $request, $userAddress): JsonResponse
     {
         try {
-            // Handle route model binding - if it's an ID, fetch the model
+            
             if (!($userAddress instanceof UserAddress)) {
                 $userAddress = UserAddress::findOrFail($userAddress);
             }
@@ -324,9 +303,8 @@ class UserAddressController extends Controller
                 ], 403);
             }
 
-            // Use transaction to ensure data consistency
             DB::transaction(function () use ($user, $userAddress) {
-                // Unset other defaults
+                
                 UserAddress::where('user_id', $user->id)
                     ->where('id', '!=', $userAddress->id)
                     ->update(['is_default_shipping' => false]);
@@ -360,13 +338,10 @@ class UserAddressController extends Controller
         }
     }
 
-    /**
-     * Set default billing address
-     */
     public function setDefaultBilling(Request $request, $userAddress): JsonResponse
     {
         try {
-            // Handle route model binding - if it's an ID, fetch the model
+            
             if (!($userAddress instanceof UserAddress)) {
                 $userAddress = UserAddress::findOrFail($userAddress);
             }
@@ -387,9 +362,8 @@ class UserAddressController extends Controller
                 ], 403);
             }
 
-            // Use transaction to ensure data consistency
             DB::transaction(function () use ($user, $userAddress) {
-                // Unset other defaults
+                
                 UserAddress::where('user_id', $user->id)
                     ->where('id', '!=', $userAddress->id)
                     ->update(['is_default_billing' => false]);

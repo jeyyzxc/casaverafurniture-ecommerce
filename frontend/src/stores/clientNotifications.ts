@@ -21,13 +21,13 @@ export interface ClientNotification {
 }
 
 export const useClientNotificationStore = defineStore('clientNotifications', () => {
-  // State
+  
   const notifications = ref<ClientNotification[]>([])
   const isLoading = ref(false)
   const lastFetched = ref<Date | null>(null)
   let pollingInterval: number | null = null
 
-  // Computed
+  
   const unreadCount = computed(() => 
     notifications.value.filter(n => !n.read && !n.is_read).length
   )
@@ -46,7 +46,7 @@ export const useClientNotificationStore = defineStore('clientNotifications', () 
       .slice(0, 10)
   )
 
-  // Methods
+  
   const loadNotifications = async (force = false) => {
     if (isLoading.value && !force) return
 
@@ -102,7 +102,7 @@ export const useClientNotificationStore = defineStore('clientNotifications', () 
       await notificationsApi.markAsRead(id)
     } catch (error) {
       console.error('Failed to mark notification as read:', error)
-      // Revert on error
+      
       if (notification) {
         notification.read = false
         notification.is_read = false
@@ -155,10 +155,10 @@ export const useClientNotificationStore = defineStore('clientNotifications', () 
   const startPolling = () => {
     if (pollingInterval) return
     
-    // Load immediately
+    
     loadNotifications(true)
     
-    // Then poll every 5 seconds
+    
     pollingInterval = window.setInterval(() => {
       loadNotifications(true)
     }, 5000)
@@ -171,30 +171,30 @@ export const useClientNotificationStore = defineStore('clientNotifications', () 
     }
   }
 
-  // Real-time event handlers
+  
   const handleOrderStatusUpdate = (event: CustomEvent) => {
-    // Reload notifications when order status changes
+    
     loadNotifications(true)
   }
 
   const handleProductUpdate = (event: CustomEvent) => {
-    // Reload notifications when products are updated (sales, etc.)
+    
     loadNotifications(true)
   }
 
   const handlePaymentUpdate = (event: CustomEvent) => {
-    // Reload notifications when payment status changes
+    
     loadNotifications(true)
   }
 
-  // Set up real-time listeners
+  
   if (typeof window !== 'undefined') {
     onMounted(() => {
       startPolling()
       window.addEventListener('realtime:order:status:updated', handleOrderStatusUpdate as EventListener)
       window.addEventListener('realtime:product:updated', handleProductUpdate as EventListener)
       window.addEventListener('realtime:payment:updated', handlePaymentUpdate as EventListener)
-      // Also listen for general order updates
+      
       window.addEventListener('realtime:order:created', handleOrderStatusUpdate as EventListener)
     })
 

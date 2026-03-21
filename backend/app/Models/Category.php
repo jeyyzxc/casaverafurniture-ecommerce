@@ -36,7 +36,6 @@ class Category extends Model
         ];
     }
 
-    // Relationships
     public function parent()
     {
         return $this->belongsTo(Category::class, 'parent_id');
@@ -52,7 +51,6 @@ class Category extends Model
         return $this->hasMany(Product::class);
     }
 
-    // Scopes
     public function scopeVisible($query)
     {
         return $query->where('is_visible', true);

@@ -10,9 +10,7 @@ use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class UserNotificationService
 {
-    /**
-     * Notify user about order status update
-     */
+    
     public function notifyOrderStatusUpdate(User $user, Order $order, string $oldStatus, string $newStatus, string $additionalInfo = ''): void
     {
         $message = match($newStatus) {
@@ -49,9 +47,6 @@ class UserNotificationService
         );
     }
 
-    /**
-     * Notify user about new order confirmation
-     */
     public function notifyOrderCreated(User $user, Order $order): void
     {
         $itemsCount = $order->items()->count();
@@ -69,9 +64,6 @@ class UserNotificationService
         );
     }
 
-    /**
-     * Notify user about product sale/promotion
-     */
     public function notifyProductSale(User $user, Product $product, ?float $salePrice = null): void
     {
         $originalPrice = $product->price;
@@ -94,9 +86,6 @@ class UserNotificationService
         );
     }
 
-    /**
-     * Notify user about new product
-     */
     public function notifyNewProduct(User $user, Product $product): void
     {
         $priceText = $product->sale_price 
@@ -115,9 +104,6 @@ class UserNotificationService
         );
     }
 
-    /**
-     * Notify user about payment status
-     */
     public function notifyPaymentStatus(User $user, Order $order, string $status): void
     {
         $message = match($status) {
@@ -139,10 +125,6 @@ class UserNotificationService
         );
     }
 
-    /**
-     * Create a notification for user using Laravel's notification system
-     * Uses database transactions for data integrity
-     */
     private function createNotification(
         User $user,
         string $title,
@@ -155,7 +137,7 @@ class UserNotificationService
     ): void {
         try {
             \DB::transaction(function() use ($user, $title, $message, $type, $priority, $relatedType, $relatedId, $actionUrl) {
-                // Use Laravel's notification system (stores in notifications table)
+                
                 $user->notify(new \App\Notifications\UserNotification(
                     title: $title,
                     message: $message,

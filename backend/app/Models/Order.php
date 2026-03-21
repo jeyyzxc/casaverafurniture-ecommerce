@@ -78,7 +78,6 @@ class Order extends Model
         ];
     }
 
-    // Relationships
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -106,20 +105,19 @@ class Order extends Model
 
     public function latestPayment()
     {
-        // Check if deleted_at column exists
+        
         $hasDeletedAt = false;
         try {
             $hasDeletedAt = \Schema::hasColumn('payments', 'deleted_at');
         } catch (\Exception $e) {
-            // If check fails, assume column doesn't exist
+            
         }
         
         if ($hasDeletedAt) {
-            // Column exists - use latestOfMany with SoftDeletes
-            // Note: Don't select order_id in eager loading to avoid ambiguity with subquery
+
             return $this->hasOne(Payment::class)->latestOfMany();
         } else {
-            // Column doesn't exist - use a subquery to get latest payment without SoftDeletes
+            
             return $this->hasOne(Payment::class)
                 ->whereRaw('payments.id = (SELECT MAX(p2.id) FROM payments p2 WHERE p2.order_id = orders.id)');
         }
@@ -145,7 +143,6 @@ class Order extends Model
         return $this->belongsTo(Courier::class);
     }
 
-    // Generate order number
     public static function generateOrderNumber(): string
     {
         $prefix = 'CV';
@@ -154,7 +151,6 @@ class Order extends Model
         return "{$prefix}{$date}{$random}";
     }
 
-    // Status helpers
     public function isPending(): bool
     {
         return $this->status === 'pending';
@@ -185,7 +181,6 @@ class Order extends Model
         return in_array($this->status, ['pending', 'processing']);
     }
 
-    // Scopes
     public function scopeStatus($query, string $status)
     {
         return $query->where('status', $status);

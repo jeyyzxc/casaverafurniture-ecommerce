@@ -22,7 +22,6 @@ class SiteSetting extends Model
         ];
     }
 
-    // Get value with proper type casting
     public function getTypedValueAttribute()
     {
         return match ($this->type) {
@@ -35,7 +34,6 @@ class SiteSetting extends Model
         };
     }
 
-    // Static helper to get a setting
     public static function get(string $key, $default = null)
     {
         $cacheKey = "site_setting_{$key}";
@@ -46,7 +44,6 @@ class SiteSetting extends Model
         });
     }
 
-    // Static helper to set a setting
     public static function set(string $key, $value, string $group = 'general', string $type = 'string'): void
     {
         if (is_array($value)) {
@@ -62,7 +59,6 @@ class SiteSetting extends Model
         Cache::forget("site_setting_{$key}");
     }
 
-    // Get all settings by group
     public static function getByGroup(string $group): array
     {
         return static::where('group', $group)
@@ -71,7 +67,6 @@ class SiteSetting extends Model
             ->toArray();
     }
 
-    // Get all public settings
     public static function getPublicSettings(): array
     {
         return Cache::remember('public_site_settings', 3600, function () {

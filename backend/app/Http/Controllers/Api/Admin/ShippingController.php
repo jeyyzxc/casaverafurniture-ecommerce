@@ -11,15 +11,12 @@ use Illuminate\Validation\Rule;
 
 class ShippingController extends Controller
 {
-    /**
-     * List all shipping zones
-     */
+    
     public function index(Request $request): JsonResponse
     {
         try {
             $query = ShippingZone::with('rates')->orderBy('display_order')->orderBy('name');
 
-            // Filter by active status if requested
             if ($request->has('active_only')) {
                 $query->where('is_active', true);
             }
@@ -43,9 +40,6 @@ class ShippingController extends Controller
         }
     }
 
-    /**
-     * Get single shipping zone
-     */
     public function show(ShippingZone $shippingZone): JsonResponse
     {
         $shippingZone->load('rates', 'couriers');
@@ -56,9 +50,6 @@ class ShippingController extends Controller
         ]);
     }
 
-    /**
-     * Create new shipping zone
-     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -106,9 +97,6 @@ class ShippingController extends Controller
         }
     }
 
-    /**
-     * Update shipping zone
-     */
     public function update(Request $request, ShippingZone $shippingZone): JsonResponse
     {
         $validated = $request->validate([
@@ -125,7 +113,6 @@ class ShippingController extends Controller
             'display_order' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        // Validate max_delivery_days >= min_delivery_days if both are provided
         if (isset($validated['max_delivery_days']) && isset($validated['min_delivery_days'])) {
             if ($validated['max_delivery_days'] < $validated['min_delivery_days']) {
                 return response()->json([
@@ -182,16 +169,10 @@ class ShippingController extends Controller
         }
     }
 
-    /**
-     * Delete shipping zone (soft delete)
-     */
     public function destroy(ShippingZone $shippingZone): JsonResponse
     {
         try {
             $zoneName = $shippingZone->name;
-
-            // Check if zone is used in any orders (optional check - soft delete allows this)
-            // We'll allow deletion but keep the record for historical purposes
 
             $shippingZone->delete();
 

@@ -6,15 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Base API Controller
- * Provides common functionality for all API controllers
- */
 abstract class BaseApiController extends Controller
 {
-    /**
-     * Return a successful JSON response
-     */
     protected function successResponse(
         mixed $data = null,
         string $message = 'Success',
@@ -32,9 +25,6 @@ abstract class BaseApiController extends Controller
         return response()->json($response, $statusCode);
     }
 
-    /**
-     * Return an error JSON response
-     */
     protected function errorResponse(
         string $message,
         int $statusCode = 400,
@@ -57,9 +47,6 @@ abstract class BaseApiController extends Controller
         return response()->json($response, $statusCode);
     }
 
-    /**
-     * Handle exceptions with proper logging and response
-     */
     protected function handleException(
         \Exception $e,
         string $context,
@@ -81,9 +68,6 @@ abstract class BaseApiController extends Controller
         );
     }
 
-    /**
-     * Return validation error response
-     */
     protected function validationErrorResponse(
         array $errors,
         string $message = 'Validation failed.'
@@ -91,25 +75,16 @@ abstract class BaseApiController extends Controller
         return $this->errorResponse($message, 422, $errors);
     }
 
-    /**
-     * Return unauthorized response
-     */
     protected function unauthorizedResponse(string $message = 'Unauthorized. Please log in.'): JsonResponse
     {
         return $this->errorResponse($message, 401);
     }
 
-    /**
-     * Return forbidden response
-     */
     protected function forbiddenResponse(string $message = 'Access denied.'): JsonResponse
     {
         return $this->errorResponse($message, 403);
     }
 
-    /**
-     * Return not found response
-     */
     protected function notFoundResponse(string $message = 'Resource not found.'): JsonResponse
     {
         return $this->errorResponse($message, 404);

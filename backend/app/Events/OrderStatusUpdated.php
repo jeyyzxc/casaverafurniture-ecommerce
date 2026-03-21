@@ -19,7 +19,7 @@ class OrderStatusUpdated implements ShouldBroadcast
         public string $oldStatus,
         public string $newStatus
     ) {
-        //
+        
     }
 
     public function broadcastOn(): array

@@ -11,10 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class AdminNotificationService
 {
-    /**
-     * Create a notification for all admins
-     * Uses database transactions for data integrity
-     */
+    
     public function createNotification(
         string $title,
         string $message,
@@ -28,7 +25,7 @@ class AdminNotificationService
         try {
             $notification = \DB::transaction(function() use ($title, $message, $type, $priority, $relatedType, $relatedId, $actionUrl, $adminId) {
                 return AdminNotification::create([
-                    'admin_id' => $adminId, // null = all admins
+                    'admin_id' => $adminId, 
                     'title' => $title,
                     'message' => $message,
                     'type' => $type,
@@ -56,9 +53,6 @@ class AdminNotificationService
         }
     }
 
-    /**
-     * Notify about new order
-     */
     public function notifyNewOrder(Order $order): void
     {
         $itemsCount = $order->items()->count();
@@ -75,9 +69,6 @@ class AdminNotificationService
         );
     }
 
-    /**
-     * Notify about order status update
-     */
     public function notifyOrderStatusUpdate(Order $order, string $oldStatus, string $newStatus): void
     {
         $this->createNotification(
@@ -91,9 +82,6 @@ class AdminNotificationService
         );
     }
 
-    /**
-     * Notify about order item update
-     */
     public function notifyOrderItemUpdate(OrderItem $orderItem, string $action): void
     {
         $order = $orderItem->order;
@@ -116,9 +104,6 @@ class AdminNotificationService
         );
     }
 
-    /**
-     * Notify about new product
-     */
     public function notifyNewProduct(Product $product): void
     {
         $this->createNotification(
@@ -132,9 +117,6 @@ class AdminNotificationService
         );
     }
 
-    /**
-     * Notify about product sale/promotion
-     */
     public function notifyProductSale(Product $product, ?float $salePrice = null): void
     {
         $message = $salePrice
@@ -152,9 +134,6 @@ class AdminNotificationService
         );
     }
 
-    /**
-     * Notify about product update
-     */
     public function notifyProductUpdate(Product $product, array $changes = []): void
     {
         $changeMessages = [];
@@ -184,9 +163,6 @@ class AdminNotificationService
         );
     }
 
-    /**
-     * Notify about low stock
-     */
     public function notifyLowStock(Product $product, int $currentStock): void
     {
         $this->createNotification(
@@ -200,9 +176,6 @@ class AdminNotificationService
         );
     }
 
-    /**
-     * Notify about out of stock
-     */
     public function notifyOutOfStock(Product $product): void
     {
         $this->createNotification(
@@ -216,9 +189,6 @@ class AdminNotificationService
         );
     }
 
-    /**
-     * Get icon for notification type
-     */
     private function getIconForType(string $type): string
     {
         return match($type) {
@@ -232,9 +202,6 @@ class AdminNotificationService
         };
     }
 
-    /**
-     * Get color for notification type
-     */
     private function getColorForType(string $type): string
     {
         return match($type) {
@@ -248,9 +215,6 @@ class AdminNotificationService
         };
     }
 
-    /**
-     * Mark notification as read
-     */
     public function markAsRead(int $notificationId, ?int $adminId = null): bool
     {
         $query = AdminNotification::where('id', $notificationId);
@@ -272,9 +236,6 @@ class AdminNotificationService
         return false;
     }
 
-    /**
-     * Mark all notifications as read for an admin
-     */
     public function markAllAsRead(?int $adminId = null): int
     {
         $query = AdminNotification::where('is_read', false);

@@ -89,7 +89,6 @@
       </table>
     </div>
 
-    <!-- Payment Details Modal -->
     <Teleport to="body">
       <div v-if="showDetailsModal && selectedPayment" class="modal-overlay" @click.self="closeDetailsModal">
         <div class="modal-content details-modal" @click.stop>
@@ -186,7 +185,6 @@
       </div>
     </Teleport>
 
-    <!-- Verify Payment Modal -->
     <Teleport to="body">
       <div v-if="showVerifyModal && selectedPayment" class="modal-overlay" @click.self="closeVerifyModal">
         <div class="modal-content" @click.stop>
@@ -218,7 +216,6 @@
       </div>
     </Teleport>
 
-    <!-- Reject Payment Modal -->
     <Teleport to="body">
       <div v-if="showRejectModal && selectedPayment" class="modal-overlay" @click.self="closeRejectModal">
         <div class="modal-content" @click.stop>
@@ -301,7 +298,6 @@ const error = ref<string | null>(null)
 const currentPage = ref(1)
 const totalPayments = ref(0)
 
-// Modal States
 const showDetailsModal = ref(false)
 const showVerifyModal = ref(false)
 const showRejectModal = ref(false)
@@ -310,7 +306,6 @@ const verifyNotes = ref('')
 const rejectReason = ref('')
 const isProcessing = ref(false)
 
-// Load payment methods
 const loadPaymentMethods = async () => {
   try {
     const response = await settingsApi.getPaymentMethods()
@@ -322,7 +317,6 @@ const loadPaymentMethods = async () => {
   }
 }
 
-// Load payments from API
 const loadPayments = async () => {
   isLoading.value = true
   error.value = null
@@ -348,7 +342,6 @@ const loadPayments = async () => {
 
     if (response.data.success) {
       const data = response.data.data
-      // Handle both paginated and direct array responses
       const paymentsData = data.data || data || []
 
       payments.value = paymentsData.map((p: any) => ({
@@ -388,7 +381,6 @@ const loadPayments = async () => {
   }
 }
 
-// Payments are already filtered by API, so we use them directly
 const filteredPayments = computed(() => payments.value)
 
 const resetFilters = () => {
@@ -416,8 +408,8 @@ const formatDate = (date: Date | string) => {
 const getStatusClass = (status: string) => {
   const s = status.toLowerCase().replace('_', '-')
   if (s === 'confirmed') return 'confirmed'
-  if (s === 'verified') return 'confirmed' // Map verified to confirmed
-  if (s === 'rejected') return 'failed' // Map rejected to failed
+  if (s === 'verified') return 'confirmed'
+  if (s === 'rejected') return 'failed'
   return s
 }
 
@@ -489,7 +481,6 @@ const closeVerifyModal = () => {
 const confirmVerify = async () => {
   if (!selectedPayment.value) return
 
-  // Check if payment can be verified
   const status = selectedPayment.value.status.toLowerCase()
   if (status !== 'pending' && status !== 'awaiting_verification') {
     showError(
@@ -507,11 +498,9 @@ const confirmVerify = async () => {
     if (response.data.success) {
       const transactionId = selectedPayment.value.transactionId
 
-      // Update the payment in the list immediately
       const payment = payments.value.find(p => p.id === selectedPayment.value.id)
       if (payment) {
         payment.status = 'confirmed'
-        // Update other fields if provided in response
         if (response.data.data) {
           const updatedPayment = response.data.data
           payment.verification_notes = updatedPayment.verification_notes
@@ -527,7 +516,6 @@ const confirmVerify = async () => {
         `Payment ${transactionId} has been verified and confirmed successfully.`
       )
 
-      // Reload payments to ensure consistency
       await loadPayments()
     } else {
       throw new Error(response.data.message || 'Failed to verify payment')
@@ -564,7 +552,6 @@ const confirmReject = async () => {
     return
   }
 
-  // Check if payment can be rejected
   const status = selectedPayment.value.status.toLowerCase()
   if (status !== 'pending' && status !== 'awaiting_verification') {
     showError(
@@ -582,11 +569,9 @@ const confirmReject = async () => {
     if (response.data.success) {
       const transactionId = selectedPayment.value.transactionId
 
-      // Update the payment in the list immediately
       const payment = payments.value.find(p => p.id === selectedPayment.value.id)
       if (payment) {
         payment.status = 'failed'
-        // Update other fields if provided in response
         if (response.data.data) {
           const updatedPayment = response.data.data
           payment.failure_reason = updatedPayment.failure_reason
@@ -601,7 +586,6 @@ const confirmReject = async () => {
         `Payment ${transactionId} has been rejected.`
       )
 
-      // Reload payments to ensure consistency
       await loadPayments()
     } else {
       throw new Error(response.data.message || 'Failed to reject payment')
@@ -617,7 +601,6 @@ const confirmReject = async () => {
   }
 }
 
-// Watch for filter changes and reload payments
 watch([filterStatus, filterMethod], () => {
   currentPage.value = 1
   loadPayments()

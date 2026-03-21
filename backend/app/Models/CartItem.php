@@ -39,7 +39,6 @@ class CartItem extends Model
         return $this->belongsTo(Product::class);
     }
 
-    // Calculate subtotal
     public function calculateSubtotal(): float
     {
         $price = $this->sale_price ?? $this->unit_price;

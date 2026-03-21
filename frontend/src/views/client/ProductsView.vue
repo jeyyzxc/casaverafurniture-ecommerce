@@ -1,22 +1,15 @@
 <template>
   <div class="products-page">
-    <!-- ═══════════════════════════════════════════════════
-         HERO SECTION
-         ═══════════════════════════════════════════════════ -->
     <HeroSection
       title="The Collection"
       subtitle="Curated pieces to elevate your modern living."
       size="large"
     />
 
-    <!-- ═══════════════════════════════════════════════════
-         MAIN CONTENT
-         ═══════════════════════════════════════════════════ -->
     <section class="products-main">
       <div class="products-container">
         <div class="products-layout">
 
-          <!-- SIDEBAR FILTERS -->
           <aside class="filter-sidebar rise-up">
             <div class="filter-header">
               <h5 class="filter-title">Filters</h5>
@@ -28,7 +21,6 @@
               </button>
             </div>
 
-            <!-- Search -->
             <div class="filter-group">
               <label class="filter-label">Search</label>
               <div class="search-input-wrap">
@@ -47,11 +39,10 @@
 
             <div class="filter-divider"></div>
 
-            <!-- Category -->
             <div class="filter-group">
               <div class="filter-toggle" @click="toggleCategory">
                 <label class="filter-label">Category</label>
-                <svg class="toggle-arrow" :class="{ rotated: !categoryOpen }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg :class="['toggle-arrow', { rotated: !categoryOpen }]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="m6 9 6 6 6-6"/>
                 </svg>
               </div>
@@ -59,8 +50,7 @@
                 <div
                   v-for="cat in categoryOptions"
                   :key="cat.value"
-                  class="category-item"
-                  :class="{ active: selectedCategory === cat.value }"
+                  :class="['category-item', { active: selectedCategory === cat.value }]"
                   @click="selectCategory(cat.value)"
                 >
                   <span>{{ cat.label }}</span>
@@ -73,11 +63,10 @@
 
             <div class="filter-divider"></div>
 
-            <!-- Price Range -->
             <div class="filter-group">
               <div class="filter-toggle" @click="togglePrice">
                 <label class="filter-label">Price Range</label>
-                <svg class="toggle-arrow" :class="{ rotated: !priceOpen }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg :class="['toggle-arrow', { rotated: !priceOpen }]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="m6 9 6 6 6-6"/>
                 </svg>
               </div>
@@ -118,9 +107,7 @@
             <button class="apply-btn" @click="() => applyFilters()">APPLY FILTERS</button>
           </aside>
 
-          <!-- PRODUCTS GRID -->
           <div class="products-content">
-            <!-- Header -->
             <div class="products-header rise-up-delay-1">
               <div class="products-info">
                 <h2 class="collection-title">{{ collectionTitle }}</h2>
@@ -142,7 +129,6 @@
               </div>
             </div>
 
-            <!-- Error Message -->
             <div v-if="error" class="error-message" style="padding: 2rem; text-align: center; color: #d32f2f; background: #ffebee; border-radius: 8px; margin: 2rem 0;">
               <p>{{ error }}</p>
               <button @click="loadProducts" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">
@@ -150,17 +136,15 @@
               </button>
             </div>
 
-            <!-- Loading State -->
             <div v-else-if="isLoading" class="loading-state" style="padding: 4rem; text-align: center;">
               <div class="spinner-loader" style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #1976d2; border-radius: 50%;"></div>
               <p style="margin-top: 1rem; color: #666;">Loading products...</p>
             </div>
 
-            <!-- Empty State -->
             <div v-else-if="!isLoading && filteredProducts.length === 0" class="no-results">
               <div class="no-results-content">
                 <div class="no-results-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
                     <path d="M320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576zM410.6 462.1C390.2 434.1 357.2 416 320 416C282.8 416 249.8 434.1 229.4 462.1C221.6 472.8 206.6 475.2 195.9 467.4C185.2 459.6 182.8 444.6 190.6 433.9C219.7 394 266.8 368 320 368C373.2 368 420.3 394 449.4 433.9C457.2 444.6 454.8 459.6 444.1 467.4C433.4 475.2 418.4 472.8 410.6 462.1zM208 272C208 254.3 222.3 240 240 240C257.7 240 272 254.3 272 272C272 289.7 257.7 304 240 304C222.3 304 208 289.7 208 272zM400 240C417.7 240 432 254.3 432 272C432 289.7 417.7 304 400 304C382.3 304 368 289.7 368 272C368 254.3 382.3 240 400 240z"/>
                   </svg>
                 </div>
@@ -170,21 +154,18 @@
               </div>
             </div>
 
-            <!-- Grid -->
             <div class="products-grid" v-else-if="filteredProducts.length > 0">
               <article
                 v-for="(product, index) in filteredProducts"
                 :key="product.id"
-                class="product-card"
-                :class="{ 'out-of-stock': isOutOfStock(product), [`rise-up-delay-${Math.min(Math.floor(index / 3) + 2, 5)}`]: true }"
+                :class="['product-card', { 'out-of-stock': isOutOfStock(product) }, `rise-up-delay-${Math.min(Math.floor(index / 3) + 2, 5)}`]"
               >
                 <div class="product-image-wrap" @click="openQuickView(product)">
                   <span v-if="product.is_new" class="product-badge">New</span>
                   <span v-if="isOutOfStock(product)" class="product-badge out-of-stock-badge">Out of Stock</span>
                   <span v-else-if="isLowStock(product)" class="product-badge low-stock-badge">Low Stock</span>
                   <button
-                    class="wishlist-btn"
-                    :class="{ 'in-wishlist': isInWishlist(product.id) }"
+                    :class="['wishlist-btn', { 'in-wishlist': isInWishlist(product.id) }]"
                     :disabled="isTogglingWishlist === product.id"
                     @click.stop="toggleWishlist(product.id)"
                     aria-label="Add to Wishlist"
@@ -234,7 +215,6 @@
               </article>
             </div>
 
-            <!-- Pagination -->
             <div v-if="!isLoading && !error && filteredProducts.length > 0 && totalPages > 1" class="pagination" style="margin-top: 3rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
               <button
                 @click="changePage(currentPage - 1)"
@@ -293,11 +273,8 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════
-         QUICK VIEW MODAL
-         ═══════════════════════════════════════════════════ -->
     <Teleport to="body">
-      <div class="quick-view-overlay" :class="{ active: quickViewOpen }" @click.self="closeQuickView">
+      <div :class="['quick-view-overlay', { active: quickViewOpen }]" @click.self="closeQuickView">
         <div class="quick-view-card">
           <button class="close-btn" @click="closeQuickView">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -344,7 +321,7 @@
                 <p v-if="quickViewProduct?.sale_price" class="qv-price-original">₱{{ formatPrice(quickViewProduct.price) }}</p>
               </div>
               <div class="qv-stock-info">
-                <span class="qv-stock-badge" :class="quickViewProduct ? getStockBadgeClass(quickViewProduct) : ''">
+                <span :class="['qv-stock-badge', quickViewProduct ? getStockBadgeClass(quickViewProduct) : '']">
                   {{ quickViewProduct ? getStockStatusText(quickViewProduct) : 'In Stock' }}
                 </span>
                 <span v-if="quickViewProduct && !isOutOfStock(quickViewProduct)" class="qv-stock-count">
@@ -392,16 +369,16 @@ const route = useRoute()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 
-// Wishlist
+
 const { isInWishlist, toggleWishlist, isToggling, loadWishlist } = useWishlist()
 const isTogglingWishlist = isToggling
 
-// Real-time updates
+
 const { startListening, stopListening } = useRealtimeProducts()
 
-// ═══════════════════════════════════════════════════
-// PRODUCTS DATA
-// ═══════════════════════════════════════════════════
+
+
+
 interface Product {
   id: number
   name: string
@@ -434,15 +411,15 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const categories = ref<{ id: number; name: string; slug: string }[]>([])
 
-// Pagination
+
 const currentPage = ref(1)
 const totalPages = ref(1)
 const totalProducts = ref(0)
 const perPage = ref(24)
 
-// ═══════════════════════════════════════════════════
-// FILTER STATE
-// ═══════════════════════════════════════════════════
+
+
+
 const searchQuery = ref('')
 const selectedCategory = ref('All')
 const maxPrice = ref(300000)
@@ -466,15 +443,15 @@ const collectionTitle = computed(() => {
   return cat?.name || 'All Collections'
 })
 
-// ═══════════════════════════════════════════════════
-// CART STATE
-// ═══════════════════════════════════════════════════
+
+
+
 const isAddingToCart = ref(false)
 const addingProductId = ref<number | null>(null)
 
-// ═══════════════════════════════════════════════════
-// QUICK VIEW
-// ═══════════════════════════════════════════════════
+
+
+
 const quickViewOpen = ref(false)
 const quickViewProduct = ref<Product | null>(null)
 
@@ -489,9 +466,9 @@ const closeQuickView = () => {
   document.body.style.overflow = ''
 }
 
-// ═══════════════════════════════════════════════════
-// FILTER FUNCTIONS
-// ═══════════════════════════════════════════════════
+
+
+
 const toggleCategory = () => {
   categoryOpen.value = !categoryOpen.value
 }
@@ -502,7 +479,7 @@ const togglePrice = () => {
 
 const selectCategory = (value: string) => {
   selectedCategory.value = value
-  // applyFilters will be called by watch
+
 }
 
 const applyPricePreset = () => {
@@ -515,7 +492,7 @@ const applyPricePreset = () => {
   } else if (pricePreset.value === '50000-1000000') {
     maxPrice.value = 300000
   }
-  // applyFilters will be called by watch
+
 }
 
 const resetFilters = () => {
@@ -532,12 +509,12 @@ const changePage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
     loadProducts()
-    // Scroll to top
+
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
 
-// Debounce search to avoid too many API calls
+
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 const applyFilters = async (resetPage = true) => {
@@ -548,16 +525,16 @@ const applyFilters = async (resetPage = true) => {
   await loadProducts()
 }
 
-// Watch for filter changes and reload products
+
 watch([searchQuery, selectedCategory, maxPrice, sortBy], () => {
-  // Debounce search
+
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
 
   searchTimeout = setTimeout(() => {
     applyFilters()
-  }, searchQuery.value ? 500 : 0) // 500ms delay for search, immediate for other filters
+  }, searchQuery.value ? 500 : 0)
 })
 
 const loadProducts = async () => {
@@ -565,7 +542,7 @@ const loadProducts = async () => {
   error.value = null
 
   try {
-    // Build API parameters
+
     const params: {
       page: number
       per_page: number
@@ -580,23 +557,23 @@ const loadProducts = async () => {
       per_page: perPage.value,
     }
 
-    // Add search
+
     if (searchQuery.value.trim()) {
       params.search = searchQuery.value.trim()
     }
 
-    // Add category filter
+
     if (selectedCategory.value && selectedCategory.value !== 'All') {
       params.category = selectedCategory.value
     }
 
-    // Add price filter
+
     if (maxPrice.value < 300000) {
       params.max_price = maxPrice.value
     }
     params.min_price = 0
 
-    // Add sorting
+
     const sortMapping: Record<string, { sort_by: string; sort_order: string }> = {
       newest: { sort_by: 'newest', sort_order: 'desc' },
       price_low: { sort_by: 'price_low', sort_order: 'asc' },
@@ -615,7 +592,7 @@ const loadProducts = async () => {
     if (response.data.success) {
       const responseData = response.data.data
 
-      // Handle both paginated response and array response
+
       const isPaginated = responseData && typeof responseData === 'object' && 'data' in responseData && !Array.isArray(responseData)
       const paginatedData = isPaginated ? responseData as {
         data?: Array<Record<string, unknown>>
@@ -628,7 +605,7 @@ const loadProducts = async () => {
         ? (paginatedData?.data || [])
         : (Array.isArray(responseData) ? responseData : [])
 
-      // Map products to our interface
+
       allProducts.value = products.map((p) => {
         const product = p as Record<string, unknown>
         const cat = product.category as Record<string, unknown> | null
@@ -642,7 +619,7 @@ const loadProducts = async () => {
           category_name: cat?.name as string,
           price: typeof product.price === 'string' ? parseFloat(product.price) : (typeof product.price === 'number' ? product.price : 0),
           sale_price: product.sale_price ? (typeof product.sale_price === 'string' ? parseFloat(product.sale_price as string) : (typeof product.sale_price === 'number' ? product.sale_price as number : null)) : null,
-          image: (product.image || '/images/products/placeholder.png') as string,
+          image: (product.image as string | null) || '/images/products/placeholder.png',
           primary_image: product.image as string | undefined,
           is_new: (product.is_new || false) as boolean,
           is_featured: (product.is_featured || false) as boolean,
@@ -664,23 +641,23 @@ const loadProducts = async () => {
         }
       })
 
-      // Update pagination info
+
       if (isPaginated && paginatedData) {
         if (paginatedData.current_page !== undefined) {
           currentPage.value = paginatedData.current_page
           totalPages.value = paginatedData.last_page || 1
           totalProducts.value = paginatedData.total || 0
         } else {
-          // Fallback if no pagination data
+
           filteredProducts.value = allProducts.value
         }
       } else {
-        // No pagination, set defaults
+
         totalPages.value = 1
         totalProducts.value = allProducts.value.length
       }
 
-      // Set filtered products (same as all products since filtering is server-side)
+
       filteredProducts.value = allProducts.value
     } else {
       error.value = 'Failed to load products. Please try again.'
@@ -709,7 +686,7 @@ const loadCategories = async () => {
   }
 }
 
-// Watch for category changes from route
+
 watch(() => route.params.category, async (newCategory) => {
   if (newCategory) {
     selectedCategory.value = newCategory as string
@@ -718,7 +695,7 @@ watch(() => route.params.category, async (newCategory) => {
   }
 }, { immediate: false })
 
-// Real-time event handlers
+
 const handleProductCreated = (event: Event) => {
   const customEvent = event as CustomEvent<{
     id: number
@@ -737,7 +714,7 @@ const handleProductCreated = (event: Event) => {
   }>
   const product = customEvent.detail
   if (product && product.status === 'active') {
-    // Reload products to get fresh data from server
+
     loadProducts()
   }
 }
@@ -764,7 +741,7 @@ const handleProductUpdated = (event: Event) => {
   const index = allProducts.value.findIndex(p => p.id === productData.id)
   if (index !== -1 && allProducts.value[index]) {
     const existingProduct = allProducts.value[index]
-    // Ensure price values are properly converted to numbers
+
     const price = typeof productData.price === 'string'
       ? parseFloat(productData.price.replace(/[^0-9.-]/g, ''))
       : (typeof productData.price === 'number' ? productData.price : existingProduct.price)
@@ -774,7 +751,7 @@ const handleProductUpdated = (event: Event) => {
           : (typeof productData.sale_price === 'number' ? productData.sale_price : null))
       : null
 
-    // Update product in place
+
     allProducts.value[index] = {
       ...existingProduct,
       name: productData.name,
@@ -790,10 +767,10 @@ const handleProductUpdated = (event: Event) => {
       image: productData.primary_image || existingProduct.image,
       primary_image: productData.primary_image,
     }
-    // Update filtered products
+
     filteredProducts.value = [...allProducts.value]
   } else {
-    // Product not in current view, reload to get updated data
+
     loadProducts()
   }
 }
@@ -825,7 +802,7 @@ const handleStockChanged = (event: Event) => {
     product.stock_quantity = stockData.new_quantity
     product.stock_status = stockData.stock_status
 
-    // Update filtered products
+
     const filteredIndex = filteredProducts.value.findIndex(p => p.id === stockData.product_id)
     if (filteredIndex !== -1) {
       const filteredProduct = filteredProducts.value[filteredIndex]
@@ -834,7 +811,7 @@ const handleStockChanged = (event: Event) => {
       }
     }
 
-    // Show notification for low stock or out of stock
+
     if (stockData.type === 'low_stock') {
       console.warn(`Low stock alert: ${stockData.product_name} (${stockData.new_quantity} remaining)`)
     } else if (stockData.type === 'out_of_stock') {
@@ -844,18 +821,18 @@ const handleStockChanged = (event: Event) => {
 }
 
 onMounted(async () => {
-  // Load wishlist if user is authenticated
+
   loadWishlist()
 
   await loadCategories()
   await loadProducts()
 
-  // Check if we're viewing a specific category
+
   if (route.params.category) {
     selectedCategory.value = route.params.category as string
   }
 
-  // Set up real-time listeners
+
   startListening()
   window.addEventListener('realtime:product:created', handleProductCreated)
   window.addEventListener('realtime:product:updated', handleProductUpdated)
@@ -874,9 +851,9 @@ onUnmounted(() => {
   window.removeEventListener('realtime:stock:changed', handleStockChanged)
 })
 
-// ═══════════════════════════════════════════════════
-// CART FUNCTIONS
-// ═══════════════════════════════════════════════════
+
+
+
 const addToCart = async (product: Product) => {
   isAddingToCart.value = true
   addingProductId.value = product.id
@@ -884,7 +861,7 @@ const addToCart = async (product: Product) => {
   try {
     const result = await cartStore.addItem(product.id, 1)
     if (result.success) {
-      // Show success notification or update UI
+
       console.log('Added to cart:', product.name)
     } else {
       alert(result.message || 'Failed to add item to cart')
@@ -899,9 +876,9 @@ const addToCart = async (product: Product) => {
 }
 
 const buyNow = async (product: Product) => {
-  // Check if user is authenticated
+
   if (!authStore.isAuthenticated) {
-    // Store intended destination and redirect to home with login prompt
+
     sessionStorage.setItem('redirectAfterLogin', '/checkout')
     router.push({ name: 'home', query: { login: 'true' } })
     return
@@ -940,9 +917,9 @@ const buyNowFromModal = () => {
   }
 }
 
-// ═══════════════════════════════════════════════════
-// STOCK STATUS HELPERS
-// ═══════════════════════════════════════════════════
+
+
+
 const getStockQuantity = (product: Product): number => {
   return product.stock_quantity || product.stock || 0
 }
@@ -953,10 +930,10 @@ const getLowStockThreshold = (product: Product): number => {
 
 const isOutOfStock = (product: Product): boolean => {
   if (!product.track_inventory && product.track_inventory !== false) {
-    return false // Default to in stock if tracking is not specified
+    return false
   }
   if (product.track_inventory === false) {
-    return false // If not tracking inventory, always available
+    return false
   }
   const stock = getStockQuantity(product)
   return stock <= 0 || product.stock_status === 'out_of_stock'
@@ -991,9 +968,9 @@ const getStockBadgeClass = (product: Product): string => {
   return 'stock-badge-in'
 }
 
-// ═══════════════════════════════════════════════════
-// UTILITIES
-// ═══════════════════════════════════════════════════
+
+
+
 const formatPrice = (price: number) => {
   return price.toLocaleString('en-PH', {
     minimumFractionDigits: 2,
@@ -1001,9 +978,9 @@ const formatPrice = (price: number) => {
   })
 }
 
-// ═══════════════════════════════════════════════════
-// LIFECYCLE
-// ═══════════════════════════════════════════════════
+
+
+
 onMounted(() => {
   applyFilters()
 })
@@ -1018,9 +995,6 @@ onMounted(() => {
 .spinner-loader {
   animation: spin 1s linear infinite;
 }
-/* ═══════════════════════════════════════════════════
-   CSS VARIABLES
-   ═══════════════════════════════════════════════════ */
 .products-page {
   --gold: #c9a050;
   --gold-light: #d4af37;
@@ -1036,9 +1010,6 @@ onMounted(() => {
   min-height: 100vh;
 }
 
-/* ═══════════════════════════════════════════════════
-   1. MAIN LAYOUT
-   ═══════════════════════════════════════════════════ */
 .products-main {
   background: var(--light);
   padding: 3rem 0 4rem;
@@ -1057,9 +1028,6 @@ onMounted(() => {
   gap: 3rem;
 }
 
-/* ═══════════════════════════════════════════════════
-   3. FILTER SIDEBAR
-   ═══════════════════════════════════════════════════ */
 .filter-sidebar {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
@@ -1152,7 +1120,6 @@ onMounted(() => {
   margin: 1rem 0;
 }
 
-/* Search Input */
 .search-input-wrap {
   position: relative;
   margin-top: 0.5rem;
@@ -1182,7 +1149,6 @@ onMounted(() => {
   border-color: var(--gold);
 }
 
-/* Category List */
 .category-list {
   margin-top: 0.5rem;
 }
@@ -1217,7 +1183,6 @@ onMounted(() => {
   height: 14px;
 }
 
-/* Price Range */
 .price-range-display {
   display: flex;
   justify-content: space-between;
@@ -1293,9 +1258,6 @@ onMounted(() => {
   color: var(--white);
 }
 
-/* ═══════════════════════════════════════════════════
-   4. PRODUCTS CONTENT
-   ═══════════════════════════════════════════════════ */
 .products-header {
   display: flex;
   justify-content: space-between;
@@ -1345,7 +1307,6 @@ onMounted(() => {
   outline: none;
 }
 
-/* Products Grid */
 .products-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1660,7 +1621,6 @@ onMounted(() => {
   to { transform: rotate(360deg); }
 }
 
-/* No Results */
 .no-results {
   display: flex;
   align-items: center;
@@ -1766,9 +1726,6 @@ onMounted(() => {
 }
 
 
-/* ═══════════════════════════════════════════════════
-   5. QUICK VIEW MODAL
-   ═══════════════════════════════════════════════════ */
 .quick-view-overlay {
   position: fixed;
   inset: 0;
@@ -2091,9 +2048,6 @@ onMounted(() => {
   box-shadow: 0 8px 25px rgba(201, 160, 80, 0.5);
 }
 
-/* ═══════════════════════════════════════════════════
-   6. RESPONSIVE
-   ═══════════════════════════════════════════════════ */
 @media (max-width: 1200px) {
   .products-layout {
     grid-template-columns: 300px 1fr;

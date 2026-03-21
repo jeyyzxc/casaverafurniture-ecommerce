@@ -82,7 +82,7 @@ export function useWishlist() {
 
     try {
       if (isCurrentlyInWishlist) {
-        // Remove from wishlist
+        
         const response = await wishlistApi.remove(productId)
         if (response.data.success) {
           wishlistItems.value.delete(productId)
@@ -93,7 +93,7 @@ export function useWishlist() {
           return { success: false, message: response.data.message }
         }
       } else {
-        // Add to wishlist
+        
         const response = await wishlistApi.add(productId)
         if (response.data.success) {
           wishlistItems.value.add(productId)

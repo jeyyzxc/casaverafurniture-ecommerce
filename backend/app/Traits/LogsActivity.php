@@ -7,9 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 trait LogsActivity
 {
-    /**
-     * Log an activity
-     */
+    
     protected function logActivity(
         string $action,
         string $module,
@@ -30,7 +28,7 @@ trait LogsActivity
                 $properties
             );
         } catch (\Exception $e) {
-            // Silently fail logging to prevent breaking the main operation
+            
             \Log::warning('Failed to log activity', [
                 'error' => $e->getMessage(),
                 'action' => $action,
@@ -39,9 +37,6 @@ trait LogsActivity
         }
     }
 
-    /**
-     * Get old values from model before update
-     */
     protected function getOldValues(Model $model, array $fields): array
     {
         $oldValues = [];
@@ -53,9 +48,6 @@ trait LogsActivity
         return $oldValues;
     }
 
-    /**
-     * Get new values from request or model
-     */
     protected function getNewValues($data, array $fields): array
     {
         $newValues = [];

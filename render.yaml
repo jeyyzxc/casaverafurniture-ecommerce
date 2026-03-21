@@ -72,11 +72,11 @@ services:
           name: casaverafurniture-db
           property: password
       - key: SESSION_DRIVER
-        value: database
+        value: redis
       - key: CACHE_STORE
-        value: database
+        value: redis
       - key: QUEUE_CONNECTION
-        value: database
+        value: redis
       - key: BROADCAST_DRIVER
         value: log
       - key: LOG_CHANNEL

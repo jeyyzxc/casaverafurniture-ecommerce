@@ -37,12 +37,10 @@ interface Cart {
 }
 
 export const useCartStore = defineStore('cart', () => {
-  // State
   const cart = ref<Cart | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  // Computed - ensure proper number conversion
   const itemCount = computed(() => {
     const value = cart.value?.item_count
     return typeof value === 'number' ? value : parseInt(String(value || 0), 10)
@@ -75,7 +73,6 @@ export const useCartStore = defineStore('cart', () => {
   const appliedCoupon = computed(() => cart.value?.coupon_code || null)
   const isEmpty = computed(() => !cart.value || cart.value.items.length === 0)
 
-  // Actions
   async function fetchCart() {
     isLoading.value = true
     error.value = null
@@ -86,7 +83,6 @@ export const useCartStore = defineStore('cart', () => {
         cart.value = response.data.data
       } else {
         error.value = response.data.message || 'Failed to load cart'
-        // If cart fetch fails, ensure cart is reset
         if (!cart.value) {
           cart.value = {
             id: 0,
@@ -103,10 +99,8 @@ export const useCartStore = defineStore('cart', () => {
     } catch (err: unknown) {
       const apiError = err as { response?: { status?: number; data?: { message?: string } }; message?: string }
       error.value = apiError.response?.data?.message || apiError.message || 'Failed to load cart'
-      
-      // If cart fetch fails with 401, don't reset cart (auth issue)
+
       if (apiError.response?.status !== 401) {
-        // Reset cart on other errors
         cart.value = {
           id: 0,
           item_count: 0,
@@ -131,18 +125,17 @@ export const useCartStore = defineStore('cart', () => {
       const response = await cartApi.addItem(productId, quantity)
       if (response.data.success) {
         cart.value = response.data.data
-        
-        // Emit custom event for real-time updates
+
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('realtime:cart:updated', { 
-            detail: { 
+          window.dispatchEvent(new CustomEvent('realtime:cart:updated', {
+            detail: {
               item_count: cart.value.item_count,
               action: 'add',
-              product_id: productId 
-            } 
+              product_id: productId
+            }
           }))
         }
-        
+
         return { success: true, message: response.data.message }
       }
       return { success: false, message: response.data.message || 'Failed to add item' }
@@ -163,18 +156,17 @@ export const useCartStore = defineStore('cart', () => {
       const response = await cartApi.updateItem(itemId, quantity)
       if (response.data.success) {
         cart.value = response.data.data
-        
-        // Emit custom event for real-time updates
+
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('realtime:cart:updated', { 
-            detail: { 
+          window.dispatchEvent(new CustomEvent('realtime:cart:updated', {
+            detail: {
               item_count: cart.value.item_count,
               action: 'update',
-              item_id: itemId 
-            } 
+              item_id: itemId
+            }
           }))
         }
-        
+
         return { success: true, message: response.data.message }
       }
       return { success: false, message: response.data.message || 'Failed to update item' }
@@ -195,18 +187,17 @@ export const useCartStore = defineStore('cart', () => {
       const response = await cartApi.removeItem(itemId)
       if (response.data.success) {
         cart.value = response.data.data
-        
-        // Emit custom event for real-time updates
+
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('realtime:cart:updated', { 
-            detail: { 
+          window.dispatchEvent(new CustomEvent('realtime:cart:updated', {
+            detail: {
               item_count: cart.value.item_count,
               action: 'remove',
-              item_id: itemId 
-            } 
+              item_id: itemId
+            }
           }))
         }
-        
+
         return { success: true, message: response.data.message }
       }
       return { success: false, message: response.data.message || 'Failed to remove item' }
@@ -227,17 +218,16 @@ export const useCartStore = defineStore('cart', () => {
       const response = await cartApi.clear()
       if (response.data.success) {
         cart.value = response.data.data
-        
-        // Emit custom event for real-time updates
+
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('realtime:cart:updated', { 
-            detail: { 
+          window.dispatchEvent(new CustomEvent('realtime:cart:updated', {
+            detail: {
               item_count: 0,
               action: 'clear'
-            } 
+            }
           }))
         }
-        
+
         return { success: true, message: response.data.message }
       }
       return { success: false, message: response.data.message || 'Failed to clear cart' }
@@ -290,17 +280,10 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  // Real-time cart update handler
   const handleCartUpdate = () => {
-    // Refresh cart from server to get latest data
     fetchCart()
   }
 
-  // Set up real-time listeners (only in browser environment)
-  // Note: Event listeners are set up in components that use the store
-  // The store will automatically update when cart operations complete
-
-  // Initialize cart on store creation (only in browser)
   if (typeof window !== 'undefined') {
     fetchCart()
   }

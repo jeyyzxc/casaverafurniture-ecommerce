@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Admin Controllers
 use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
@@ -17,7 +16,6 @@ use App\Http\Controllers\Api\Admin\ReportsController;
 use App\Http\Controllers\Api\Admin\CMSController;
 use App\Http\Controllers\Api\Admin\PromotionController;
 
-// Client Controllers
 use App\Http\Controllers\Api\Client\AuthController as ClientAuthController;
 use App\Http\Controllers\Api\Client\HomeController;
 use App\Http\Controllers\Api\Client\ProductController as ClientProductController;
@@ -26,34 +24,19 @@ use App\Http\Controllers\Api\Client\OrderController as ClientOrderController;
 use App\Http\Controllers\Api\Client\WishlistController;
 use App\Http\Controllers\Api\Client\PromotionController as ClientPromotionController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-*/
-
-// =====================
-// PUBLIC CLIENT ROUTES
-// =====================
-
-// Home & Site Data
 Route::get('/home', [HomeController::class, 'index']);
 Route::get('/settings', [HomeController::class, 'settings']);
 Route::get('/categories', [HomeController::class, 'categories']);
 
-// Products (Public)
 Route::get('/products', [ClientProductController::class, 'index']);
 Route::get('/products/{slug}', [ClientProductController::class, 'show']);
 Route::get('/categories/{slug}', [ClientProductController::class, 'category']);
 
-// Checkout Data (Public)
 Route::get('/checkout/shipping-zones', [ClientOrderController::class, 'shippingZones']);
 Route::get('/checkout/payment-methods', [ClientOrderController::class, 'paymentMethods']);
 
-// Promotions (Public - visible promotions only)
 Route::get('/promotions', [ClientPromotionController::class, 'index']);
 
-// Cart (Session-based, works for guests)
 Route::prefix('cart')->group(function () {
     Route::get('/', [CartController::class, 'index']);
     Route::post('/items', [CartController::class, 'addItem']);
@@ -64,25 +47,19 @@ Route::prefix('cart')->group(function () {
     Route::delete('/coupon', [CartController::class, 'removeCoupon']);
 });
 
-// =====================
-// CLIENT AUTH ROUTES
-// =====================
-
 Route::prefix('auth')->group(function () {
     Route::post('/register', [ClientAuthController::class, 'register']);
     Route::post('/login', [ClientAuthController::class, 'login']);
-    Route::post('/refresh', [ClientAuthController::class, 'refresh']); // Public refresh endpoint
+    Route::post('/refresh', [ClientAuthController::class, 'refresh']); 
 
-    // Google OAuth routes need session middleware for state storage
     Route::middleware('web')->group(function () {
-        Route::get('/google', [ClientAuthController::class, 'redirectToGoogle']); // Initiate Google OAuth
-        Route::get('/google/callback', [ClientAuthController::class, 'handleGoogleCallback']); // Handle Google OAuth callback
+        Route::get('/google', [ClientAuthController::class, 'redirectToGoogle']); 
+        Route::get('/google/callback', [ClientAuthController::class, 'handleGoogleCallback']); 
     });
 });
 
-// Protected Client Routes
 Route::middleware('auth:sanctum')->group(function () {
-    // Auth
+    
     Route::prefix('auth')->group(function () {
         Route::get('/me', [ClientAuthController::class, 'me']);
         Route::post('/logout', [ClientAuthController::class, 'logout']);
@@ -91,7 +68,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/account-stats', [ClientAuthController::class, 'getAccountStats']);
     });
 
-    // Addresses
     Route::prefix('addresses')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\Client\UserAddressController::class, 'index']);
         Route::post('/', [\App\Http\Controllers\Api\Client\UserAddressController::class, 'store']);
@@ -101,7 +77,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{userAddress}/default-billing', [\App\Http\Controllers\Api\Client\UserAddressController::class, 'setDefaultBilling']);
     });
 
-    // Orders
     Route::prefix('orders')->group(function () {
         Route::get('/', [ClientOrderController::class, 'index']);
         Route::post('/', [ClientOrderController::class, 'store']);
@@ -110,7 +85,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{orderNumber}/cancel', [ClientOrderController::class, 'cancel']);
     });
 
-    // Wishlist
     Route::prefix('wishlist')->group(function () {
         Route::get('/', [WishlistController::class, 'index']);
         Route::post('/', [WishlistController::class, 'store']);
@@ -120,18 +94,13 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-// =====================
-// ADMIN AUTH ROUTES
-// =====================
-
 Route::prefix('admin')->group(function () {
-    // Public Admin Routes
+    
     Route::post('/auth/login', [AdminAuthController::class, 'login']);
-    Route::post('/auth/refresh', [AdminAuthController::class, 'refresh']); // Public refresh endpoint
+    Route::post('/auth/refresh', [AdminAuthController::class, 'refresh']); 
 
-    // Protected Admin Routes
     Route::middleware(['auth:admin', 'admin.only'])->group(function () {
-        // Auth
+        
         Route::prefix('auth')->group(function () {
             Route::get('/me', [AdminAuthController::class, 'me']);
             Route::post('/logout', [AdminAuthController::class, 'logout']);
@@ -139,11 +108,9 @@ Route::prefix('admin')->group(function () {
             Route::put('/password', [AdminAuthController::class, 'changePassword']);
         });
 
-        // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index']);
         Route::get('/dashboard/quick-stats', [DashboardController::class, 'quickStats']);
 
-        // Reports & Analytics
         Route::prefix('reports')->group(function () {
             Route::get('/summary', [ReportsController::class, 'summary']);
             Route::get('/sales', [ReportsController::class, 'sales']);
@@ -152,7 +119,6 @@ Route::prefix('admin')->group(function () {
             Route::get('/users', [ReportsController::class, 'users']);
         });
 
-        // Products
         Route::prefix('products')->group(function () {
             Route::get('/', [AdminProductController::class, 'index']);
             Route::post('/', [AdminProductController::class, 'store']);
@@ -164,7 +130,6 @@ Route::prefix('admin')->group(function () {
             Route::get('/{product}/stock-history', [AdminProductController::class, 'getStockHistory']);
         });
 
-        // Categories
         Route::prefix('categories')->group(function () {
             Route::get('/', [AdminCategoryController::class, 'index']);
             Route::post('/', [AdminCategoryController::class, 'store']);
@@ -174,7 +139,6 @@ Route::prefix('admin')->group(function () {
             Route::post('/reorder', [AdminCategoryController::class, 'reorder']);
         });
 
-        // Orders
         Route::prefix('orders')->group(function () {
             Route::get('/', [AdminOrderController::class, 'index']);
             Route::get('/statistics', [AdminOrderController::class, 'statistics']);
@@ -185,7 +149,6 @@ Route::prefix('admin')->group(function () {
             Route::post('/{order}/cancel', [AdminOrderController::class, 'cancel']);
         });
 
-        // Users
         Route::prefix('users')->group(function () {
             Route::get('/', [AdminUserController::class, 'index']);
             Route::get('/{user}', [AdminUserController::class, 'show']);
@@ -196,7 +159,6 @@ Route::prefix('admin')->group(function () {
             Route::get('/{user}/orders', [AdminUserController::class, 'orders']);
         });
 
-        // Payments
         Route::prefix('payments')->group(function () {
             Route::get('/', [AdminPaymentController::class, 'index']);
             Route::get('/statistics', [AdminPaymentController::class, 'statistics']);
@@ -205,7 +167,6 @@ Route::prefix('admin')->group(function () {
             Route::post('/{payment}/reject', [AdminPaymentController::class, 'reject']);
         });
 
-        // Settings
         Route::prefix('settings')->group(function () {
             Route::get('/', [SettingsController::class, 'index']);
             Route::put('/', [SettingsController::class, 'update']);
@@ -217,7 +178,6 @@ Route::prefix('admin')->group(function () {
             Route::put('/couriers/{courier}', [SettingsController::class, 'updateCourier']);
         });
 
-        // Shipping Zones (dedicated controller)
         Route::prefix('shipping')->group(function () {
             Route::get('/', [\App\Http\Controllers\Api\Admin\ShippingController::class, 'index']);
             Route::post('/', [\App\Http\Controllers\Api\Admin\ShippingController::class, 'store']);
@@ -226,39 +186,34 @@ Route::prefix('admin')->group(function () {
             Route::delete('/{shippingZone}', [\App\Http\Controllers\Api\Admin\ShippingController::class, 'destroy']);
         });
 
-        // File Uploads
         Route::prefix('upload')->group(function () {
             Route::post('/image', [\App\Http\Controllers\Api\Admin\FileUploadController::class, 'uploadImage']);
             Route::delete('/file', [\App\Http\Controllers\Api\Admin\FileUploadController::class, 'deleteFile']);
         });
 
-        // Activity Logs
         Route::prefix('activity-logs')->group(function () {
             Route::get('/', [ActivityLogController::class, 'index']);
             Route::get('/statistics', [ActivityLogController::class, 'statistics']);
             Route::get('/{activityLog}', [ActivityLogController::class, 'show']);
         });
 
-        // Admins (Super Admin only for create/update/delete)
         Route::prefix('admins')->group(function () {
             Route::get('/', [AdminController::class, 'index']);
             Route::get('/roles', [AdminController::class, 'roles']);
             Route::get('/{admin}', [AdminController::class, 'show']);
-            Route::post('/', [AdminController::class, 'store']); // Super Admin only
-            Route::put('/{admin}', [AdminController::class, 'update']); // Super Admin only (or self for profile)
-            Route::delete('/{admin}', [AdminController::class, 'destroy']); // Super Admin only
+            Route::post('/', [AdminController::class, 'store']); 
+            Route::put('/{admin}', [AdminController::class, 'update']); 
+            Route::delete('/{admin}', [AdminController::class, 'destroy']); 
         });
 
-        // CMS (Content Management System)
         Route::prefix('cms')->group(function () {
-            // Homepage Sections
+            
             Route::get('/sections', [CMSController::class, 'getSections']);
             Route::get('/sections/{section}', [CMSController::class, 'getSection']);
             Route::post('/sections', [CMSController::class, 'saveSection']);
             Route::put('/sections/{section}', [CMSController::class, 'saveSection']);
             Route::delete('/sections/{section}', [CMSController::class, 'deleteSection']);
 
-            // Banners
             Route::get('/banners', [CMSController::class, 'getBanners']);
             Route::get('/banners/{banner}', [CMSController::class, 'getBanner']);
             Route::post('/banners', [CMSController::class, 'saveBanner']);
@@ -266,7 +221,6 @@ Route::prefix('admin')->group(function () {
             Route::delete('/banners/{banner}', [CMSController::class, 'deleteBanner']);
         });
 
-        // Promotions
         Route::prefix('promotions')->group(function () {
             Route::get('/', [PromotionController::class, 'index']);
             Route::get('/{promotion}', [PromotionController::class, 'show']);

@@ -17,9 +17,9 @@
           <div class="form-row">
             <div class="form-group">
               <div class="input-wrapper" :class="{ focused: firstNameFocused || form.firstName, error: errors.firstName }">
-              <input 
-                type="text" 
-                v-model="form.firstName" 
+              <input
+                type="text"
+                v-model="form.firstName"
                 @input="handleFirstNameInput"
                 @keydown="preventLeadingSpace"
                 @focus="firstNameFocused = true"
@@ -33,9 +33,9 @@
 
             <div class="form-group">
               <div class="input-wrapper" :class="{ focused: lastNameFocused || form.lastName, error: errors.lastName }">
-              <input 
-                type="text" 
-                v-model="form.lastName" 
+              <input
+                type="text"
+                v-model="form.lastName"
                 @input="handleLastNameInput"
                 @keydown="preventLeadingSpace"
                 @focus="lastNameFocused = true"
@@ -50,9 +50,9 @@
 
           <div class="form-group">
             <div class="input-wrapper" :class="{ focused: emailFocused || form.email, error: errors.email }">
-              <input 
-                type="email" 
-                v-model="form.email" 
+              <input
+                type="email"
+                v-model="form.email"
                 @input="handleEmailInput"
                 @keydown="preventSpaceInEmail"
                 @focus="emailFocused = true"
@@ -66,8 +66,8 @@
 
           <div class="form-group">
             <div class="input-wrapper" :class="{ focused: passwordFocused || form.password, error: errors.password }">
-              <input 
-                :type="showPassword ? 'text' : 'password'" 
+              <input
+                :type="showPassword ? 'text' : 'password'"
                 v-model="form.password"
                 @input="handlePasswordInput"
                 @focus="passwordFocused = true"
@@ -90,8 +90,8 @@
 
           <div class="form-group">
             <div class="input-wrapper" :class="{ focused: confirmFocused || form.confirmPassword, error: errors.confirmPassword }">
-              <input 
-                :type="showConfirm ? 'text' : 'password'" 
+              <input
+                :type="showConfirm ? 'text' : 'password'"
                 v-model="form.confirmPassword"
                 @input="handleConfirmPasswordInput"
                 @focus="confirmFocused = true"
@@ -116,8 +116,8 @@
             <input type="checkbox" v-model="agreeTerms">
             <span class="checkmark"></span>
             <span class="checkbox-label">
-              I agree to the 
-              <router-link to="/terms" @click="close">Terms</router-link> & 
+              I agree to the
+              <router-link to="/terms" @click="close">Terms</router-link> &
               <router-link to="/privacy" @click="close">Privacy Policy</router-link>
             </span>
           </label>
@@ -212,201 +212,169 @@ const togglePassword = (field: 'password' | 'confirm') => {
   }
 }
 
-// Prevent space key from being entered at the start of name fields
 const preventLeadingSpace = (event: KeyboardEvent) => {
   const target = event.target as HTMLInputElement
-  // If field is empty and user tries to type space, prevent it
   if (event.key === ' ' && target.value.length === 0) {
     event.preventDefault()
   }
 }
 
-// Strictly prevent spaces in email field
 const preventSpaceInEmail = (event: KeyboardEvent) => {
-  // Prevent space key from being entered at all in email field
   if (event.key === ' ') {
     event.preventDefault()
   }
 }
 
-// Handle first name input - prevent leading spaces and consecutive spaces
 const handleFirstNameInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   let value = target.value
-  
-  // Block spaces at the start - must start with a letter
+
   if (value.length > 0 && value[0] === ' ') {
     value = value.trimStart()
   }
-  
-  // Replace consecutive spaces with single space (allow only one space at a time)
+
   value = value.replace(/\s{2,}/g, ' ')
-  
+
   form.firstName = value
   errors.firstName = ''
 }
 
-// Handle last name input - prevent leading spaces and consecutive spaces
 const handleLastNameInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   let value = target.value
-  
-  // Block spaces at the start - must start with a letter
+
   if (value.length > 0 && value[0] === ' ') {
     value = value.trimStart()
   }
-  
-  // Replace consecutive spaces with single space (allow only one space at a time)
+
   value = value.replace(/\s{2,}/g, ' ')
-  
+
   form.lastName = value
   errors.lastName = ''
 }
 
-// Handle email input - remove any spaces that might have been pasted
 const handleEmailInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   let value = target.value
-  
-  // Remove all spaces from email (in case user pastes text with spaces)
+
   value = value.replace(/\s/g, '')
-  
+
   form.email = value
   errors.email = ''
 }
 
-// Password: allow spaces but prevent leading spaces
 const handlePasswordInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   let value = target.value
-  
-  // Remove leading spaces only
+
   if (value.startsWith(' ')) {
     value = value.trimStart()
   }
-  
-  // Allow single spaces in password, but prevent consecutive spaces
+
   value = value.replace(/\s{2,}/g, ' ')
-  
+
   form.password = value
 }
 
 const handleConfirmPasswordInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   let value = target.value
-  
-  // Remove leading spaces only
+
   if (value.startsWith(' ')) {
     value = value.trimStart()
   }
-  
-  // Allow single spaces in password, but prevent consecutive spaces
+
   value = value.replace(/\s{2,}/g, ' ')
-  
+
   form.confirmPassword = value
 }
 
 const validateFirstName = () => {
   errors.firstName = ''
-  
-  // Check if field is empty
+
   if (!form.firstName.trim()) {
     errors.firstName = 'First Name is required'
     return false
   }
-  
-  // Check minimum length (6 characters for full name, but first name alone - let's use 2 as minimum)
-  // Actually, since we have separate first/last, let's use 2 chars minimum each
+
   if (form.firstName.trim().length < 2) {
     errors.firstName = 'First Name must be at least 2 characters'
     return false
   }
-  
-  // Check if starts with space (shouldn't happen due to input handler, but double-check)
+
   if (form.firstName.trim().startsWith(' ')) {
     errors.firstName = 'First Name cannot start with a space'
     return false
   }
-  
-  // Check if starts with a letter (not a space or number)
+
   if (form.firstName.trim().length > 0 && !/^[a-zA-Z]/.test(form.firstName.trim())) {
     errors.firstName = 'First Name must start with a letter'
     return false
   }
-  
-  // Check for consecutive spaces
+
   if (/\s{2,}/.test(form.firstName)) {
     errors.firstName = 'First Name cannot contain consecutive spaces'
     return false
   }
-  
+
   return true
 }
 
 const validateLastName = () => {
   errors.lastName = ''
-  
-  // Check if field is empty
+
   if (!form.lastName.trim()) {
     errors.lastName = 'Last Name is required'
     return false
   }
-  
-  // Check minimum length (2 characters minimum)
+
   if (form.lastName.trim().length < 2) {
     errors.lastName = 'Last Name must be at least 2 characters'
     return false
   }
-  
-  // Check if starts with space (shouldn't happen due to input handler, but double-check)
+
   if (form.lastName.trim().startsWith(' ')) {
     errors.lastName = 'Last Name cannot start with a space'
     return false
   }
-  
-  // Check if starts with a letter (not a space or number)
+
   if (form.lastName.trim().length > 0 && !/^[a-zA-Z]/.test(form.lastName.trim())) {
     errors.lastName = 'Last Name must start with a letter'
     return false
   }
-  
-  // Check for consecutive spaces
+
   if (/\s{2,}/.test(form.lastName)) {
     errors.lastName = 'Last Name cannot contain consecutive spaces'
     return false
   }
-  
+
   return true
 }
 
 const validateEmail = () => {
   errors.email = ''
-  
-  // Check if field is empty
+
   if (!form.email.trim()) {
     errors.email = 'Email Address is required'
     return false
   }
-  
-  // Check if email contains any spaces (strictly not allowed)
+
   if (/\s/.test(form.email)) {
     errors.email = 'Email Address cannot contain spaces'
     return false
   }
-  
-  // Check if starts with a letter (not a space or number)
+
   if (form.email.trim().length > 0 && !/^[a-zA-Z]/.test(form.email.trim())) {
     errors.email = 'Email Address must start with a letter'
     return false
   }
-  
-  // Email format validation
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(form.email.trim())) {
     errors.email = 'Please enter a valid email address'
     return false
   }
-  
+
   return true
 }
 
@@ -444,27 +412,22 @@ const validateForm = () => {
   errors.confirmPassword = ''
   errors.general = ''
 
-  // Validate first name
   if (!validateFirstName()) {
     isValid = false
   }
 
-  // Validate last name
   if (!validateLastName()) {
     isValid = false
   }
 
-  // Validate email
   if (!validateEmail()) {
     isValid = false
   }
 
-  // Validate password
   if (!validatePassword()) {
     isValid = false
   }
 
-  // Validate confirm password
   if (!form.confirmPassword) {
     errors.confirmPassword = 'Please confirm your password'
     isValid = false
@@ -479,16 +442,14 @@ const validateForm = () => {
 }
 
 const handleSignup = async () => {
-  // Immediately validate all fields and show ALL errors at once
+
   errors.general = ''
   let isValid = true
-  
-  // Validate first name - set error immediately if empty
   if (!form.firstName || !form.firstName.trim()) {
     errors.firstName = 'First Name is required'
     isValid = false
   } else {
-    // Field has content, validate it
+
     if (form.firstName.trim().length < 2) {
       errors.firstName = 'First Name must be at least 2 characters'
       isValid = false
@@ -505,13 +466,11 @@ const handleSignup = async () => {
       errors.firstName = ''
     }
   }
-  
-  // Validate last name - set error immediately if empty
   if (!form.lastName || !form.lastName.trim()) {
     errors.lastName = 'Last Name is required'
     isValid = false
   } else {
-    // Field has content, validate it
+
     if (form.lastName.trim().length < 2) {
       errors.lastName = 'Last Name must be at least 2 characters'
       isValid = false
@@ -528,13 +487,11 @@ const handleSignup = async () => {
       errors.lastName = ''
     }
   }
-  
-  // Validate email - set error immediately if empty
   if (!form.email || !form.email.trim()) {
     errors.email = 'Email Address is required'
     isValid = false
   } else {
-    // Field has content, validate it
+
     if (/\s/.test(form.email)) {
       errors.email = 'Email Address cannot contain spaces'
       isValid = false
@@ -551,13 +508,11 @@ const handleSignup = async () => {
       }
     }
   }
-  
-  // Validate password - set error immediately if empty
   if (!form.password || form.password.trim() === '') {
     errors.password = 'Password is required'
     isValid = false
   } else {
-    // Field has content, validate it
+
     if (form.password.length < 8) {
       errors.password = 'Password must be at least 8 characters'
       isValid = false
@@ -568,8 +523,6 @@ const handleSignup = async () => {
       errors.password = ''
     }
   }
-  
-  // Validate confirm password - set error immediately if empty
   if (!form.confirmPassword || form.confirmPassword.trim() === '') {
     errors.confirmPassword = 'Please confirm your password'
     isValid = false
@@ -582,8 +535,6 @@ const handleSignup = async () => {
   } else {
     errors.confirmPassword = ''
   }
-  
-  // If validation fails, prevent submission (all errors are already set above)
   if (!isValid) {
     return
   }
@@ -607,10 +558,10 @@ const handleSignup = async () => {
       })
       close()
     } else {
-      // Handle specific error messages
+
       const errorMessage = result.message || ''
       if (result.errors) {
-        // Handle field-specific errors from backend
+
         if (result.errors.first_name) {
           errors.firstName = result.errors.first_name[0]
         }
@@ -640,7 +591,7 @@ const handleSignup = async () => {
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || 'An error occurred. Please try again.'
     const errorData = error?.response?.data?.errors || {}
-    
+
     if (errorData.first_name) {
       errors.firstName = errorData.first_name[0]
     }
@@ -653,7 +604,7 @@ const handleSignup = async () => {
     if (errorData.password) {
       errors.password = errorData.password[0]
     }
-    
+
     if (!errors.firstName && !errors.lastName && !errors.email && !errors.password) {
       errors.general = errorMessage
     }
@@ -682,25 +633,17 @@ const switchToLogin = () => {
   close()
   emit('switch-to-login')
 }
-
-// Handle Google OAuth signup
 const handleGoogleSignup = () => {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
-  // Redirect to backend Google OAuth endpoint
   window.location.href = `${apiUrl}/auth/google?action=signup`
 }
-
-// Lock body scroll when modal is open
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
-    // Lock body scroll
     document.body.style.overflow = 'hidden'
-    document.body.style.paddingRight = '0px' // Prevent layout shift
+    document.body.style.paddingRight = '0px'
   } else {
-    // Unlock body scroll
     document.body.style.overflow = ''
     document.body.style.paddingRight = ''
-    // Reset form
     form.firstName = ''
     form.lastName = ''
     form.email = ''
@@ -715,8 +658,6 @@ watch(() => props.isOpen, (newVal) => {
     agreeTerms.value = false
   }
 })
-
-// Cleanup on unmount
 onUnmounted(() => {
   document.body.style.overflow = ''
   document.body.style.paddingRight = ''
@@ -1072,7 +1013,7 @@ onUnmounted(() => {
   .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-box {
     padding: 2rem 1.5rem;
   }

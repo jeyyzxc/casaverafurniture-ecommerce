@@ -15,7 +15,7 @@ class ProductCreated implements ShouldBroadcast
 
     public function __construct(public Product $product)
     {
-        //
+        
     }
 
     public function broadcastOn(): array

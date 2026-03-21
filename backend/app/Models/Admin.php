@@ -44,13 +44,11 @@ class Admin extends Authenticatable
         ];
     }
 
-    // Accessors
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
     }
 
-    // Relationships
     public function role()
     {
         return $this->belongsTo(Role::class);
@@ -61,14 +59,12 @@ class Admin extends Authenticatable
         return $this->hasMany(AdminNotification::class);
     }
 
-    // Permission checking
     public function hasPermission(string $permission): bool
     {
         if (!$this->role) {
             return false;
         }
 
-        // Super Admin has all permissions
         if ($this->role->slug === 'super-admin') {
             return true;
         }

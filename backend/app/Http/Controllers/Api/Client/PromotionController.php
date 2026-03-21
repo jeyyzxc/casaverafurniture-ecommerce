@@ -10,9 +10,7 @@ use Carbon\Carbon;
 
 class PromotionController extends Controller
 {
-    /**
-     * Get visible promotions for clients
-     */
+    
     public function index(Request $request): JsonResponse
     {
         try {
@@ -27,12 +25,10 @@ class PromotionController extends Controller
                       ->orWhere('ends_at', '>=', $now);
                 });
 
-            // Get only active and visible promotions
             $promotions = $query->orderBy('priority', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            // Transform data for frontend
             $transformed = $promotions->map(function ($promotion) {
                 return [
                     'id' => $promotion->id,

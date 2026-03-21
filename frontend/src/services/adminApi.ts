@@ -1,8 +1,5 @@
 import api from './api'
 
-// ==================
-// AUTH
-// ==================
 
 export const adminAuth = {
   login: (email: string, password: string, remember = false) =>
@@ -25,9 +22,6 @@ export const adminAuth = {
     }),
 }
 
-// ==================
-// DASHBOARD
-// ==================
 
 export const dashboard = {
   getStats: (startDate?: string, endDate?: string) =>
@@ -36,9 +30,6 @@ export const dashboard = {
   getQuickStats: () => api.get('/admin/dashboard/quick-stats'),
 }
 
-// ==================
-// NOTIFICATIONS
-// ==================
 
 export const notifications = {
   list: (params?: { page?: number; per_page?: number; read?: boolean }) =>
@@ -53,9 +44,6 @@ export const notifications = {
   getUnreadCount: () => api.get('/admin/notifications/unread-count'),
 }
 
-// ==================
-// PRODUCTS
-// ==================
 
 export const products = {
   list: (params?: {
@@ -88,9 +76,6 @@ export const products = {
     api.get(`/admin/products/${id}/stock-history`, { params }),
 }
 
-// ==================
-// CATEGORIES
-// ==================
 
 export const categories = {
   list: (params?: { parent_id?: number | null; is_visible?: boolean; hierarchical?: boolean; search?: string }) =>
@@ -108,9 +93,6 @@ export const categories = {
     api.post('/admin/categories/reorder', { categories }),
 }
 
-// ==================
-// ORDERS
-// ==================
 
 export const orders = {
   list: (params?: {
@@ -148,9 +130,6 @@ export const orders = {
   statistics: () => api.get('/admin/orders/statistics'),
 }
 
-// ==================
-// USERS
-// ==================
 
 export const users = {
   list: (params?: {
@@ -176,9 +155,6 @@ export const users = {
     api.get(`/admin/users/${id}/orders`, { params }),
 }
 
-// ==================
-// PAYMENTS
-// ==================
 
 export const payments = {
   list: (params?: {
@@ -202,9 +178,6 @@ export const payments = {
   statistics: () => api.get('/admin/payments/statistics'),
 }
 
-// ==================
-// SETTINGS
-// ==================
 
 export const settings = {
   getAll: (group?: string) => api.get('/admin/settings', { params: { group } }),
@@ -227,9 +200,6 @@ export const settings = {
   updateCourier: (id: number, data: Record<string, unknown>) => api.put(`/admin/settings/couriers/${id}`, data),
 }
 
-// ==================
-// SHIPPING
-// ==================
 
 export const shipping = {
   list: (params?: { active_only?: boolean }) => api.get('/admin/shipping', { params }),
@@ -243,9 +213,6 @@ export const shipping = {
   delete: (id: number) => api.delete(`/admin/shipping/${id}`),
 }
 
-// ==================
-// FILE UPLOAD
-// ==================
 
 export const upload = {
   image: (file: File, folder?: string) => {
@@ -264,9 +231,6 @@ export const upload = {
   deleteFile: (path: string) => api.delete('/admin/upload/file', { data: { path } }),
 }
 
-// ==================
-// ACTIVITY LOGS
-// ==================
 
 export const activityLogs = {
   list: (params?: {
@@ -287,9 +251,6 @@ export const activityLogs = {
   statistics: () => api.get('/admin/activity-logs/statistics'),
 }
 
-// ==================
-// ADMINS
-// ==================
 
 export const admins = {
   list: (params?: {
@@ -330,19 +291,16 @@ export const admins = {
   getRoles: () => api.get('/admin/admins/roles'),
 }
 
-// ==================
-// CMS (Content Management System)
-// ==================
 
 export const cms = {
-  // Homepage Sections
+  
   getSections: () => api.get('/admin/cms/sections'),
   getSection: (id: number) => api.get(`/admin/cms/sections/${id}`),
   createSection: (data: Record<string, unknown>) => api.post('/admin/cms/sections', data),
   updateSection: (id: number, data: Record<string, unknown>) => api.put(`/admin/cms/sections/${id}`, data),
   deleteSection: (id: number) => api.delete(`/admin/cms/sections/${id}`),
 
-  // Banners
+  
   getBanners: (params?: { position?: string }) => api.get('/admin/cms/banners', { params }),
   getBanner: (id: number) => api.get(`/admin/cms/banners/${id}`),
   createBanner: (data: Record<string, unknown>) => api.post('/admin/cms/banners', data),
@@ -350,9 +308,6 @@ export const cms = {
   deleteBanner: (id: number) => api.delete(`/admin/cms/banners/${id}`),
 }
 
-// ==================
-// PROMOTIONS
-// ==================
 
 export const promotions = {
   list: (params?: {
@@ -376,9 +331,6 @@ export const promotions = {
   toggle: (id: number) => api.post(`/admin/promotions/${id}/toggle`),
 }
 
-// ==================
-// REVIEWS
-// ==================
 
 export const reviews = {
   list: (params?: {
@@ -401,9 +353,6 @@ export const reviews = {
   delete: (id: number) => api.delete(`/admin/reviews/${id}`),
 }
 
-// ==================
-// REPORTS & ANALYTICS
-// ==================
 
 export const reports = {
   summary: (params?: { start_date?: string; end_date?: string }) =>

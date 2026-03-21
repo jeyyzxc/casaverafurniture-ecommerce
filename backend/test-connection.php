@@ -1,8 +1,4 @@
 <?php
-/**
- * Quick connection test script
- * Run: php test-connection.php
- */
 
 require __DIR__ . '/vendor/autoload.php';
 
@@ -11,7 +7,6 @@ $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 echo "=== Connection Test ===\n\n";
 
-// Test Database Connection
 try {
     $connection = \DB::connection();
     $pdo = $connection->getPdo();
@@ -23,8 +18,7 @@ try {
     echo "  - Host: " . ($config['host'] ?? 'N/A') . "\n";
     echo "  - Database: " . ($config['database'] ?? 'N/A') . "\n";
     echo "  - Username: " . ($config['username'] ?? 'N/A') . "\n";
-    
-    // Test query
+
     try {
         $productCount = \DB::table('products')->count();
         echo "  - Products in database: {$productCount}\n";
@@ -39,18 +33,15 @@ try {
     exit(1);
 }
 
-// Test API Routes
 echo "\n✓ API Routes configured\n";
 echo "  - Base URL: " . config('app.url') . "\n";
 echo "  - Frontend URL: " . env('FRONTEND_URL', 'http://localhost:5173') . "\n";
 
-// Test CORS
 echo "\n✓ CORS Configuration:\n";
 $cors = config('cors');
 echo "  - Allowed origins: " . implode(', ', $cors['allowed_origins']) . "\n";
 echo "  - Supports credentials: " . ($cors['supports_credentials'] ? 'Yes' : 'No') . "\n";
 
-// Test Sanctum
 echo "\n✓ Sanctum Configuration:\n";
 $sanctum = config('sanctum');
 echo "  - Stateful domains: " . implode(', ', $sanctum['stateful']) . "\n";

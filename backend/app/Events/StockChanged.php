@@ -17,7 +17,7 @@ class StockChanged implements ShouldBroadcast
         public Product $product,
         public int $oldQuantity,
         public int $newQuantity,
-        public string $type = 'update' // 'update', 'low_stock', 'out_of_stock', 'restocked'
+        public string $type = 'update' 
     ) {}
 
     public function broadcastOn(): array

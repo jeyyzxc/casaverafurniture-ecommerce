@@ -85,7 +85,6 @@ class Payment extends Model
         return $this->hasMany(Refund::class);
     }
 
-    // Status helpers
     public function isPending(): bool
     {
         return $this->status === 'pending';
@@ -101,7 +100,6 @@ class Payment extends Model
         return $this->status === 'completed';
     }
 
-    // Generate transaction ID
     public static function generateTransactionId(): string
     {
         $prefix = 'TXN';
@@ -110,7 +108,6 @@ class Payment extends Model
         return "{$prefix}{$timestamp}{$random}";
     }
 
-    // Scopes
     public function scopeStatus($query, string $status)
     {
         return $query->where('status', $status);

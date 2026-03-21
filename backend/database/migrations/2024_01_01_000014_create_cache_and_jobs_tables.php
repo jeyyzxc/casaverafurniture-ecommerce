@@ -6,15 +6,10 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     * 
-     * CACHE & JOBS TABLES
-     * Laravel required tables for caching and queue jobs
-     */
+    
     public function up(): void
     {
-        // Cache Table
+        
         Schema::create('cache', function (Blueprint $table) {
             $table->string('key')->primary();
             $table->mediumText('value');
@@ -27,7 +22,6 @@ return new class extends Migration
             $table->integer('expiration')->index();
         });
 
-        // Jobs Table (for queues)
         Schema::create('jobs', function (Blueprint $table) {
             $table->id();
             $table->string('queue')->index();
@@ -62,9 +56,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('failed_jobs');

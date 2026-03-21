@@ -12,14 +12,11 @@ use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
-    /**
-     * List all users
-     */
+    
     public function index(Request $request): JsonResponse
     {
         $query = User::query();
 
-        // Search
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
@@ -28,28 +25,22 @@ class UserController extends Controller
             });
         }
 
-        // Filter by status
         if ($status = $request->input('status')) {
             $query->where('status', $status);
         }
 
-        // Sorting
         $sortBy = $request->input('sort_by', 'created_at');
         $sortOrder = $request->input('sort_order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
-        // Add aggregates for accurate reporting
-        // We calculate these on the fly to ensure they are always up to date
         $query->withCount('orders');
         $query->withSum(['orders' => function ($q) {
             $q->where('payment_status', 'paid');
         }], 'total');
 
-        // Pagination
         $perPage = $request->input('per_page', 15);
         $users = $query->paginate($perPage);
 
-        // Override the cached columns with the calculated values
         $users->getCollection()->transform(function ($user) {
             $user->order_count = $user->orders_count;
             $user->total_spent = $user->orders_sum_total ?? 0;
@@ -62,16 +53,12 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Get single user
-     */
     public function show(User $user): JsonResponse
     {
         $user->load(['addresses', 'orders' => function ($q) {
             $q->latest()->limit(10);
         }]);
 
-        // Also calculate for single user view
         $user->loadCount('orders');
         $user->loadSum(['orders' => function ($q) {
             $q->where('payment_status', 'paid');
@@ -86,9 +73,6 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Update user
-     */
     public function update(Request $request, User $user): JsonResponse
     {
         $validated = $request->validate([
@@ -117,9 +101,6 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Ban user
-     */
     public function ban(Request $request, User $user): JsonResponse
     {
         $validated = $request->validate([
@@ -132,7 +113,6 @@ class UserController extends Controller
             'banned_at' => now(),
         ]);
 
-        // Revoke all tokens
         $user->tokens()->delete();
 
         ActivityLog::log('ban', 'users', "Banned user: {$user->full_name}", $user);
@@ -143,9 +123,6 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Unban user
-     */
     public function unban(User $user): JsonResponse
     {
         $user->update([
@@ -162,9 +139,6 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Delete user (Permanent Delete)
-     */
     public function destroy(User $user): JsonResponse
     {
         try {
@@ -173,29 +147,20 @@ class UserController extends Controller
             $userName = $user->full_name;
             $userEmail = $user->email;
 
-            // Delete related data to ensure clean removal
             $user->tokens()->delete();
             $user->addresses()->delete();
             $user->cart()->delete();
             $user->wishlists()->delete();
 
-            // Note: We are not deleting orders here to preserve business records.
-            // If the database has strict foreign key constraints on orders,
-            // this might fail unless ON DELETE SET NULL or CASCADE is configured.
-            // Assuming we want to keep orders but remove the user link if necessary:
-            // $user->orders()->update(['user_id' => null]);
-
-            // Permanently delete the user
             $user->forceDelete();
 
             DB::commit();
 
-            // Log activity
             ActivityLog::log(
                 'delete',
                 'users',
                 "Permanently deleted user: {$userName} ({$userEmail})",
-                null // User is gone, so no subject
+                null 
             );
 
             return response()->json([
@@ -218,9 +183,6 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Get user orders
-     */
     public function orders(User $user, Request $request): JsonResponse
     {
         $perPage = $request->input('per_page', 15);

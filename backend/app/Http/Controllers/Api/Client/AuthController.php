@@ -22,17 +22,13 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    /**
-     * User Registration
-     */
     public function register(RegisterRequest $request): JsonResponse
     {
-        // Validate no leading spaces and no consecutive spaces (except password)
         $validator = Validator::make($request->all(), [
             'first_name' => ['regex:/^[^ ]/', 'regex:/^(?!.*  )/'],
             'last_name' => ['regex:/^[^ ]/', 'regex:/^(?!.*  )/'],
             'email' => ['regex:/^[^ ]/', 'regex:/^(?!.*  )/'],
-            'password' => ['regex:/^[^ ]/'], // Password: prevent leading spaces only, allow single spaces
+            'password' => ['regex:/^[^ ]/'], 
         ], [
             'first_name.regex' => 'First name cannot start with a space and cannot contain consecutive spaces.',
             'last_name.regex' => 'Last name cannot start with a space and cannot contain consecutive spaces.',
@@ -50,7 +46,6 @@ class AuthController extends Controller
 
         $validated = $request->validated();
 
-        // Create user with hashed password
         $user = User::create([
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
@@ -61,16 +56,13 @@ class AuthController extends Controller
             'status' => 'active',
         ]);
 
-        // Generate access and refresh tokens
-        $tokens = $user->generateTokens('user-token', ['*'], 30); // 30 days refresh token
+        $tokens = $user->generateTokens('user-token', ['*'], 30); 
 
-        // Update login info
         $user->update([
             'last_login_at' => now(),
             'last_login_ip' => $request->ip(),
         ]);
 
-        // Log user login
         DB::table('user_login_logs')->insert([
             'user_id' => $user->id,
             'email' => $user->email,
@@ -80,23 +72,20 @@ class AuthController extends Controller
             'created_at' => now(),
         ]);
 
-        // Log activity
         ActivityLog::log('register', 'auth', "New user {$user->full_name} registered", $user);
 
-        // Broadcast user registered event
         event(new UserRegistered($user));
 
-        // Create HTTP-only cookie for refresh token
         $refreshTokenCookie = cookie(
             'client_refresh_token',
             $tokens['refresh_token'],
-            30 * 24 * 60, // 30 days in minutes
+            30 * 24 * 60, 
             '/',
             null,
-            config('app.env') === 'production', // Secure in production
-            true, // HttpOnly
-            false, // Raw
-            'Lax' // SameSite
+            config('app.env') === 'production', 
+            true, 
+            false, 
+            'Lax' 
         );
 
         return response()->json([
@@ -117,16 +106,12 @@ class AuthController extends Controller
         ], 201)->cookie($refreshTokenCookie);
     }
 
-    /**
-     * User Login
-     */
     public function login(LoginRequest $request): JsonResponse
     {
-        // Validate no leading spaces and no consecutive spaces for email
-        // Password: allow spaces but prevent leading spaces
+
         $validator = Validator::make($request->all(), [
             'email' => ['regex:/^[^ ]/', 'regex:/^(?!.*  )/'],
-            'password' => ['regex:/^[^ ]/'], // Password: prevent leading spaces only, allow single spaces
+            'password' => ['regex:/^[^ ]/'], 
         ], [
             'email.regex' => 'Email cannot start with a space and cannot contain consecutive spaces.',
             'password.regex' => 'Password cannot start with a space.',
@@ -141,12 +126,10 @@ class AuthController extends Controller
 
         $credentials = $request->validated();
 
-        // Find user by email
         $user = User::where('email', $credentials['email'])->first();
 
-        // Check if user exists and password is correct
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
-            // Log failed attempt
+            
             DB::table('user_login_logs')->insert([
                 'user_id' => $user?->id,
                 'email' => $credentials['email'],
@@ -162,7 +145,6 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Check if user is active
         if ($user->status !== 'active') {
             $message = match ($user->status) {
                 'banned' => 'Your account has been banned. Reason: ' . ($user->ban_reason ?? 'Policy violation'),
@@ -177,19 +159,13 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // Revoke existing tokens (optional - for single device login)
-        // $user->tokens()->delete();
+        $tokens = $user->generateTokens('user-token', ['*'], 30); 
 
-        // Generate access and refresh tokens
-        $tokens = $user->generateTokens('user-token', ['*'], 30); // 30 days refresh token
-
-        // Update login info
         $user->update([
             'last_login_at' => now(),
             'last_login_ip' => $request->ip(),
         ]);
 
-        // Log successful login
         DB::table('user_login_logs')->insert([
             'user_id' => $user->id,
             'email' => $credentials['email'],
@@ -199,20 +175,18 @@ class AuthController extends Controller
             'created_at' => now(),
         ]);
 
-        // Broadcast user login event
         event(new UserLogin($user));
 
-        // Create HTTP-only cookie for refresh token
         $refreshTokenCookie = cookie(
             'client_refresh_token',
             $tokens['refresh_token'],
-            30 * 24 * 60, // 30 days in minutes
+            30 * 24 * 60, 
             '/',
             null,
-            config('app.env') === 'production', // Secure in production
-            true, // HttpOnly
-            false, // Raw
-            'Lax' // SameSite
+            config('app.env') === 'production', 
+            true, 
+            false, 
+            'Lax' 
         );
 
         return response()->json([
@@ -235,9 +209,6 @@ class AuthController extends Controller
         ])->cookie($refreshTokenCookie);
     }
 
-    /**
-     * Get Current User
-     */
     public function me(Request $request): JsonResponse
     {
         try {
@@ -250,11 +221,10 @@ class AuthController extends Controller
                 ], 401);
             }
 
-            // Safely load relationships - they might not exist for all users
             try {
                 $user->load(['defaultShippingAddress', 'defaultBillingAddress']);
             } catch (\Exception $e) {
-                // If relationships fail, continue without them
+                
                 \Log::warning('Failed to load user address relationships', [
                     'user_id' => $user->id,
                     'error' => $e->getMessage(),
@@ -302,17 +272,12 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * User Logout
-     */
     public function logout(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        // Revoke all tokens (access and refresh)
         $user->revokeAllTokens();
 
-        // Clear refresh token cookie
         $cookie = cookie()->forget('client_refresh_token');
 
         return response()->json([
@@ -321,12 +286,9 @@ class AuthController extends Controller
         ])->cookie($cookie);
     }
 
-    /**
-     * Refresh Access Token
-     */
     public function refresh(Request $request): JsonResponse
     {
-        // Get refresh token from cookie
+        
         $refreshToken = $request->cookie('client_refresh_token');
 
         if (!$refreshToken) {
@@ -336,11 +298,10 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Find and validate refresh token
         $tokenRecord = RefreshToken::findToken($refreshToken);
 
         if (!$tokenRecord) {
-            // Clear invalid cookie
+            
             $cookie = cookie()->forget('client_refresh_token');
             return response()->json([
                 'success' => false,
@@ -348,7 +309,6 @@ class AuthController extends Controller
             ], 401)->cookie($cookie);
         }
 
-        // Get the user
         $user = $tokenRecord->tokenable;
 
         if (!$user || $user->status !== 'active') {
@@ -360,23 +320,20 @@ class AuthController extends Controller
             ], 403)->cookie($cookie);
         }
 
-        // Revoke old refresh token (one-time use)
         $tokenRecord->revoke();
 
-        // Generate new tokens
         $tokens = $user->generateTokens('user-token', ['*'], 30);
 
-        // Create new HTTP-only cookie for refresh token
         $refreshTokenCookie = cookie(
             'client_refresh_token',
             $tokens['refresh_token'],
-            30 * 24 * 60, // 30 days in minutes
+            30 * 24 * 60, 
             '/',
             null,
-            config('app.env') === 'production', // Secure in production
-            true, // HttpOnly
-            false, // Raw
-            'Lax' // SameSite
+            config('app.env') === 'production', 
+            true, 
+            false, 
+            'Lax' 
         );
 
         return response()->json([
@@ -387,9 +344,6 @@ class AuthController extends Controller
         ])->cookie($refreshTokenCookie);
     }
 
-    /**
-     * Update Profile
-     */
     public function updateProfile(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -416,10 +370,8 @@ class AuthController extends Controller
             'email.email' => 'Please enter a valid email address.',
         ]);
 
-        // Update user with validated data
         $user->update($validated);
 
-        // Refresh user to get latest data
         $user->refresh();
 
         return response()->json([
@@ -445,9 +397,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Change Password
-     */
     public function changePassword(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -474,9 +423,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Get Account Statistics
-     */
     public function getAccountStats(Request $request): JsonResponse
     {
         try {
@@ -489,15 +435,12 @@ class AuthController extends Controller
                 ], 401);
             }
 
-            // Get total orders count
             $totalOrders = Order::where('user_id', $user->id)->count();
 
-            // Get total spent from completed orders (status = 'delivered' - these are the completed transactions)
             $totalSpent = Order::where('user_id', $user->id)
                 ->where('status', 'delivered')
                 ->sum('total');
 
-            // Format member since date
             $memberSince = $user->created_at
                 ? $user->created_at->format('M Y')
                 : '';
@@ -506,7 +449,7 @@ class AuthController extends Controller
                 'success' => true,
                 'data' => [
                     'total_orders' => $totalOrders,
-                    'total_spent' => (float)$totalSpent, // Return as float for frontend
+                    'total_spent' => (float)$totalSpent, 
                     'member_since' => $memberSince,
                 ],
             ]);
@@ -526,9 +469,6 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * Redirect to Google OAuth
-     */
     public function redirectToGoogle(Request $request)
     {
         $clientId = env('GOOGLE_CLIENT_ID');
@@ -542,13 +482,11 @@ class AuthController extends Controller
 
         $redirectUri = env('GOOGLE_REDIRECT_URI', url('/api/auth/google/callback'));
         $scope = 'openid email profile';
-        $state = Str::random(32); // CSRF protection
+        $state = Str::random(32); 
 
-        // Store state in session for verification
         $request->session()->put('google_oauth_state', $state);
 
-        // Store intended action (login or signup) in session
-        $action = $request->query('action', 'login'); // 'login' or 'signup'
+        $action = $request->query('action', 'login'); 
         $request->session()->put('google_oauth_action', $action);
 
         $params = http_build_query([
@@ -557,7 +495,7 @@ class AuthController extends Controller
             'response_type' => 'code',
             'scope' => $scope,
             'access_type' => 'offline',
-            'prompt' => 'select_account', // Show account selection screen
+            'prompt' => 'select_account', 
             'state' => $state,
         ]);
 
@@ -566,12 +504,9 @@ class AuthController extends Controller
         return redirect($authUrl);
     }
 
-    /**
-     * Handle Google OAuth Callback
-     */
     public function handleGoogleCallback(Request $request)
     {
-        // Verify state parameter (CSRF protection)
+        
         $sessionState = $request->session()->get('google_oauth_state');
         $requestState = $request->query('state');
 
@@ -579,10 +514,8 @@ class AuthController extends Controller
             return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/?error=invalid_state');
         }
 
-        // Clear state from session
         $request->session()->forget('google_oauth_state');
 
-        // Get action (login or signup)
         $action = $request->session()->get('google_oauth_action', 'login');
         $request->session()->forget('google_oauth_action');
 
@@ -598,7 +531,7 @@ class AuthController extends Controller
         }
 
         try {
-            // Exchange authorization code for access token
+            
             $clientId = env('GOOGLE_CLIENT_ID');
             $clientSecret = env('GOOGLE_CLIENT_SECRET');
             $redirectUri = env('GOOGLE_REDIRECT_URI', url('/api/auth/google/callback'));
@@ -609,37 +542,33 @@ class AuthController extends Controller
                 return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/?error=token_exchange_failed');
             }
 
-            // Get user info from Google
             $userInfo = $this->getGoogleUserInfo($tokenResponse['access_token']);
 
             if (!$userInfo || !isset($userInfo['email'])) {
                 return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/?error=user_info_failed');
             }
 
-            // Find or create user
             $user = User::where('email', $userInfo['email'])->first();
 
             if (!$user) {
-                // Create new user
+                
                 $nameParts = $this->parseName($userInfo['name'] ?? '');
 
                 $user = User::create([
                     'first_name' => $nameParts['first_name'],
                     'last_name' => $nameParts['last_name'],
                     'email' => $userInfo['email'],
-                    'password' => Hash::make(bin2hex(random_bytes(32))), // Random password for OAuth users
+                    'password' => Hash::make(bin2hex(random_bytes(32))), 
                     'avatar' => $userInfo['picture'] ?? null,
                     'status' => 'active',
-                    'email_verified_at' => now(), // Google emails are verified
+                    'email_verified_at' => now(), 
                 ]);
 
-                // Log activity
                 ActivityLog::log('register', 'auth', "New user {$user->full_name} registered via Google", $user);
 
-                // Broadcast user registered event
                 event(new UserRegistered($user));
             } else {
-                // Update existing user info if needed
+                
                 if ($userInfo['picture'] && !$user->avatar) {
                     $user->avatar = $userInfo['picture'];
                 }
@@ -649,7 +578,6 @@ class AuthController extends Controller
                 $user->save();
             }
 
-            // Check if user is active
             if ($user->status !== 'active') {
                 $message = match ($user->status) {
                     'banned' => 'Your account has been banned.',
@@ -660,16 +588,13 @@ class AuthController extends Controller
                 return redirect(env('FRONTEND_URL', 'http://localhost:5173') . '/?error=' . urlencode($message));
             }
 
-            // Generate access and refresh tokens
             $tokens = $user->generateTokens('user-token', ['*'], 30);
 
-            // Update login info
             $user->update([
                 'last_login_at' => now(),
                 'last_login_ip' => $request->ip(),
             ]);
 
-            // Log successful login
             DB::table('user_login_logs')->insert([
                 'user_id' => $user->id,
                 'email' => $user->email,
@@ -679,24 +604,20 @@ class AuthController extends Controller
                 'created_at' => now(),
             ]);
 
-            // Broadcast user login event
             event(new UserLogin($user));
 
-            // Create HTTP-only cookie for refresh token
             $refreshTokenCookie = cookie(
                 'client_refresh_token',
                 $tokens['refresh_token'],
-                30 * 24 * 60, // 30 days in minutes
+                30 * 24 * 60, 
                 '/',
                 null,
                 config('app.env') === 'production',
-                true, // HttpOnly
-                false, // Raw
-                'Lax' // SameSite
+                true, 
+                false, 
+                'Lax' 
             );
 
-            // Redirect to frontend with access token in URL fragment (not query string for security)
-            // Frontend will extract it and store in memory
             $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
             $redirectUrl = $frontendUrl . '/auth/google/callback?' . http_build_query([
                 'token' => $tokens['access_token'],
@@ -716,9 +637,6 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * Exchange authorization code for access token
-     */
     private function exchangeCodeForToken(string $code, string $clientId, string $clientSecret, string $redirectUri): array
     {
         try {
@@ -745,9 +663,6 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * Get user info from Google
-     */
     private function getGoogleUserInfo(string $accessToken): ?array
     {
         try {
@@ -768,9 +683,6 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * Parse full name into first and last name
-     */
     private function parseName(string $fullName): array
     {
         $parts = explode(' ', trim($fullName), 2);

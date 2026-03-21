@@ -9,9 +9,7 @@ use Carbon\Carbon;
 
 class CategoriesSeeder extends Seeder
 {
-    /**
-     * Seed product categories.
-     */
+    
     public function run(): void
     {
         $now = Carbon::now();
@@ -129,26 +127,22 @@ class CategoriesSeeder extends Seeder
 
         DB::table('categories')->insert($categories);
 
-        // Get parent category IDs
         $livingRoom = DB::table('categories')->where('slug', 'living-room')->first();
         $diningRoom = DB::table('categories')->where('slug', 'dining-room')->first();
         $bedroom = DB::table('categories')->where('slug', 'bedroom')->first();
 
-        // Subcategories
         $subcategories = [
-            // Living Room subcategories
+            
             ['parent_id' => $livingRoom->id, 'name' => 'Sofas', 'slug' => 'sofas', 'display_order' => 1, 'color' => '#c9a050'],
             ['parent_id' => $livingRoom->id, 'name' => 'Armchairs', 'slug' => 'armchairs', 'display_order' => 2, 'color' => '#c9a050'],
             ['parent_id' => $livingRoom->id, 'name' => 'Coffee Tables', 'slug' => 'coffee-tables', 'display_order' => 3, 'color' => '#c9a050'],
             ['parent_id' => $livingRoom->id, 'name' => 'TV Stands', 'slug' => 'tv-stands', 'display_order' => 4, 'color' => '#c9a050'],
 
-            // Dining Room subcategories
             ['parent_id' => $diningRoom->id, 'name' => 'Dining Tables', 'slug' => 'dining-tables', 'display_order' => 1, 'color' => '#8b5cf6'],
             ['parent_id' => $diningRoom->id, 'name' => 'Dining Chairs', 'slug' => 'dining-chairs', 'display_order' => 2, 'color' => '#8b5cf6'],
             ['parent_id' => $diningRoom->id, 'name' => 'Dining Sets', 'slug' => 'dining-sets', 'display_order' => 3, 'color' => '#8b5cf6'],
             ['parent_id' => $diningRoom->id, 'name' => 'Bar Furniture', 'slug' => 'bar-furniture', 'display_order' => 4, 'color' => '#8b5cf6'],
 
-            // Bedroom subcategories
             ['parent_id' => $bedroom->id, 'name' => 'Beds', 'slug' => 'beds', 'display_order' => 1, 'color' => '#3b82f6'],
             ['parent_id' => $bedroom->id, 'name' => 'Nightstands', 'slug' => 'nightstands', 'display_order' => 2, 'color' => '#3b82f6'],
             ['parent_id' => $bedroom->id, 'name' => 'Dressers', 'slug' => 'dressers', 'display_order' => 3, 'color' => '#3b82f6'],
@@ -166,9 +160,6 @@ class CategoriesSeeder extends Seeder
 
         DB::table('categories')->insert($subcategories);
 
-        // ===========================================
-        // COLLECTIONS
-        // ===========================================
         $collections = [
             [
                 'name' => 'New Arrivals',

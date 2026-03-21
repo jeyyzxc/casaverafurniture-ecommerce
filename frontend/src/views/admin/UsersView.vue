@@ -124,7 +124,6 @@
       </table>
     </div>
 
-    <!-- Ban User Modal -->
     <Teleport to="body">
       <div v-if="showBanModal" class="modal-overlay" @click="closeBanModal">
         <div class="modal-content" @click.stop>
@@ -156,7 +155,6 @@
       </div>
     </Teleport>
 
-    <!-- Delete User Confirmation Modal -->
     <Teleport to="body">
       <div v-if="showDeleteModal" class="modal-overlay delete-modal-overlay" @click.self="closeDeleteModal">
         <div class="modal-container delete-modal" @click.stop>
@@ -244,18 +242,15 @@ const currentPage = ref(1)
 const totalUsers = ref(0)
 const error = ref<string | null>(null)
 
-// Ban Modal State
 const showBanModal = ref(false)
 const banningUser = ref<User | null>(null)
 const banReason = ref('')
 const isBanning = ref(false)
 
-// Delete Modal State
 const showDeleteModal = ref(false)
 const deletingUser = ref<User | null>(null)
 const isDeleting = ref(false)
 
-// Load users from API
 const loadUsers = async () => {
   isLoading.value = true
   error.value = null
@@ -277,7 +272,6 @@ const loadUsers = async () => {
 
     if (response.data.success) {
       const data = response.data.data
-      // Handle both paginated and direct array responses
       const usersData = data.data || data || []
 
       users.value = usersData.map((u: any) => ({
@@ -308,7 +302,6 @@ const loadUsers = async () => {
   }
 }
 
-// Users are already filtered by API, so we use them directly
 const filteredUsers = computed(() => users.value)
 
 const formatPrice = (price: number) => {
@@ -325,15 +318,12 @@ const formatDate = (date: Date | string) => {
 }
 
 const viewUser = (id: number) => {
-  // Navigate to orders page filtered by user, or show user details
-  // For now, navigate to orders page - can be enhanced later with user detail page
   router.push({ path: '/admin/orders', query: { user_id: id } })
 }
 
 const toggleUserStatus = async (user: User) => {
   const originalStatus = user.status
 
-  // Optimistically update UI
   user.status = user.status === 'active' ? 'inactive' : 'active'
 
   try {
@@ -351,7 +341,6 @@ const toggleUserStatus = async (user: User) => {
     }
   } catch (error: any) {
     console.error('Failed to update user status:', error)
-    // Revert on error
     user.status = originalStatus
     showError(
       'Failed to Update Status',
@@ -483,7 +472,6 @@ const exportUsers = () => {
       return
     }
 
-    // Generate CSV content
     const headers = ['ID', 'Name', 'Email', 'Status', 'Orders', 'Total Spent', 'Joined Date']
     const rows = filteredUsers.value.map(u => [
       u.id,
@@ -521,7 +509,6 @@ const exportUsers = () => {
   }
 }
 
-// Watch for filter changes and reload users
 watch([searchQuery, selectedStatus], () => {
   currentPage.value = 1
   loadUsers()

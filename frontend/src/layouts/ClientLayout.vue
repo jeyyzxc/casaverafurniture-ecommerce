@@ -13,16 +13,10 @@ import { promotions as promotionsApi } from '@/services/clientApi'
 const route = useRoute()
 const router = useRouter()
 
-// ═══════════════════════════════════════════════════
-// NAVBAR STATE
-// ═══════════════════════════════════════════════════
 const isScrolled = ref(false)
 const isMobileMenuOpen = ref(false)
 const scrollThreshold = 50
 
-// ═══════════════════════════════════════════════════
-// AUTH STATE
-// ═══════════════════════════════════════════════════
 const authStore = useAuthStore()
 const isLoggedIn = computed(() => authStore.isAuthenticated)
 const user = computed(() => ({
@@ -30,33 +24,18 @@ const user = computed(() => ({
   email: authStore.user?.email || ''
 }))
 
-// ═══════════════════════════════════════════════════
-// CART STATE
-// ═══════════════════════════════════════════════════
 const cartStore = useCartStore()
 const cartCount = computed(() => cartStore.itemCount)
 
-// ═══════════════════════════════════════════════════
-// ORDER COUNT STATE
-// ═══════════════════════════════════════════════════
 const { orderCount, fetchOrderCount, updateOrderCount } = useOrderCount()
 
-// ═══════════════════════════════════════════════════
-// MODAL STATE
-// ═══════════════════════════════════════════════════
 const showLoginModal = ref(false)
 const showSignupModal = ref(false)
 
-// ═══════════════════════════════════════════════════
-// SCROLL HANDLER
-// ═══════════════════════════════════════════════════
 const handleScroll = () => {
   isScrolled.value = window.scrollY > scrollThreshold
 }
 
-// ═══════════════════════════════════════════════════
-// MOBILE MENU
-// ═══════════════════════════════════════════════════
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
 }
@@ -65,51 +44,27 @@ const closeMobileMenu = () => {
   isMobileMenuOpen.value = false
 }
 
-// ═══════════════════════════════════════════════════
-// AUTH ACTIONS
-// ═══════════════════════════════════════════════════
 const openLoginModal = () => {
   showLoginModal.value = true
   closeMobileMenu()
 }
 
 const handleLoginSuccess = async () => {
-  // #region agent log
-  
-  // #endregion
   try {
-    // Tokens are stored in memory via tokenManager, not localStorage
-    // Just call fetchUser() - the API interceptor will use the token from memory
-    // #region agent log
-    
-    // #endregion
     await authStore.fetchUser()
-    // #region agent log
-    
-    // #endregion
-    // Refresh cart to merge guest cart with user cart
     await cartStore.fetchCart()
-    
-    // Check for redirect destination after successful login
+
     const redirectPath = sessionStorage.getItem('redirectAfterLogin')
     if (redirectPath) {
-      // #region agent log
-      
-      // #endregion
       sessionStorage.removeItem('redirectAfterLogin')
       router.push(redirectPath).catch(() => {})
     }
   } catch (error) {
-    // #region agent log
-    
-    // #endregion
     console.error('Failed to fetch user after login:', error)
   }
   showLoginModal.value = false
-  // Remove login query parameter if present - do this immediately to prevent watcher from re-triggering
   if (route.query.login) {
     router.replace({ query: {} }).catch(() => {
-      // Ignore navigation errors
     })
   }
 }
@@ -117,27 +72,23 @@ const handleLoginSuccess = async () => {
 const handleSignupSuccess = async () => {
   try {
     await authStore.fetchUser()
-    // Refresh cart to merge guest cart with user cart
     await cartStore.fetchCart()
   } catch (error) {
     console.error('Failed to fetch user after signup:', error)
   }
   showSignupModal.value = false
-  
-  // Check for redirect destination
+
   const redirectPath = sessionStorage.getItem('redirectAfterLogin')
   if (redirectPath) {
     sessionStorage.removeItem('redirectAfterLogin')
     router.push(redirectPath)
   } else {
-    // Remove login query parameter if present
     if (route.query.login) {
       router.replace({ query: {} })
     }
   }
 }
 
-// Switch modal functions (used by modal components)
 const switchToSignup = () => {
   showLoginModal.value = false
   showSignupModal.value = true
@@ -154,14 +105,8 @@ const logout = async () => {
   closeMobileMenu()
 }
 
-// ═══════════════════════════════════════════════════
-// CURRENT YEAR
-// ═══════════════════════════════════════════════════
 const currentYear = computed(() => new Date().getFullYear())
 
-// ═══════════════════════════════════════════════════
-// PROMOTION POPUP
-// ═══════════════════════════════════════════════════
 interface Promotion {
   id: number
   name: string
@@ -176,7 +121,6 @@ interface Promotion {
 const currentPromotion = ref<Promotion | null>(null)
 const PROMOTION_STORAGE_KEY = 'casavera_shown_promotions'
 
-// Get list of shown promotion IDs from localStorage
 const getShownPromotionIds = (): number[] => {
   try {
     const stored = localStorage.getItem(PROMOTION_STORAGE_KEY)
@@ -189,7 +133,6 @@ const getShownPromotionIds = (): number[] => {
   return []
 }
 
-// Mark a promotion as shown
 const markPromotionAsShown = (promotionId: number): void => {
   try {
     const shown = getShownPromotionIds()
@@ -202,39 +145,34 @@ const markPromotionAsShown = (promotionId: number): void => {
   }
 }
 
-// Check for new visible promotions
 const checkForNewPromotions = async (): Promise<void> => {
   try {
     const response = await promotionsApi.list()
     console.log('Promotions API response:', response.data)
-    
+
     if (response.data.success && response.data.data && response.data.data.length > 0) {
       const promotions: Promotion[] = response.data.data
       const shownIds = getShownPromotionIds()
-      
+
       console.log('Available promotions:', promotions.length)
       console.log('Shown promotion IDs:', shownIds)
-      
-      // Find the newest promotion that hasn't been shown yet
-      // Sort by createdAt (newest first) and find first unshown
+
       const sortedPromotions = [...promotions].sort((a, b) => {
         const dateA = new Date(a.createdAt).getTime()
         const dateB = new Date(b.createdAt).getTime()
-        return dateB - dateA // Newest first
+        return dateB - dateA
       })
-      
+
       const newPromotion = sortedPromotions.find(p => !shownIds.includes(p.id))
-      
+
       console.log('New promotion found:', newPromotion)
-      
+
       if (newPromotion) {
-        // Show the popup after a short delay for better UX
         setTimeout(() => {
           currentPromotion.value = newPromotion
-          // Mark as shown immediately so it won't show again
           markPromotionAsShown(newPromotion.id)
           console.log('Showing promotion popup:', newPromotion.name)
-        }, 1500) // 1.5 second delay after page load
+        }, 300)
       } else {
         console.log('No new promotions to show')
       }
@@ -243,7 +181,7 @@ const checkForNewPromotions = async (): Promise<void> => {
     }
   } catch (error) {
     console.error('Failed to check for promotions:', error)
-    // Silently fail - don't show error to user
+
   }
 }
 
@@ -251,74 +189,61 @@ const closePromotionPopup = (): void => {
   currentPromotion.value = null
 }
 
-// ═══════════════════════════════════════════════════
-// WATCHERS
-// ═══════════════════════════════════════════════════
-// Watch for login query parameter to open login modal
+
 watch(
   () => route.query.login,
   (loginParam) => {
-    // Only open login modal if:
-    // 1. login query param is 'true'
-    // 2. User is NOT authenticated
-    // 3. Login modal is not already open (prevent duplicate opens)
+
+
+
+
     if (loginParam === 'true' && !authStore.isAuthenticated && !showLoginModal.value) {
       showLoginModal.value = true
       showSignupModal.value = false
     } else if (loginParam === 'true' && authStore.isAuthenticated) {
-      // If user is already authenticated, remove the login query parameter
+
       router.replace({ query: {} })
     }
   },
   { immediate: true }
 )
 
-// ═══════════════════════════════════════════════════
-// LIFECYCLE
-// ═══════════════════════════════════════════════════
 onMounted(async () => {
   try {
-    // Fetch initial cart
-    await cartStore.fetchCart()
-    
-    // Fetch user if token exists in memory OR if user data exists in localStorage
-    // fetchUser will handle token refresh automatically if needed (no token but user data exists)
-    // Tokens are stored in memory (not localStorage), so they're lost on page refresh
     const token = getClientAccessToken()
     const hasStoredUser = !!authStore.user
-    
+
+    const parallelTasks: Promise<unknown>[] = [
+      cartStore.fetchCart()
+    ]
+
+    let userFetchPromise: Promise<unknown> | null = null
     if (token || hasStoredUser) {
-      // fetchUser will:
-      // 1. Check if token exists
-      // 2. If no token but user data exists, refresh token first (prevents 401 errors)
-      // 3. Only make API call if token is available
-      const result = await authStore.fetchUser()
-      
-      // fetchUser always returns an object, so we can safely check it
+      userFetchPromise = authStore.fetchUser()
+      parallelTasks.push(userFetchPromise)
+    }
+
+    await Promise.all(parallelTasks)
+
+    if (userFetchPromise) {
+      const result = await userFetchPromise.catch(() => ({ success: false })) as { success?: boolean; expired?: boolean }
       if (result.expired) {
-        // Session expired - user was already logged out by fetchUser
         console.log('Session expired, user logged out')
-      } else if (result.noToken && !hasStoredUser) {
-        // No token and no user data - user is not logged in
-        // This is normal, no action needed
       } else if (result.success && authStore.isAuthenticated) {
-        // Fetch order count if user is authenticated
-        await fetchOrderCount()
+        fetchOrderCount()
       }
     }
-    
-    // Check for new visible promotions (available on all pages)
+
     checkForNewPromotions()
   } catch (error) {
     console.error('Failed to initialize layout:', error)
-    // Don't clear auth state here - let fetchUser handle it
   }
-  
+
   window.addEventListener('scroll', handleScroll, { passive: true })
-  handleScroll() // Check initial scroll position
+  handleScroll()
 })
 
-// Watch for authentication changes to update order count
+
 watch(() => authStore.isAuthenticated, async (isAuthenticated) => {
   if (isAuthenticated) {
     await fetchOrderCount()
@@ -334,16 +259,16 @@ onUnmounted(() => {
 
 <template>
   <div class="client-layout">
-    <!-- Announcements Banner (optional) -->
+
     <div id="clientAnnouncements" class="client-announcements-container"></div>
 
-    <!-- Navigation -->
+
     <nav class="navbar" :class="{ scrolled: isScrolled }">
       <div class="nav-container">
-        <!-- Mobile Toggle -->
-        <button 
-          class="navbar-toggler" 
-          type="button" 
+
+        <button
+          class="navbar-toggler"
+          type="button"
           @click="toggleMobileMenu"
           :class="{ active: isMobileMenuOpen }"
         >
@@ -352,13 +277,13 @@ onUnmounted(() => {
           <span class="toggler-line"></span>
         </button>
 
-        <!-- Centered Brand -->
+
         <div class="navbar-brand-centered">
           <RouterLink to="/" class="brand-logo">CASA VÉRA</RouterLink>
           <span class="brand-tagline">Est. 2022</span>
         </div>
 
-        <!-- Navigation Content -->
+
         <div class="navbar-collapse" :class="{ show: isMobileMenuOpen }">
           <ul class="navbar-nav">
             <li class="nav-item">
@@ -375,7 +300,7 @@ onUnmounted(() => {
             </li>
           </ul>
 
-          <!-- Nav Actions -->
+
           <div class="nav-actions">
             <RouterLink to="/cart" class="nav-icon-link" title="View Cart" @click="closeMobileMenu">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -386,7 +311,7 @@ onUnmounted(() => {
               <span class="badge-cart" v-if="cartCount > 0">{{ cartCount }}</span>
             </RouterLink>
 
-            <!-- User Menu (Logged In) -->
+
             <div v-if="isLoggedIn" class="nav-item dropdown">
               <a class="nav-link dropdown-toggle text-gold" href="#" role="button">
                 <svg class="nav-icon-sm me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -408,7 +333,7 @@ onUnmounted(() => {
               </ul>
             </div>
 
-            <!-- Login Link (Not Logged In) -->
+
             <a v-else href="#" class="nav-link special-login-link" @click.prevent="openLoginModal">
               Login
             </a>
@@ -417,16 +342,16 @@ onUnmounted(() => {
       </div>
     </nav>
 
-    <!-- Main Content -->
+
     <main class="client-main">
       <RouterView />
     </main>
 
-    <!-- Footer -->
+
     <footer class="footer-luxury">
       <div class="footer-container">
         <div class="footer-grid">
-          <!-- Brand Column -->
+
           <div class="footer-col footer-brand">
             <RouterLink to="/" class="text-decoration-none">
               <h3 class="brand-font text-gold">CASA VÉRA</h3>
@@ -436,7 +361,7 @@ onUnmounted(() => {
             </p>
           </div>
 
-          <!-- Explore Column -->
+
           <div class="footer-col">
             <h5 class="footer-heading">Explore</h5>
             <ul class="footer-links">
@@ -447,17 +372,17 @@ onUnmounted(() => {
             </ul>
           </div>
 
-          <!-- Social Column -->
+
           <div class="footer-col">
             <h5 class="footer-heading">Follow Us</h5>
             <p class="footer-social-text">Join our community.</p>
             <div class="social-icons">
-              <a href="https://facebook.com" target="_blank" class="social-icon-box" aria-label="Facebook">
+              <a href="https://www.facebook.com/casaverafurniture" target="_blank" rel="noopener noreferrer" class="social-icon-box" aria-label="Facebook">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                   <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
                 </svg>
               </a>
-              <a href="https://instagram.com" target="_blank" class="social-icon-box" aria-label="Instagram">
+              <a href="https://www.instagram.com/casaverafurniture" target="_blank" rel="noopener noreferrer" class="social-icon-box" aria-label="Instagram">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
@@ -482,25 +407,25 @@ onUnmounted(() => {
       </div>
     </footer>
 
-    <!-- Auth Modals -->
-    <LoginModal 
+
+    <LoginModal
       :is-open="showLoginModal"
       @close="() => { showLoginModal = false; if (route.query.login) router.replace({ query: {} }) }"
       @switch-to-signup="switchToSignup"
       @login-success="handleLoginSuccess"
     />
-    
-    <SignupModal 
+
+    <SignupModal
       :is-open="showSignupModal"
       @close="() => { showSignupModal = false; if (route.query.login) router.replace({ query: {} }) }"
       @switch-to-login="switchToLogin"
       @signup-success="handleSignupSuccess"
     />
 
-    <!-- Promotion Popup (Available on all client pages) -->
-    <PromotionPopup 
-      v-if="currentPromotion" 
-      :promotion="currentPromotion" 
+
+    <PromotionPopup
+      v-if="currentPromotion"
+      :promotion="currentPromotion"
       @close="closePromotionPopup"
     />
   </div>
@@ -558,7 +483,7 @@ onUnmounted(() => {
   position: relative;
 }
 
-/* Brand Centered */
+
 .navbar-brand-centered {
   position: absolute;
   left: 50%;
@@ -602,7 +527,7 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-/* Navigation Links */
+
 .navbar-collapse {
   display: flex;
   align-items: center;
@@ -655,7 +580,7 @@ onUnmounted(() => {
   transform: scaleX(1);
 }
 
-/* Nav Actions */
+
 .nav-actions {
   display: flex;
   align-items: center;
@@ -743,7 +668,7 @@ onUnmounted(() => {
   color: var(--gold) !important;
 }
 
-/* User Dropdown */
+
 .dropdown {
   position: relative;
 }
@@ -797,7 +722,7 @@ onUnmounted(() => {
   margin: 0.25rem 0;
 }
 
-/* Mobile Toggle */
+
 .navbar-toggler {
   display: none;
   border: none;
@@ -833,7 +758,7 @@ onUnmounted(() => {
   transform: rotate(-45deg) translate(7px, -6px);
 }
 
-/* Mobile Menu */
+
 @media (max-width: 991px) {
   .navbar-toggler {
     display: block;
@@ -944,7 +869,7 @@ onUnmounted(() => {
   line-height: 1.5;
   font-size: 0.8rem;
   max-width: 350px;
-  margin: 0.5rem 0 0; 
+  margin: 0.5rem 0 0;
 }
 
 .footer-heading {
@@ -1071,7 +996,7 @@ onUnmounted(() => {
   width: 100%;
 }
 
-/* Footer Responsive */
+
 @media (max-width: 768px) {
   .footer-grid {
     grid-template-columns: 1fr;
@@ -1098,8 +1023,8 @@ onUnmounted(() => {
   }
 }
 
-/* Announcements Banner */
+
 .client-announcements-container {
-  display: none; /* Hidden until announcements are implemented */
+  display: none;
 }
 </style>

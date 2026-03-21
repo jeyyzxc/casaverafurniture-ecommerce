@@ -9,30 +9,24 @@ use Illuminate\Http\Request;
 
 class ActivityLogController extends Controller
 {
-    /**
-     * List activity logs with filters
-     */
+    
     public function index(Request $request): JsonResponse
     {
         $query = ActivityLog::with(['causer:id,first_name,last_name,email'])
             ->orderBy('created_at', 'desc');
 
-        // Filter by action
         if ($action = $request->input('action')) {
             $query->where('action', $action);
         }
 
-        // Filter by module
         if ($module = $request->input('module')) {
             $query->where('module', $module);
         }
 
-        // Filter by causer (admin)
         if ($causerId = $request->input('causer_id')) {
             $query->where('causer_id', $causerId);
         }
 
-        // Filter by date range
         if ($dateFrom = $request->input('date_from')) {
             $query->whereDate('created_at', '>=', $dateFrom);
         }
@@ -40,7 +34,6 @@ class ActivityLogController extends Controller
             $query->whereDate('created_at', '<=', $dateTo);
         }
 
-        // Search in description
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('description', 'like', "%{$search}%")
@@ -49,11 +42,9 @@ class ActivityLogController extends Controller
             });
         }
 
-        // Pagination
         $perPage = min($request->input('per_page', 50), 100);
         $logs = $query->paginate($perPage);
 
-        // Transform logs for frontend
         $logs->getCollection()->transform(function ($log) {
             return [
                 'id' => $log->id,
@@ -82,9 +73,6 @@ class ActivityLogController extends Controller
         ]);
     }
 
-    /**
-     * Get single activity log
-     */
     public function show(ActivityLog $activityLog): JsonResponse
     {
         $activityLog->load(['causer:id,first_name,last_name,email']);
@@ -114,9 +102,6 @@ class ActivityLogController extends Controller
         ]);
     }
 
-    /**
-     * Get activity log statistics
-     */
     public function statistics(): JsonResponse
     {
         $stats = [

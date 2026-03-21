@@ -61,9 +61,9 @@ export interface LowStockItem {
 }
 
 export const useDashboardStore = defineStore('dashboard', () => {
-  // ═══════════════════════════════════════════════════
-  // STATE
-  // ═══════════════════════════════════════════════════
+  
+  
+  
   const stats = ref<DashboardStats>({
     total_orders: 0,
     total_revenue: 0,
@@ -96,9 +96,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const selectedPeriod = ref<string>('month')
   const isConnected = ref(false)
 
-  // ═══════════════════════════════════════════════════
-  // COMPUTED
-  // ═══════════════════════════════════════════════════
+  
+  
+  
   const totalRevenue = computed(() => stats.value.total_revenue)
   const totalOrders = computed(() => stats.value.total_orders)
   const totalProducts = computed(() => stats.value.total_products)
@@ -107,9 +107,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const hasLowStockAlerts = computed(() => lowStockItems.value.length > 0)
   const hasPendingOrders = computed(() => stats.value.pending_orders > 0)
 
-  // ═══════════════════════════════════════════════════
-  // METHODS
-  // ═══════════════════════════════════════════════════
+  
+  
+  
   const getDateRange = () => {
     const now = new Date()
     let startDate: Date
@@ -139,7 +139,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   }
 
   const loadDashboardData = async (force = false) => {
-    // Prevent concurrent requests unless forced
+    
     if (isLoading.value && !force) return
 
     isLoading.value = true
@@ -152,7 +152,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       if (response.data.success) {
         const data = response.data.data
 
-        // Update stats
+        
         stats.value = {
           total_orders: data.stats.total_orders || 0,
           total_revenue: parseFloat(data.stats.total_revenue || 0),
@@ -166,7 +166,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
           pending_reviews: data.stats.pending_reviews || 0,
         }
 
-        // Update order status distribution
+        
         if (data.orders_by_status) {
           orderStatus.value = {
             pending: data.orders_by_status.pending || 0,
@@ -177,7 +177,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
           }
         }
 
-        // Update recent orders with items
+        
         if (data.recent_orders) {
           recentOrders.value = data.recent_orders.map((order: any) => ({
             id: order.order_number,
@@ -192,7 +192,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
           }))
         }
 
-        // Update best selling products
+        
         if (data.top_products) {
           bestSellingProducts.value = data.top_products.map((product: any) => {
             let imagePath = product.primary_image || '/images/products/placeholder.png'
@@ -210,7 +210,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
           })
         }
 
-        // Update low stock items
+        
         if (data.stock_alerts) {
           lowStockItems.value = data.stock_alerts.map((alert: any) => ({
             id: alert.product?.id,
@@ -219,7 +219,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
           }))
         }
 
-        // Update revenue by day
+        
         if (data.revenue_by_day) {
           revenueByDay.value = data.revenue_by_day
         }
@@ -239,7 +239,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     loadDashboardData(true)
   }
 
-  // Update specific stats when changes occur
+  
   const updateOrderCount = (increment: number) => {
     stats.value.total_orders += increment
   }
@@ -266,9 +266,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
     if (index >= 0) {
       lowStockItems.value[index].stock = stock
       if (stock > 0) {
-        // Keep in list if still low
+        
       } else {
-        // Remove if out of stock (handled by backend)
+        
       }
     }
   }
@@ -282,7 +282,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   }
 
   return {
-    // State
+    
     stats,
     orderStatus,
     recentOrders,
@@ -295,7 +295,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     selectedPeriod,
     isConnected,
 
-    // Computed
+    
     totalRevenue,
     totalOrders,
     totalProducts,
@@ -304,7 +304,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     hasLowStockAlerts,
     hasPendingOrders,
 
-    // Methods
+    
     loadDashboardData,
     updatePeriod,
     updateOrderCount,

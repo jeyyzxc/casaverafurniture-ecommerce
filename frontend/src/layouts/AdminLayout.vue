@@ -1,6 +1,5 @@
 <template>
   <div class="admin-layout">
-    <!-- Sidebar -->
     <aside class="admin-sidebar" :class="{ collapsed: sidebarCollapsed, 'mobile-open': mobileMenuOpen }">
       <div class="sidebar-header">
         <div class="logo-section">
@@ -199,9 +198,7 @@
       </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="admin-main" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
-      <!-- Top Bar -->
       <header class="admin-header" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
         <div class="header-left">
           <button class="mobile-menu-toggle" @click="toggleMobileMenu">
@@ -232,7 +229,6 @@
               </span>
             </button>
 
-            <!-- Notification Dropdown -->
             <div v-if="notificationDropdownOpen" class="notification-dropdown">
               <div class="notification-header">
                 <h3>Notifications</h3>
@@ -320,13 +316,11 @@
         </div>
       </header>
 
-      <!-- Page Content -->
       <div class="admin-content">
       <RouterView />
       </div>
     </main>
 
-    <!-- Mobile Sidebar Overlay -->
     <div v-if="mobileMenuOpen" class="mobile-overlay" @click="closeMobileMenu"></div>
   </div>
 </template>
@@ -344,17 +338,12 @@ const route = useRoute()
 const adminAuthStore = useAdminAuthStore()
 const notificationStore = useNotificationStore()
 
-// ═══════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════
 const sidebarCollapsed = ref(false)
 const mobileMenuOpen = ref(false)
 const notificationDropdownOpen = ref(false)
 
-// Get admin data from store
 const currentAdmin = computed(() => {
   const roleName = adminAuthStore.roleName || 'Admin'
-  // Format role name: replace hyphens/underscores with spaces and uppercase
   const formattedRole = roleName.replace(/[-_]/g, ' ').toUpperCase()
 
   return {
@@ -369,9 +358,6 @@ const isSuperAdmin = computed(() => adminAuthStore.admin?.role?.slug === 'super-
 const pendingOrdersCount = ref(0)
 const lowStockCount = ref(0)
 
-// ═══════════════════════════════════════════════════
-// COMPUTED
-// ═══════════════════════════════════════════════════
 const currentPageTitle = computed(() => {
   const titles: Record<string, string> = {
     'admin-dashboard': 'Dashboard',
@@ -392,9 +378,6 @@ const currentPageTitle = computed(() => {
   return titles[route.name as string] || 'Admin Panel'
 })
 
-// ═══════════════════════════════════════════════════
-// METHODS
-// ═══════════════════════════════════════════════════
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value
 }
@@ -439,7 +422,6 @@ const handleLogout = () => {
   adminAuthStore.logout()
 }
 
-// Fetch quick stats from API
 const fetchQuickStats = async () => {
   try {
     const response = await dashboard.getQuickStats()
@@ -452,29 +434,20 @@ const fetchQuickStats = async () => {
   }
 }
 
-// ═══════════════════════════════════════════════════
-// LIFECYCLE
-// ═══════════════════════════════════════════════════
 onMounted(async () => {
-  // Check if admin is authenticated
   if (!adminAuthStore.isAuthenticated) {
     router.push('/admin/login')
     return
   }
 
-  // Wait for admin data to be loaded (which ensures refresh is done)
-  // We check for both admin data AND access token to avoid 401s
   if (!adminAuthStore.admin || !getAdminAccessToken()) {
     await adminAuthStore.fetchAdmin()
   }
 
-  // Fetch quick stats
   fetchQuickStats()
 
-  // Ensure dark mode class is removed
   document.documentElement.classList.remove('dark-mode')
 
-  // Close notification dropdown when clicking outside
   const handleClickOutside = (event: MouseEvent) => {
     const target = event.target as HTMLElement
     if (!target.closest('.notification-wrapper')) {
@@ -489,7 +462,6 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  // Cleanup if needed
 })
 </script>
 
@@ -500,9 +472,6 @@ onUnmounted(() => {
   background: #f5f7fa;
 }
 
-/* ═══════════════════════════════════════════════════
-   SIDEBAR - All Text White
-   ═══════════════════════════════════════════════════ */
 .admin-sidebar {
   width: 280px;
   background: linear-gradient(180deg, #1a1d29 0%, #151821 100%);
@@ -525,7 +494,6 @@ onUnmounted(() => {
   width: 70px;
 }
 
-/* Hide logo when collapsed */
 .admin-sidebar.collapsed .logo-section {
   opacity: 0;
   visibility: hidden;
@@ -535,7 +503,6 @@ onUnmounted(() => {
   transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-/* Adjust sidebar header when collapsed - center the menu icon */
 .admin-sidebar.collapsed .sidebar-header {
   justify-content: center;
   padding: 1rem 0;
@@ -556,7 +523,6 @@ onUnmounted(() => {
   height: 22px;
 }
 
-/* Hide section titles when collapsed */
 .admin-sidebar.collapsed .nav-section-title {
   opacity: 0;
   visibility: hidden;
@@ -567,7 +533,6 @@ onUnmounted(() => {
   transition: opacity 0.2s ease, visibility 0.2s ease, height 0.2s ease, padding 0.2s ease, margin 0.2s ease;
 }
 
-/* Show only icons in nav items when collapsed */
 .admin-sidebar.collapsed .nav-item {
   justify-content: center;
   padding: 0.75rem 0;
@@ -587,19 +552,16 @@ onUnmounted(() => {
   transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-/* Center and size icons consistently when collapsed */
 .admin-sidebar.collapsed .nav-item svg {
   margin: 0 auto;
   width: 22px;
   height: 22px;
 }
 
-/* Adjust nav section spacing when collapsed */
 .admin-sidebar.collapsed .nav-section {
   margin-bottom: 0.25rem;
 }
 
-/* Sidebar footer when collapsed */
 .admin-sidebar.collapsed .sidebar-footer {
   padding: 0.75rem 0.5rem;
   display: flex;
@@ -608,7 +570,6 @@ onUnmounted(() => {
   gap: 0.5rem;
 }
 
-/* Admin info (profile) when collapsed - show only avatar icon */
 .admin-sidebar.collapsed .admin-info {
   justify-content: center;
   padding: 0;
@@ -629,7 +590,6 @@ onUnmounted(() => {
   height: 22px;
 }
 
-/* Hide admin details text when collapsed */
 .admin-sidebar.collapsed .admin-details {
   opacity: 0;
   visibility: hidden;
@@ -639,7 +599,6 @@ onUnmounted(() => {
   position: absolute;
 }
 
-/* Logout button when collapsed - show only icon */
 .admin-sidebar.collapsed .logout-btn {
   width: 50px;
   height: 50px;
@@ -663,12 +622,10 @@ onUnmounted(() => {
   position: absolute;
 }
 
-/* Hide the left indicator bar when collapsed */
 .admin-sidebar.collapsed .nav-item::before {
   display: none;
 }
 
-/* Hover effects for collapsed nav items */
 .admin-sidebar.collapsed .nav-item:hover {
   transform: none;
   background: rgba(201, 160, 80, 0.15);
@@ -678,18 +635,15 @@ onUnmounted(() => {
   background: rgba(201, 160, 80, 0.2);
 }
 
-/* Hover effect for collapsed admin info */
 .admin-sidebar.collapsed .admin-info:hover {
   transform: none;
   background: rgba(201, 160, 80, 0.15);
 }
 
-/* Hover effect for collapsed logout */
 .admin-sidebar.collapsed .logout-btn:hover {
   transform: none;
 }
 
-/* Ensure ALL text in sidebar is white - Comprehensive rule */
 .admin-sidebar,
 .admin-sidebar *,
 .admin-sidebar span,
@@ -704,24 +658,20 @@ onUnmounted(() => {
   color: #ffffff !important;
 }
 
-/* Exception: Logo text uses gradient (intentional) */
 .admin-sidebar .logo-text {
   color: transparent !important;
   -webkit-text-fill-color: transparent !important;
 }
 
-/* Exception: Icons can be gold on hover/active (for visual distinction) */
 .admin-sidebar .nav-item:hover svg,
 .admin-sidebar .nav-item.router-link-active svg {
   color: #c9a050 !important;
 }
 
-/* Exception: Badges keep their colored backgrounds with white text */
 .admin-sidebar .nav-badge {
   color: #ffffff !important;
 }
 
-/* Hide scrollbar but keep functionality */
 .admin-sidebar::-webkit-scrollbar {
   width: 6px;
 }
@@ -824,7 +774,6 @@ onUnmounted(() => {
   overflow-x: hidden;
 }
 
-/* Hide scrollbar for nav */
 .sidebar-nav {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -1157,9 +1106,6 @@ onUnmounted(() => {
   z-index: 1;
 }
 
-/* ═══════════════════════════════════════════════════
-   MAIN CONTENT
-   ═══════════════════════════════════════════════════ */
 .admin-main {
   flex: 1;
   margin-left: 280px;
@@ -1361,9 +1307,6 @@ onUnmounted(() => {
 }
 
 
-/* ═══════════════════════════════════════════════════
-   NOTIFICATION DROPDOWN
-   ═══════════════════════════════════════════════════ */
 .notification-wrapper {
   position: relative;
 }
@@ -1625,7 +1568,6 @@ onUnmounted(() => {
   scrollbar-color: rgba(201, 160, 80, 0.2) transparent;
 }
 
-/* Hide scrollbar for content but keep functionality */
 .admin-content::-webkit-scrollbar {
   width: 8px;
 }
@@ -1654,9 +1596,6 @@ onUnmounted(() => {
 }
 
 
-/* ═══════════════════════════════════════════════════
-   RESPONSIVE
-   ═══════════════════════════════════════════════════ */
 @media (max-width: 1024px) {
   .admin-sidebar {
     transform: translateX(-100%);

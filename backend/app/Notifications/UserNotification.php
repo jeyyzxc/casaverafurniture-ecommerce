@@ -21,17 +21,11 @@ class UserNotification extends Notification
         public ?string $actionUrl = null
     ) {}
 
-    /**
-     * Get the notification's delivery channels.
-     */
     public function via($notifiable): array
     {
         return ['database'];
     }
 
-    /**
-     * Get the array representation of the notification.
-     */
     public function toArray($notifiable): array
     {
         return [
@@ -47,9 +41,6 @@ class UserNotification extends Notification
         ];
     }
 
-    /**
-     * Get icon for notification type
-     */
     private function getIconForType(string $type): string
     {
         return match($type) {
@@ -62,9 +53,6 @@ class UserNotification extends Notification
         };
     }
 
-    /**
-     * Get color for notification type
-     */
     private function getColorForType(string $type): string
     {
         return match($type) {

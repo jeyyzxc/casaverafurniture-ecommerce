@@ -11,7 +11,7 @@ export function useRealtimeProducts() {
 
     switch (event) {
       case 'product.created':
-        // Emit custom event for components to handle
+        
         window.dispatchEvent(new CustomEvent('realtime:product:created', { detail: data }))
         break
       case 'product.updated':
@@ -32,7 +32,7 @@ export function useRealtimeProducts() {
   }
 
   const stopListening = () => {
-    // Real-time service handles cleanup
+    
     isConnected.value = false
   }
 

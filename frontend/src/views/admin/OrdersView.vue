@@ -10,7 +10,6 @@
       </div>
     </div>
 
-    <!-- Filters -->
     <div class="filters-bar">
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -47,7 +46,6 @@
       </button>
     </div>
 
-    <!-- Orders Table -->
     <div class="table-card">
       <table class="data-table">
         <thead>
@@ -142,7 +140,6 @@
       </table>
     </div>
 
-    <!-- Order Details Modal -->
     <Teleport to="body">
       <div v-if="showOrderModal && selectedOrder" class="modal-overlay" @click.self="closeOrderModal">
         <div class="modal-content order-details-modal" @click.stop>
@@ -255,13 +252,13 @@ const error = ref<string | null>(null)
 let pollInterval: number | null = null
 let searchTimeout: number | null = null
 
-// Order Details Modal
+
 const showOrderModal = ref(false)
 const selectedOrder = ref<any | null>(null)
 const orderDetails = ref<any | null>(null)
 const isLoadingOrder = ref(false)
 
-// Real-time updates
+
 const { startListening, stopListening } = useRealtimeAdmin()
 
 const filteredOrders = computed(() => {
@@ -335,7 +332,7 @@ const getPaymentMethodName = (order: any) => {
   const payment = order.latest_payment || order.latestPayment
   if (!payment) return 'N/A'
 
-  // Try both snake_case and camelCase
+
   const paymentMethod = payment.payment_method || payment.paymentMethod
   if (paymentMethod?.name) {
     return paymentMethod.name
@@ -343,7 +340,7 @@ const getPaymentMethodName = (order: any) => {
   if (paymentMethod?.code) {
     return paymentMethod.code.toUpperCase()
   }
-  // Fallback to payment_method_name if available
+
   if (payment.payment_method_name) {
     return payment.payment_method_name
   }
@@ -354,7 +351,7 @@ const getPaymentMethodClass = (order: any) => {
   const payment = order.latest_payment || order.latestPayment
   if (!payment) return 'cod'
 
-  // Try both snake_case and camelCase
+
   const paymentMethod = payment.payment_method || payment.paymentMethod
   const methodCode = paymentMethod?.code || payment.payment_method_name?.toLowerCase() || 'cod'
   return methodCode.toLowerCase().replace('_', '-')
@@ -365,7 +362,7 @@ const loadOrders = async () => {
   error.value = null
   try {
     const params: any = {
-      per_page: 100, // Reasonable limit
+      per_page: 100,
       sort_by: 'created_at',
       sort_order: 'desc',
     }
@@ -391,26 +388,26 @@ const loadOrders = async () => {
     if (response.data.success) {
       const data = response.data.data
 
-      // Handle paginated response
+
       let ordersData: any[] = []
       if (data) {
         if (data.data && Array.isArray(data.data)) {
-          // Paginated response (Laravel paginator)
+
           ordersData = data.data
         } else if (Array.isArray(data)) {
-          // Direct array response
+
           ordersData = data
         } else {
-          // Empty or unexpected structure
+
           ordersData = []
         }
       } else {
         ordersData = []
       }
 
-      // Map orders to ensure consistent structure
+
       orders.value = ordersData.map((order: any) => {
-        // Handle payment data - support both snake_case and camelCase
+
         const payment = order.latest_payment || order.latestPayment || null
         const paymentMethod = payment?.payment_method || payment?.paymentMethod || null
 
@@ -474,14 +471,14 @@ const updateOrderStatus = async (orderId: number, status: string) => {
   const previousStatus = order.status
   if (previousStatus === status) return
 
-  // Optimistically update UI
+
   order.status = status
 
   try {
     const response = await ordersApi.updateStatus(orderId, status, undefined, false)
 
     if (response.data.success) {
-      // Update order with latest data from response
+
       const updatedOrder = response.data.data
       if (updatedOrder) {
         Object.assign(order, {
@@ -495,16 +492,16 @@ const updateOrderStatus = async (orderId: number, status: string) => {
         `Order ${order.order_number} status has been updated from ${previousStatus} to ${status}.`
       )
 
-      // Reload to get latest data and relationships
+
       await loadOrders()
     } else {
-      // Revert on failure
+
       order.status = previousStatus
       throw new Error(response.data.message || 'Failed to update order status')
     }
   } catch (err: any) {
     console.error('Failed to update order status:', err)
-    // Revert optimistic update
+
     order.status = previousStatus
     showError(
       'Failed to Update Status',
@@ -530,7 +527,7 @@ const viewOrder = async (orderId: number) => {
     if (response.data && response.data.success) {
       const data = response.data.data
 
-      // Map order details similar to how we map orders in the list
+
       const payment = data.latest_payment || data.latestPayment || null
       const paymentMethod = payment?.payment_method || payment?.paymentMethod || null
 
@@ -575,13 +572,13 @@ const closeOrderModal = () => {
 }
 
 const printInvoice = (orderId: number) => {
-  // TODO: Implement print invoice
+
   window.print()
 }
 
 const exportOrders = async () => {
   try {
-    // Fetch all orders for export
+
     const response = await ordersApi.list({
       per_page: 10000,
       sort_by: 'created_at',
@@ -591,7 +588,7 @@ const exportOrders = async () => {
     if (response.data.success) {
       const ordersData = response.data.data.data || response.data.data || []
 
-      // Convert to CSV
+
       const headers = ['Order Number', 'Customer Name', 'Customer Email', 'Status', 'Total', 'Payment Method', 'Date']
       const rows = ordersData.map((order: any) => [
         order.order_number || `#${order.id}`,
@@ -608,7 +605,7 @@ const exportOrders = async () => {
         ...rows.map((row: any[]) => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
       ].join('\n')
 
-      // Download CSV
+
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
       const link = document.createElement('a')
       const url = URL.createObjectURL(blob)
@@ -632,10 +629,10 @@ const exportOrders = async () => {
   }
 }
 
-// Real-time event handlers
+
 const handleOrderCreated = (event: CustomEvent) => {
   const orderData = event.detail
-  // Reload orders to show the new order
+
   loadOrders()
   console.log('New order created:', orderData.order_number)
 }
@@ -646,26 +643,26 @@ const handleOrderStatusUpdate = (event: CustomEvent) => {
   if (order) {
     order.status = orderData.new_status
   } else {
-    // Reload if order not found
+
     loadOrders()
   }
 }
 
 const handleStockChanged = (event: CustomEvent) => {
   const stockData = event.detail
-  // Show notification for low stock or out of stock
+
   if (stockData.type === 'low_stock') {
     console.warn(`Low stock alert: ${stockData.product_name} (${stockData.new_quantity} remaining)`)
   } else if (stockData.type === 'out_of_stock') {
     console.warn(`Out of stock: ${stockData.product_name}`)
   }
-  // Could trigger a notification system here
+
 }
 
-// Real-time polling for order updates (fallback) - disabled to reduce server load
-// Use real-time events instead
+
+
 const startPolling = () => {
-  // Poll every 30 seconds for updates (reduced frequency)
+
   pollInterval = window.setInterval(() => {
     if (!isLoading.value) {
       loadOrders()
@@ -680,17 +677,17 @@ const stopPolling = () => {
   }
 }
 
-// Watch for search query changes with debounce
+
 watch(searchQuery, () => {
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
   searchTimeout = window.setTimeout(() => {
     loadOrders()
-  }, 500) // Debounce search by 500ms
+  }, 500)
 })
 
-// Watch for filter changes
+
 watch([selectedStatus, selectedPayment, selectedDate], () => {
   loadOrders()
 })
@@ -699,7 +696,7 @@ onMounted(() => {
   loadOrders()
   startPolling()
 
-  // Set up real-time listeners
+
   startListening()
   window.addEventListener('realtime:admin:order:created', handleOrderCreated as EventListener)
   window.addEventListener('realtime:admin:order:status:updated', handleOrderStatusUpdate as EventListener)
@@ -1055,7 +1052,6 @@ onUnmounted(() => {
   font-size: 0.9rem;
 }
 
-/* Order Details Modal Styles */
 .order-details-modal {
   max-width: 800px;
 }
@@ -1178,7 +1174,6 @@ onUnmounted(() => {
   100% { transform: rotate(360deg); }
 }
 
-/* Modal Styles */
 .modal-overlay {
   position: fixed;
   inset: 0;

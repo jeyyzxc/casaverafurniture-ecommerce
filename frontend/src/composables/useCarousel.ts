@@ -26,10 +26,10 @@ export function useCarousel(options: CarouselOptions) {
   let interval: ReturnType<typeof setInterval> | null = null
 
   const totalReal = computed(() => items.value.length)
-  const startIndex = computed(() => totalReal.value * 2) // Start in third copy
+  const startIndex = computed(() => totalReal.value * 2) 
   const carouselItems = computed(() => {
     if (items.value.length === 0) return []
-    // Create 6 copies for seamless infinite loop
+    
     return [...items.value, ...items.value, ...items.value, ...items.value, ...items.value, ...items.value]
   })
 
@@ -64,7 +64,7 @@ export function useCarousel(options: CarouselOptions) {
     isAnimating.value = false
     const total = totalReal.value
 
-    // Seamlessly reset when reaching boundaries
+    
     if (currentIndex.value >= total * 4) {
       moveToIndex(currentIndex.value - total * 2, false)
     } else if (currentIndex.value < total * 2) {
@@ -108,7 +108,7 @@ export function useCarousel(options: CarouselOptions) {
     }
   }
 
-  // Watch for items changes
+  
   watch(items, (newItems) => {
     if (newItems.length > 0) {
       stop()

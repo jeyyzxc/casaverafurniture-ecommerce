@@ -15,19 +15,13 @@ use Illuminate\Support\Facades\Cookie;
 
 class AuthController extends Controller
 {
-    /**
-     * Admin Login
-     */
     public function login(LoginRequest $request): JsonResponse
     {
         $credentials = $request->validated();
 
-        // Find admin by email
         $admin = Admin::with('role.permissions')->where('email', $credentials['email'])->first();
 
-        // Check if admin exists and password is correct
         if (!$admin || !Hash::check($credentials['password'], $admin->password)) {
-            // Log failed attempt
             DB::table('admin_login_logs')->insert([
                 'admin_id' => $admin?->id,
                 'email' => $credentials['email'],
@@ -43,7 +37,6 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Check if admin is active
         if ($admin->status !== 'active') {
             return response()->json([
                 'success' => false,
@@ -51,21 +44,16 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // Revoke existing tokens
         $admin->tokens()->delete();
         RefreshToken::revokeAllFor($admin);
 
-        // Generate access and refresh tokens
-        // Admin tokens expire in 15 days (stricter than client)
         $tokens = $admin->generateTokens('admin-token', ['admin'], 15);
 
-        // Update login info
         $admin->update([
             'last_login_at' => now(),
             'last_login_ip' => $request->ip(),
         ]);
 
-        // Log successful login
         DB::table('admin_login_logs')->insert([
             'admin_id' => $admin->id,
             'email' => $credentials['email'],
@@ -75,20 +63,18 @@ class AuthController extends Controller
             'created_at' => now(),
         ]);
 
-        // Log activity
         ActivityLog::log('login', 'auth', "Admin {$admin->full_name} logged in", $admin);
 
-        // Create HTTP-only cookie for refresh token
         $refreshTokenCookie = cookie(
             'admin_refresh_token',
             $tokens['refresh_token'],
-            15 * 24 * 60, // 15 days in minutes (stricter than client)
+            15 * 24 * 60,
             '/',
             null,
-            config('app.env') === 'production', // Secure in production
-            true, // HttpOnly
-            false, // Raw
-            'Lax' // SameSite
+            config('app.env') === 'production',
+            true,
+            false,
+            'Lax'
         );
 
         return response()->json([
@@ -114,9 +100,6 @@ class AuthController extends Controller
         ])->cookie($refreshTokenCookie);
     }
 
-    /**
-     * Get Current Admin
-     */
     public function me(Request $request): JsonResponse
     {
         $admin = $request->user();
@@ -145,20 +128,14 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Admin Logout
-     */
     public function logout(Request $request): JsonResponse
     {
         $admin = $request->user();
 
-        // Revoke all tokens (access and refresh)
         $admin->revokeAllTokens();
 
-        // Clear refresh token cookie
         $cookie = cookie()->forget('admin_refresh_token');
 
-        // Log activity
         ActivityLog::log('logout', 'auth', "Admin {$admin->full_name} logged out", $admin);
 
         return response()->json([
@@ -167,12 +144,8 @@ class AuthController extends Controller
         ])->cookie($cookie);
     }
 
-    /**
-     * Refresh Access Token
-     */
     public function refresh(Request $request): JsonResponse
     {
-        // Get refresh token from cookie
         $refreshToken = $request->cookie('admin_refresh_token');
 
         if (!$refreshToken) {
@@ -182,11 +155,9 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // Find and validate refresh token
         $tokenRecord = RefreshToken::findToken($refreshToken);
 
         if (!$tokenRecord) {
-            // Clear invalid cookie
             $cookie = cookie()->forget('admin_refresh_token');
             return response()->json([
                 'success' => false,
@@ -194,10 +165,8 @@ class AuthController extends Controller
             ], 401)->cookie($cookie);
         }
 
-        // Get the admin
         $admin = $tokenRecord->tokenable;
 
-        // Ensure it's an Admin model, not a User
         if (!$admin instanceof Admin || $admin->status !== 'active') {
             $tokenRecord->revoke();
             $cookie = cookie()->forget('admin_refresh_token');
@@ -207,25 +176,20 @@ class AuthController extends Controller
             ], 403)->cookie($cookie);
         }
 
-        // Generate new tokens (shorter expiry for testing refresh flow: 15 mins for access, 15 days for refresh)
         $tokens = $admin->generateTokens('admin-token', ['admin'], 15);
 
-        // Revoke old refresh token (one-time use)
-        // Note: We do this AFTER generating new tokens to slightly reduce the race window,
-        // though generateTokens itself creates a record.
         $tokenRecord->revoke();
 
-        // Create new HTTP-only cookie for refresh token
         $refreshTokenCookie = cookie(
             'admin_refresh_token',
             $tokens['refresh_token'],
-            15 * 24 * 60, // 15 days in minutes
+            15 * 24 * 60,
             '/',
             null,
-            config('app.env') === 'production', // Secure in production
-            true, // HttpOnly
-            false, // Raw
-            'Lax' // SameSite
+            config('app.env') === 'production',
+            true,
+            false,
+            'Lax'
         );
 
         return response()->json([
@@ -236,9 +200,6 @@ class AuthController extends Controller
         ])->cookie($refreshTokenCookie);
     }
 
-    /**
-     * Update Profile
-     */
     public function updateProfile(Request $request): JsonResponse
     {
         $admin = $request->user();
@@ -259,7 +220,6 @@ class AuthController extends Controller
 
         $admin->update($validated);
 
-        // Log activity
         ActivityLog::log(
             'update',
             'auth',
@@ -286,9 +246,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Change Password
-     */
     public function changePassword(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -309,10 +266,8 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        // Revoke all tokens except current
         $admin->tokens()->where('id', '!=', $request->user()->currentAccessToken()->id)->delete();
 
-        // Log activity
         ActivityLog::log('password_changed', 'auth', "Admin {$admin->full_name} changed password", $admin);
 
         return response()->json([

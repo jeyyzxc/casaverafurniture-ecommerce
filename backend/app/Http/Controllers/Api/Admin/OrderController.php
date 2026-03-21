@@ -14,30 +14,22 @@ use Illuminate\Validation\Rule;
 
 class OrderController extends Controller
 {
-    /**
-     * List all orders with filters
-     */
     public function index(Request $request): JsonResponse
     {
         try {
-            // Load relationships with proper eager loading
-            // Load basic relationships first
             $query = Order::with([
                 'user:id,first_name,last_name,email',
                 'items:id,order_id,product_id,product_name,quantity,unit_price,total',
             ]);
-            
-            // Load latestPayment separately to handle nullable relationship
+
             $query->with(['latestPayment' => function ($query) {
                 $query->select('id', 'order_id', 'status', 'payment_method_id', 'amount', 'payment_method_name', 'created_at');
             }]);
-            
-            // Load payment method for latestPayment (only if payment exists)
+
             $query->with(['latestPayment.paymentMethod' => function ($query) {
                 $query->select('id', 'name', 'code');
             }]);
 
-            // Search
             if ($search = $request->input('search')) {
                 $query->where(function ($q) use ($search) {
                     $q->where('order_number', 'like', "%{$search}%")
@@ -46,17 +38,14 @@ class OrderController extends Controller
                 });
             }
 
-            // Filter by status
             if ($status = $request->input('status')) {
                 $query->where('status', $status);
             }
 
-            // Filter by payment status
             if ($paymentStatus = $request->input('payment_status')) {
                 $query->where('payment_status', $paymentStatus);
             }
 
-            // Filter by date range
             if ($startDate = $request->input('start_date')) {
                 $query->whereDate('created_at', '>=', $startDate);
             }
@@ -64,34 +53,13 @@ class OrderController extends Controller
                 $query->whereDate('created_at', '<=', $endDate);
             }
 
-            // Sorting
             $sortBy = $request->input('sort_by', 'created_at');
             $sortOrder = $request->input('sort_order', 'desc');
             $query->orderBy($sortBy, $sortOrder);
 
-            // Pagination
             $perPage = $request->input('per_page', 15);
-            
-            // Get orders with pagination
-            $orders = $query->paginate($perPage);
 
-            // Ensure payment methods are loaded for orders that have payments
-            $orders->getCollection()->each(function ($order) {
-                if ($order->latestPayment && $order->latestPayment->payment_method_id) {
-                    // Load payment method if not already loaded
-                    if (!$order->latestPayment->relationLoaded('paymentMethod')) {
-                        try {
-                            $order->latestPayment->load('paymentMethod:id,name,code');
-                        } catch (\Exception $e) {
-                            \Log::warning('Failed to load payment method for order', [
-                                'order_id' => $order->id,
-                                'payment_id' => $order->latestPayment->id,
-                                'error' => $e->getMessage(),
-                            ]);
-                        }
-                    }
-                }
-            });
+            $orders = $query->paginate($perPage);
 
             return response()->json([
                 'success' => true,
@@ -104,7 +72,7 @@ class OrderController extends Controller
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to load orders.',
@@ -116,7 +84,7 @@ class OrderController extends Controller
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to load orders.',
@@ -125,9 +93,6 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Get single order
-     */
     public function show(Order $order): JsonResponse
     {
         $order->load([
@@ -146,9 +111,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Update order status
-     */
     public function updateStatus(Request $request, Order $order): JsonResponse
     {
         $validated = $request->validate([
@@ -167,7 +129,6 @@ class OrderController extends Controller
             ], 422);
         }
 
-        // Update order
         $updateData = ['status' => $validated['status']];
 
         if ($validated['status'] === 'shipped') {
@@ -183,7 +144,6 @@ class OrderController extends Controller
 
         $order->update($updateData);
 
-        // Create status history
         OrderStatusHistory::create([
             'order_id' => $order->id,
             'status' => $validated['status'],
@@ -194,13 +154,9 @@ class OrderController extends Controller
             'is_customer_notified' => $validated['notify_customer'] ?? false,
         ]);
 
-        // Log activity
         ActivityLog::log('status_update', 'orders', "Updated order {$order->order_number} status from {$previousStatus} to {$validated['status']}", $order);
 
-        // Broadcast order status updated event
         event(new OrderStatusUpdated($order, $previousStatus, $validated['status']));
-
-        // TODO: Send notification to customer if notify_customer is true
 
         $order->load('statusHistory');
 
@@ -211,9 +167,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Add note to order
-     */
     public function addNote(Request $request, Order $order): JsonResponse
     {
         $validated = $request->validate([
@@ -237,9 +190,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Update shipping info
-     */
     public function updateShipping(Request $request, Order $order): JsonResponse
     {
         $validated = $request->validate([
@@ -260,9 +210,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Cancel order
-     */
     public function cancel(Request $request, Order $order): JsonResponse
     {
         if (!$order->canBeCancelled()) {
@@ -284,7 +231,6 @@ class OrderController extends Controller
             'cancellation_reason' => $validated['reason'],
         ]);
 
-        // Create status history
         OrderStatusHistory::create([
             'order_id' => $order->id,
             'status' => 'cancelled',
@@ -294,7 +240,6 @@ class OrderController extends Controller
             'admin_id' => auth()->id(),
         ]);
 
-        // Restore stock
         foreach ($order->items as $item) {
             if ($item->product) {
                 $item->product->incrementStock($item->quantity);
@@ -309,9 +254,6 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Get order statistics
-     */
     public function statistics(Request $request): JsonResponse
     {
         $stats = [

@@ -52,7 +52,6 @@ class Cart extends Model
         return $this->belongsTo(Promotion::class);
     }
 
-    // Cart calculations
     public function recalculate(): void
     {
         $subtotal = $this->items->sum('subtotal');
@@ -66,7 +65,6 @@ class Cart extends Model
         ]);
     }
 
-    // Scopes
     public function scopeActive($query)
     {
         return $query->where('status', 'active');

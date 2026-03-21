@@ -14,9 +14,7 @@ use Illuminate\Support\Facades\Cache;
 
 class SettingsController extends Controller
 {
-    /**
-     * Get all settings
-     */
+    
     public function index(Request $request): JsonResponse
     {
         $group = $request->input('group');
@@ -37,9 +35,6 @@ class SettingsController extends Controller
         ]);
     }
 
-    /**
-     * Update settings
-     */
     public function update(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -59,7 +54,6 @@ class SettingsController extends Controller
             );
         }
 
-        // Clear settings cache
         Cache::flush();
 
         ActivityLog::log('update', 'settings', 'Updated site settings');
@@ -70,9 +64,6 @@ class SettingsController extends Controller
         ]);
     }
 
-    /**
-     * Get payment methods
-     */
     public function paymentMethods(): JsonResponse
     {
         $methods = PaymentMethod::orderBy('display_order')->get();
@@ -83,9 +74,6 @@ class SettingsController extends Controller
         ]);
     }
 
-    /**
-     * Update payment method
-     */
     public function updatePaymentMethod(Request $request, PaymentMethod $paymentMethod): JsonResponse
     {
         $validated = $request->validate([
@@ -114,9 +102,6 @@ class SettingsController extends Controller
         ]);
     }
 
-    /**
-     * Get shipping zones
-     */
     public function shippingZones(): JsonResponse
     {
         $zones = ShippingZone::with('rates')->orderBy('name')->get();
@@ -127,9 +112,6 @@ class SettingsController extends Controller
         ]);
     }
 
-    /**
-     * Update shipping zone
-     */
     public function updateShippingZone(Request $request, ShippingZone $shippingZone): JsonResponse
     {
         $validated = $request->validate([
@@ -153,9 +135,6 @@ class SettingsController extends Controller
         ]);
     }
 
-    /**
-     * Get couriers
-     */
     public function couriers(): JsonResponse
     {
         $couriers = Courier::orderBy('name')->get();
@@ -166,9 +145,6 @@ class SettingsController extends Controller
         ]);
     }
 
-    /**
-     * Update courier
-     */
     public function updateCourier(Request $request, Courier $courier): JsonResponse
     {
         $validated = $request->validate([

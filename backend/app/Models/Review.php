@@ -80,7 +80,6 @@ class Review extends Model
         return $this->belongsTo(Admin::class, 'moderated_by_admin_id');
     }
 
-    // Scopes
     public function scopeApproved($query)
     {
         return $query->where('status', 'approved');

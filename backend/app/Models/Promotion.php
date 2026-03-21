@@ -75,7 +75,6 @@ class Promotion extends Model
         return $this->belongsTo(Admin::class, 'created_by_admin_id');
     }
 
-    // Check if promotion is valid
     public function isValid(): bool
     {
         if (!$this->is_active) {
@@ -97,7 +96,6 @@ class Promotion extends Model
         return true;
     }
 
-    // Calculate discount
     public function calculateDiscount(float $orderAmount): float
     {
         if ($this->discount_type === 'percentage') {
@@ -115,7 +113,6 @@ class Promotion extends Model
         return 0;
     }
 
-    // Scopes
     public function scopeActive($query)
     {
         return $query->where('is_active', true)

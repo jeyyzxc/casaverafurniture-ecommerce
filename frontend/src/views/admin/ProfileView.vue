@@ -1,6 +1,5 @@
 <template>
   <div class="profile-page">
-    <!-- Page Header -->
     <div class="page-header">
       <div>
         <h1 class="page-title">My Profile</h1>
@@ -8,9 +7,7 @@
       </div>
     </div>
 
-    <!-- Profile Content -->
     <div class="profile-content">
-      <!-- Profile Card -->
       <div class="profile-card">
         <div class="profile-header">
           <div class="profile-avatar-section">
@@ -45,7 +42,6 @@
           </div>
 
           <form v-else @submit.prevent="saveProfile" class="profile-form">
-            <!-- Personal Information Section -->
             <div class="form-section">
               <h3 class="section-title">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -111,7 +107,6 @@
               </div>
             </div>
 
-            <!-- Security Section -->
             <div class="form-section">
               <h3 class="section-title">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -193,7 +188,6 @@
               </div>
             </div>
 
-            <!-- Preferences Section -->
             <div class="form-section">
               <h3 class="section-title">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -238,7 +232,6 @@
               </div>
             </div>
 
-            <!-- Action Buttons -->
             <div class="form-actions">
               <button type="button" class="btn-secondary" @click="cancelEdit">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -261,7 +254,6 @@
         </div>
       </div>
 
-      <!-- Account Statistics Card -->
       <div class="stats-card">
         <h3 class="stats-title">Account Statistics</h3>
         <div class="stats-grid">
@@ -320,15 +312,11 @@ const router = useRouter()
 const adminStore = useAdminAuthStore()
 const { success, error: showError } = useNotification()
 
-// ═══════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════
 const avatarInput = ref<HTMLInputElement | null>(null)
 const isSaving = ref(false)
 const isLoadingProfile = ref(true)
 const passwordError = ref('')
 
-// Password Visibility State
 const showCurrentPassword = ref(false)
 const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
@@ -353,9 +341,6 @@ const accountStats = ref({
 
 const profileData = ref<any>(null)
 
-// ═══════════════════════════════════════════════════
-// COMPUTED
-// ═══════════════════════════════════════════════════
 const currentAdmin = computed(() => adminStore.admin)
 
 const roleDisplay = computed(() => {
@@ -365,9 +350,6 @@ const roleDisplay = computed(() => {
   return role
 })
 
-// ═══════════════════════════════════════════════════
-// METHODS
-// ═══════════════════════════════════════════════════
 const triggerAvatarUpload = () => {
   avatarInput.value?.click()
 }
@@ -379,7 +361,6 @@ const handleAvatarChange = async (event: Event) => {
     try {
       const response = await uploadApi.image(file, 'avatars')
       if (response.data.success) {
-        // Update profile with new avatar URL
         const updateRes = await adminStore.updateProfile({
           avatar: response.data.data.url
         } as any)
@@ -402,7 +383,7 @@ const validatePassword = () => {
   passwordError.value = ''
 
   if (!profileForm.value.newPassword && !profileForm.value.confirmPassword) {
-    return true // No password change requested
+    return true
   }
 
   if (profileForm.value.newPassword && !profileForm.value.currentPassword) {
@@ -431,7 +412,6 @@ const saveProfile = async () => {
   isSaving.value = true
 
   try {
-    // 1. Update Profile Info
     const profileDataPayload = {
       first_name: profileForm.value.first_name,
       last_name: profileForm.value.last_name,
@@ -445,7 +425,6 @@ const saveProfile = async () => {
       throw new Error(profileRes.message)
     }
 
-    // 2. Update Password if requested
     if (profileForm.value.newPassword) {
       const passwordRes = await adminStore.changePassword(
         profileForm.value.currentPassword,
@@ -457,7 +436,6 @@ const saveProfile = async () => {
         throw new Error(passwordRes.message)
       }
 
-      // Clear password fields on success
       profileForm.value.currentPassword = ''
       profileForm.value.newPassword = ''
       profileForm.value.confirmPassword = ''
@@ -465,7 +443,6 @@ const saveProfile = async () => {
 
     success('Profile Updated', 'Your profile information has been saved successfully.')
 
-    // Refresh data
     await fetchFullProfile()
 
   } catch (error: any) {
@@ -483,7 +460,6 @@ const cancelEdit = () => {
 const fetchFullProfile = async () => {
   isLoadingProfile.value = true
   try {
-    // Ensure we have the ID from auth store
     if (!adminStore.admin?.id) {
       await adminStore.fetchAdmin()
     }
@@ -493,18 +469,15 @@ const fetchFullProfile = async () => {
       throw new Error('Admin ID not found')
     }
 
-    // Fetch full details from admins API
     const response = await adminsApi.get(adminId)
     if (response.data.success) {
       profileData.value = response.data.data
 
-      // Populate Form
       profileForm.value.first_name = profileData.value.first_name || ''
       profileForm.value.last_name = profileData.value.last_name || ''
       profileForm.value.email = profileData.value.email || ''
       profileForm.value.phone = profileData.value.phone || ''
 
-      // Populate Member Since
       if (profileData.value.created_at) {
         const date = new Date(profileData.value.created_at)
         accountStats.value.memberSince = date.toLocaleDateString('en-US', {
@@ -514,7 +487,6 @@ const fetchFullProfile = async () => {
         })
       }
 
-      // Populate Last Login (Fallback)
       if (profileData.value.last_login_at) {
         const date = new Date(profileData.value.last_login_at)
         accountStats.value.lastLogin = date.toLocaleDateString('en-US', {
@@ -526,7 +498,6 @@ const fetchFullProfile = async () => {
         })
       }
 
-      // Load stats from logs
       await loadAccountStats(adminId)
     }
   } catch (err) {
@@ -539,7 +510,6 @@ const fetchFullProfile = async () => {
 
 const loadAccountStats = async (adminId: number) => {
   try {
-    // 1. Total Actions
     const response = await activityLogs.list({
       causer_id: adminId,
       per_page: 1
@@ -550,7 +520,6 @@ const loadAccountStats = async (adminId: number) => {
       accountStats.value.totalActions = total.toLocaleString()
     }
 
-    // 2. Last Login from Activity Logs (More accurate than user table if available)
     const loginResponse = await activityLogs.list({
       causer_id: adminId,
       action: 'login',
@@ -576,9 +545,6 @@ const loadAccountStats = async (adminId: number) => {
   }
 }
 
-// ═══════════════════════════════════════════════════
-// LIFECYCLE
-// ═══════════════════════════════════════════════════
 onMounted(() => {
   fetchFullProfile()
 })

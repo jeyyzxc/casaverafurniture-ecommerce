@@ -8,16 +8,11 @@ use Carbon\Carbon;
 
 class ShippingZonesSeeder extends Seeder
 {
-    /**
-     * Seed shipping zones and rates.
-     */
+    
     public function run(): void
     {
         $now = Carbon::now();
 
-        // ===========================================
-        // SHIPPING ZONES
-        // ===========================================
         $zones = [
             [
                 'name' => 'Metro Manila',
@@ -156,7 +151,6 @@ class ShippingZonesSeeder extends Seeder
             ],
         ];
 
-        // Insert zones only if they don't exist
         foreach ($zones as $zone) {
             DB::table('shipping_zones')->updateOrInsert(
                 ['name' => $zone['name']],
@@ -164,9 +158,6 @@ class ShippingZonesSeeder extends Seeder
             );
         }
 
-        // ===========================================
-        // SHIPPING RATES (per zone)
-        // ===========================================
         $metroManilaZone = DB::table('shipping_zones')->where('name', 'Metro Manila')->first();
         $luzonZone = DB::table('shipping_zones')->where('name', 'Luzon (Outside NCR)')->first();
         $visayasZone = DB::table('shipping_zones')->where('name', 'Visayas')->first();
@@ -178,7 +169,7 @@ class ShippingZonesSeeder extends Seeder
         $mimaropaZone = DB::table('shipping_zones')->where('name', 'Palawan & MIMAROPA')->first();
 
         $rates = [
-            // Metro Manila rates
+            
             [
                 'shipping_zone_id' => $metroManilaZone->id,
                 'name' => 'Standard Delivery',
@@ -218,14 +209,13 @@ class ShippingZonesSeeder extends Seeder
                 'updated_at' => $now,
             ],
 
-            // Luzon rates
             [
                 'shipping_zone_id' => $luzonZone->id,
                 'name' => 'Standard Delivery',
                 'description' => 'Regular delivery within 2-4 business days',
                 'rate_type' => 'flat',
                 'rate' => 300,
-                'per_kg_rate' => 15, // Additional ₱15 per kg after first 5kg
+                'per_kg_rate' => 15, 
                 'per_item_rate' => null,
                 'min_weight' => null,
                 'max_weight' => 100,
@@ -239,7 +229,6 @@ class ShippingZonesSeeder extends Seeder
                 'updated_at' => $now,
             ],
 
-            // Visayas rates
             [
                 'shipping_zone_id' => $visayasZone->id,
                 'name' => 'Standard Delivery',
@@ -260,7 +249,6 @@ class ShippingZonesSeeder extends Seeder
                 'updated_at' => $now,
             ],
 
-            // Mindanao rates
             [
                 'shipping_zone_id' => $mindanaoZone->id,
                 'name' => 'Standard Delivery',
@@ -281,7 +269,6 @@ class ShippingZonesSeeder extends Seeder
                 'updated_at' => $now,
             ],
 
-            // Metro Manila Express rates
             [
                 'shipping_zone_id' => $metroManilaExpressZone->id,
                 'name' => 'Same-Day Delivery',
@@ -302,7 +289,6 @@ class ShippingZonesSeeder extends Seeder
                 'updated_at' => $now,
             ],
 
-            // CALABARZON rates
             [
                 'shipping_zone_id' => $calabarzonZone->id,
                 'name' => 'Standard Delivery',
@@ -323,7 +309,6 @@ class ShippingZonesSeeder extends Seeder
                 'updated_at' => $now,
             ],
 
-            // Northern Luzon rates
             [
                 'shipping_zone_id' => $northernLuzonZone->id,
                 'name' => 'Standard Delivery',
@@ -344,7 +329,6 @@ class ShippingZonesSeeder extends Seeder
                 'updated_at' => $now,
             ],
 
-            // Bicol Region rates
             [
                 'shipping_zone_id' => $bicolZone->id,
                 'name' => 'Standard Delivery',
@@ -365,7 +349,6 @@ class ShippingZonesSeeder extends Seeder
                 'updated_at' => $now,
             ],
 
-            // MIMAROPA rates
             [
                 'shipping_zone_id' => $mimaropaZone->id,
                 'name' => 'Standard Delivery',
@@ -387,7 +370,6 @@ class ShippingZonesSeeder extends Seeder
             ],
         ];
 
-        // Insert rates only if they don't exist
         foreach ($rates as $rate) {
             DB::table('shipping_rates')->updateOrInsert(
                 [
@@ -398,9 +380,6 @@ class ShippingZonesSeeder extends Seeder
             );
         }
 
-        // ===========================================
-        // COURIERS
-        // ===========================================
         $couriers = [
             [
                 'name' => 'LBC Express',
@@ -464,7 +443,6 @@ class ShippingZonesSeeder extends Seeder
             ],
         ];
 
-        // Insert couriers only if they don't exist
         foreach ($couriers as $courier) {
             DB::table('couriers')->updateOrInsert(
                 ['code' => $courier['code']],

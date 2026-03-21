@@ -1,17 +1,14 @@
 <template>
   <div class="contact-page">
-    <!-- Hero Section -->
     <HeroSection
       title="Get in Touch"
       subtitle="We'd love to hear from you—message us or visit our store for the perfect piece."
       size="large"
     />
 
-    <!-- Main Content -->
     <section class="contact-main">
       <div class="contact-container">
         <div class="contact-grid">
-          <!-- Contact Form -->
           <div class="contact-form-card rise-up">
             <div class="form-header">
               <span class="form-label">Message Us</span>
@@ -86,9 +83,7 @@
             </form>
           </div>
 
-          <!-- Contact Info -->
           <div class="contact-info rise-up-delay-2">
-            <!-- Showrooms -->
             <div class="info-card">
               <div class="info-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -115,7 +110,6 @@
               </div>
             </div>
 
-            <!-- Business Hours -->
             <div class="info-card">
               <div class="info-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -142,7 +136,6 @@
               </div>
             </div>
 
-            <!-- Quick Actions -->
             <div class="action-cards">
               <a href="mailto:hello@casavera.com" class="action-card">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -165,7 +158,6 @@
       </div>
     </section>
 
-    <!-- Map Section -->
     <section class="map-section">
       <div class="map-container">
         <iframe
@@ -184,7 +176,6 @@
 import { ref } from 'vue'
 import HeroSection from '@/components/HeroSection.vue'
 
-// Form State
 const form = ref({
   name: '',
   email: '',
@@ -200,101 +191,82 @@ const errors = ref({
 const isSubmitting = ref(false)
 const isSuccess = ref(false)
 
-// Prevent space key from being entered at the start of any field
 const preventLeadingSpace = (event: KeyboardEvent) => {
   const target = event.target as HTMLInputElement
-  // If field is empty and user tries to type space, prevent it
   if (event.key === ' ' && target.value.length === 0) {
     event.preventDefault()
   }
 }
 
-// Strictly prevent spaces in email field
 const preventSpaceInEmail = (event: KeyboardEvent) => {
-  // Prevent space key from being entered at all in email field
   if (event.key === ' ') {
     event.preventDefault()
   }
 }
 
-// Strictly prevent spaces in message field
 const preventSpaceInMessage = (event: KeyboardEvent) => {
-  // Prevent space key from being entered at all in message field
   if (event.key === ' ') {
     event.preventDefault()
   }
 }
 
-// Handle name input - prevent leading spaces and consecutive spaces
 const handleNameInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   let value = target.value
 
-  // Block spaces at the start - must start with a letter
   if (value.length > 0 && value[0] === ' ') {
     value = value.trimStart()
   }
 
-  // Replace consecutive spaces with single space (allow only one space at a time)
   value = value.replace(/\s{2,}/g, ' ')
 
   form.value.name = value
   errors.value.name = ''
 }
 
-// Handle email input - remove any spaces that might have been pasted
 const handleEmailInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   let value = target.value
 
-  // Remove all spaces from email (in case user pastes text with spaces)
   value = value.replace(/\s/g, '')
 
   form.value.email = value
   errors.value.email = ''
 }
 
-// Handle message input - remove any spaces that might have been pasted
 const handleMessageInput = (event: Event) => {
   const target = event.target as HTMLTextAreaElement
   let value = target.value
 
-  // Remove all spaces from the message (in case user pastes text with spaces)
   value = value.replace(/\s/g, '')
 
   form.value.message = value
   errors.value.message = ''
 }
 
-// Validate name field
 const validateName = () => {
   errors.value.name = ''
 
-  // Check if field is empty
   if (!form.value.name.trim()) {
     errors.value.name = 'Full Name is required'
     return false
   }
 
-  // Check minimum length (6 characters)
   if (form.value.name.trim().length < 6) {
     errors.value.name = 'Full Name must be at least 6 characters'
     return false
   }
 
-  // Check if starts with space (shouldn't happen due to input handler, but double-check)
   if (form.value.name.trim().startsWith(' ')) {
     errors.value.name = 'Full Name cannot start with a space'
     return false
   }
 
-  // Check if starts with a letter (not a space or number)
   if (form.value.name.trim().length > 0 && !/^[a-zA-Z]/.test(form.value.name.trim())) {
     errors.value.name = 'Full Name must start with a letter'
     return false
   }
 
-  // Check for consecutive spaces
   if (/\s{2,}/.test(form.value.name)) {
     errors.value.name = 'Full Name cannot contain consecutive spaces'
     return false
@@ -306,25 +278,21 @@ const validateName = () => {
 const validateEmail = () => {
   errors.value.email = ''
 
-  // Check if field is empty
   if (!form.value.email.trim()) {
     errors.value.email = 'Email Address is required'
     return false
   }
 
-  // Check if email contains any spaces (strictly not allowed)
   if (/\s/.test(form.value.email)) {
     errors.value.email = 'Email Address cannot contain spaces'
     return false
   }
 
-  // Check if starts with a letter (not a space or number)
   if (form.value.email.trim().length > 0 && !/^[a-zA-Z]/.test(form.value.email.trim())) {
     errors.value.email = 'Email Address must start with a letter'
     return false
   }
 
-  // Email format validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(form.value.email.trim())) {
     errors.value.email = 'Please enter a valid email address'
@@ -337,25 +305,21 @@ const validateEmail = () => {
 const validateMessage = () => {
   errors.value.message = ''
 
-  // Check if field is empty
   if (!form.value.message.trim()) {
     errors.value.message = 'Message is required'
     return false
   }
 
-  // Check minimum length (8 characters)
   if (form.value.message.trim().length < 8) {
     errors.value.message = 'Message must be at least 8 characters'
     return false
   }
 
-  // Check if message contains any spaces (shouldn't happen due to input handler, but double-check)
   if (/\s/.test(form.value.message)) {
     errors.value.message = 'Message cannot contain spaces'
     return false
   }
 
-  // Check if starts with a letter (not a space or number)
   if (form.value.message.trim().length > 0 && !/^[a-zA-Z]/.test(form.value.message.trim())) {
     errors.value.message = 'Message must start with a letter'
     return false
@@ -365,15 +329,12 @@ const validateMessage = () => {
 }
 
 const submitForm = async () => {
-  // Immediately validate all fields and show ALL errors at once
   let isValid = true
 
-  // Validate name field - set error immediately if empty
   if (!form.value.name || !form.value.name.trim()) {
     errors.value.name = 'Full Name is required'
     isValid = false
   } else {
-    // Field has content, validate it
     if (form.value.name.trim().length < 6) {
       errors.value.name = 'Full Name must be at least 6 characters'
       isValid = false
@@ -391,12 +352,10 @@ const submitForm = async () => {
     }
   }
 
-  // Validate email field - set error immediately if empty
   if (!form.value.email || !form.value.email.trim()) {
     errors.value.email = 'Email Address is required'
     isValid = false
   } else {
-    // Field has content, validate it
     if (/\s/.test(form.value.email)) {
       errors.value.email = 'Email Address cannot contain spaces'
       isValid = false
@@ -414,12 +373,10 @@ const submitForm = async () => {
     }
   }
 
-  // Validate message field - set error immediately if empty
   if (!form.value.message || !form.value.message.trim()) {
     errors.value.message = 'Message is required'
     isValid = false
   } else {
-    // Field has content, validate it
     if (form.value.message.trim().length < 8) {
       errors.value.message = 'Message must be at least 8 characters'
       isValid = false
@@ -434,20 +391,17 @@ const submitForm = async () => {
     }
   }
 
-  // If validation fails, prevent submission (all errors are already set above)
   if (!isValid) {
     return
   }
 
   isSubmitting.value = true
 
-  // Simulate API call
   await new Promise(resolve => setTimeout(resolve, 1500))
 
   isSubmitting.value = false
   isSuccess.value = true
 
-  // Reset after 3 seconds
   setTimeout(() => {
     form.value = { name: '', email: '', message: '' }
     errors.value = { name: '', email: '', message: '' }
@@ -471,7 +425,6 @@ const submitForm = async () => {
   min-height: 100vh;
 }
 
-/* Main Content */
 .contact-main {
   background: var(--light);
   padding: 4rem 0;
@@ -490,7 +443,6 @@ const submitForm = async () => {
   gap: 3.5rem;
 }
 
-/* Form Card */
 .contact-form-card {
   background: var(--white);
   padding: 3rem;
@@ -626,7 +578,6 @@ const submitForm = async () => {
   to { transform: rotate(360deg); }
 }
 
-/* Info Cards */
 .contact-info {
   display: flex;
   flex-direction: column;
@@ -721,7 +672,6 @@ const submitForm = async () => {
   color: var(--dark);
 }
 
-/* Action Cards */
 .action-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -768,7 +718,6 @@ const submitForm = async () => {
   color: var(--gray);
 }
 
-/* Map Section */
 .map-section {
   position: relative;
   width: 100%;
@@ -801,7 +750,6 @@ const submitForm = async () => {
   box-shadow: inset 0 10px 20px rgba(0,0,0,0.1);
 }
 
-/* Responsive */
 @media (max-width: 991px) {
   .contact-grid {
     grid-template-columns: 1fr;

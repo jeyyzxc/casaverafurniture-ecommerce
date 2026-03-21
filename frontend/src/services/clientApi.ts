@@ -1,8 +1,5 @@
 import api, { getOrCreateSessionId } from './api'
 
-// ==================
-// AUTH
-// ==================
 
 export const auth = {
   register: (data: {
@@ -36,9 +33,6 @@ export const auth = {
   getAccountStats: () => api.get('/auth/account-stats'),
 }
 
-// ==================
-// HOME & SITE
-// ==================
 
 export const home = {
   getData: () => api.get('/home'),
@@ -48,9 +42,6 @@ export const home = {
   getCategories: () => api.get('/categories'),
 }
 
-// ==================
-// PRODUCTS
-// ==================
 
 export const products = {
   list: (params?: {
@@ -79,13 +70,10 @@ export const products = {
   ) => api.get(`/categories/${slug}`, { params }),
 }
 
-// ==================
-// CART
-// ==================
 
 export const cart = {
   get: () => {
-    getOrCreateSessionId() // Ensure session ID exists
+    getOrCreateSessionId() 
     return api.get('/cart')
   },
 
@@ -105,9 +93,6 @@ export const cart = {
   removeCoupon: () => api.delete('/cart/coupon'),
 }
 
-// ==================
-// ADDRESSES
-// ==================
 
 export const addresses = {
   list: () => api.get('/addresses'),
@@ -147,9 +132,6 @@ export const addresses = {
   setDefaultBilling: (addressId: number) => api.post(`/addresses/${addressId}/default-billing`),
 }
 
-// ==================
-// CHECKOUT
-// ==================
 
 export const checkout = {
   getShippingZones: () => api.get('/checkout/shipping-zones'),
@@ -157,9 +139,6 @@ export const checkout = {
   getPaymentMethods: () => api.get('/checkout/payment-methods'),
 }
 
-// ==================
-// ORDERS
-// ==================
 
 export const orders = {
   list: (params?: { page?: number; per_page?: number; status?: string }) =>
@@ -168,12 +147,10 @@ export const orders = {
   get: (orderNumber: string) => api.get(`/orders/${orderNumber}`),
 
   create: (data: {
-    // Address selection (either use saved address ID or provide full address)
     shipping_address_id?: number
     billing_address_id?: number
     billing_same_as_shipping?: boolean
-    
-    // Full address details (required if address_id not provided)
+
     shipping_address_line_1?: string
     shipping_address_line_2?: string
     shipping_city?: string
@@ -181,17 +158,16 @@ export const orders = {
     shipping_postal_code?: string
     shipping_name?: string
     shipping_phone?: string
-    
+
     billing_address_line_1?: string
     billing_address_line_2?: string
     billing_city?: string
     billing_province?: string
     billing_postal_code?: string
-    
+
     shipping_zone_id: number
     payment_method_id: number
-    
-    // Payment confirmation details
+
     payment_confirmation?: {
       sender_name?: string
       sender_account?: string
@@ -203,7 +179,7 @@ export const orders = {
       card_expiry?: string
       card_cvv?: string
     }
-    
+
     notes?: string
   }) => api.post('/orders', data),
 
@@ -222,9 +198,6 @@ export const orders = {
   cancel: (orderNumber: string, reason?: string) => api.post(`/orders/${orderNumber}/cancel`, { reason }),
 }
 
-// ==================
-// WISHLIST
-// ==================
 
 export const wishlist = {
   get: () => api.get('/wishlist'),
@@ -238,9 +211,6 @@ export const wishlist = {
   moveToCart: (productId: number) => api.post(`/wishlist/${productId}/move-to-cart`),
 }
 
-// ==================
-// PROMOTIONS
-// ==================
 
 export const promotions = {
   list: () => api.get('/promotions'),

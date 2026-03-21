@@ -8,10 +8,10 @@
 
     <div class="checkout-container">
       <div v-if="!orderPlaced" class="checkout-layout">
-        <!-- Checkout Form -->
+
         <div class="checkout-form-wrapper rise-up">
           <form @submit.prevent="handleCheckout" class="checkout-form">
-            <!-- Shipping Address -->
+
             <section class="form-section rise-up">
               <div class="section-header">
                 <h3 class="section-title">Shipping Address</h3>
@@ -20,7 +20,7 @@
                 </button>
               </div>
 
-              <!-- Address Selection -->
+
               <div class="form-group full-width" v-if="savedAddresses.length > 0">
                 <label>Select Saved Address (Optional)</label>
                 <select v-model="selectedShippingAddressId" @change="onShippingAddressSelect" class="address-select">
@@ -143,7 +143,7 @@
               </div>
             </section>
 
-            <!-- Payment Method -->
+
             <section class="form-section">
               <h3 class="section-title">Payment Method</h3>
               <div v-if="isLoadingPaymentMethods" class="loading-payment-methods">
@@ -178,12 +178,12 @@
                         :disabled="!isPaymentMethodAvailable(method)"
                         @click.stop
                       />
-                      <span class="custom-radio" :class="{ checked: form.payment_method_id === method.id }"></span>
+                      <span :class="['custom-radio', { checked: form.payment_method_id === method.id }]"></span>
                     </div>
                     <div class="method-content">
                       <div class="method-title-row">
                         <span v-if="getPaymentIcon(method.code)" class="method-icon">
-                          <img :src="getPaymentIcon(method.code)" :alt="method.name" />
+                          <img :src="getPaymentIcon(method.code) || undefined" :alt="method.name" />
                         </span>
                         <label :for="`method-${method.id}`" class="method-name">
                           {{ method.name }}
@@ -267,7 +267,7 @@
               </div>
             </section>
 
-            <!-- Order Notes -->
+
             <section class="form-section rise-up-delay-2">
               <h3 class="section-title">Order Notes (Optional)</h3>
               <textarea
@@ -293,7 +293,7 @@
           </form>
         </div>
 
-        <!-- Order Summary -->
+
         <div class="order-summary-sidebar rise-up-delay-2">
           <div class="summary-card">
             <h4>Order Summary</h4>
@@ -354,7 +354,7 @@
         </div>
       </div>
 
-      <!-- Order Success with Transaction Summary -->
+
       <div v-else class="order-success rise-up">
         <div class="success-icon">
           <svg viewBox="0 0 24 24" fill="currentColor">
@@ -365,11 +365,11 @@
         <p class="order-number">Order Number: <strong>{{ orderNumber }}</strong></p>
         <p class="success-message">We've received your order and will process it shortly.</p>
 
-        <!-- Transaction Summary -->
+
         <div v-if="orderDetails" class="transaction-summary">
           <h3 class="summary-title">Transaction Summary</h3>
 
-          <!-- User Information -->
+
           <div class="summary-section">
             <h4 class="section-heading">Customer Information</h4>
             <div class="info-grid">
@@ -388,7 +388,7 @@
             </div>
           </div>
 
-          <!-- Shipping Address -->
+
           <div class="summary-section rise-up-delay-2">
             <h4 class="section-heading">Shipping Address</h4>
             <div class="address-display">
@@ -401,7 +401,7 @@
             </div>
           </div>
 
-          <!-- Payment Information -->
+
           <div class="summary-section rise-up-delay-3" v-if="orderDetails.latest_payment">
             <h4 class="section-heading">Payment Information</h4>
             <div class="info-grid">
@@ -451,14 +451,14 @@
                 <span class="info-label">Amount Paid:</span>
                 <span class="info-value gold">₱{{ formatPrice(orderDetails.latest_payment.amount) }}</span>
               </div>
-              <div class="info-item" v-if="orderDetails.latest_payment.fee_amount > 0">
+              <div class="info-item" v-if="(orderDetails.latest_payment.fee_amount || 0) > 0">
                 <span class="info-label">Payment Fee:</span>
-                <span class="info-value">₱{{ formatPrice(orderDetails.latest_payment.fee_amount) }}</span>
+                <span class="info-value">₱{{ formatPrice(orderDetails.latest_payment.fee_amount || 0) }}</span>
               </div>
             </div>
           </div>
 
-          <!-- Order Items -->
+
           <div class="summary-section rise-up-delay-4" v-if="orderDetails.items && orderDetails.items.length > 0">
             <h4 class="section-heading">Order Items</h4>
             <div class="order-items-summary">
@@ -472,7 +472,7 @@
             </div>
           </div>
 
-          <!-- Order Totals -->
+
           <div class="summary-section rise-up-delay-5">
             <h4 class="section-heading">Order Totals</h4>
             <div class="totals-grid">
@@ -480,17 +480,17 @@
                 <span>Subtotal:</span>
                 <span>₱{{ formatPrice(orderDetails.subtotal || 0) }}</span>
               </div>
-              <div class="total-row" v-if="orderDetails.discount_amount > 0">
+              <div class="total-row" v-if="(orderDetails.discount_amount || 0) > 0">
                 <span>Discount:</span>
-                <span class="discount">-₱{{ formatPrice(orderDetails.discount_amount) }}</span>
+                <span class="discount">-₱{{ formatPrice(orderDetails.discount_amount || 0) }}</span>
               </div>
               <div class="total-row">
                 <span>Shipping:</span>
                 <span>₱{{ formatPrice(orderDetails.shipping_amount || 0) }}</span>
               </div>
-              <div class="total-row" v-if="orderDetails.latest_payment?.fee_amount > 0">
+              <div class="total-row" v-if="(orderDetails.latest_payment?.fee_amount || 0) > 0">
                 <span>Payment Fee:</span>
-                <span>₱{{ formatPrice(orderDetails.latest_payment.fee_amount) }}</span>
+                <span>₱{{ formatPrice(orderDetails.latest_payment?.fee_amount || 0) }}</span>
               </div>
               <div class="total-row final-total">
                 <span>Total:</span>
@@ -508,7 +508,7 @@
       </div>
     </div>
 
-    <!-- Payment Confirmation Modal -->
+
     <Teleport to="body">
       <div v-if="showPaymentConfirmation" class="modal-overlay" @click.self="showPaymentConfirmation = false">
         <div class="modal-box payment-confirmation-modal">
@@ -521,7 +521,7 @@
           <h3 class="modal-title">Confirm Payment Details</h3>
           <p class="modal-subtitle">Please review and confirm your payment information</p>
 
-          <!-- Order Summary in Modal -->
+
           <div class="confirmation-summary">
             <div class="summary-row">
               <span>Subtotal:</span>
@@ -546,11 +546,11 @@
           </div>
 
           <form @submit.prevent="submitOrderWithConfirmation" class="payment-confirmation-form">
-            <!-- Payment Method Specific Fields -->
+
             <div v-if="selectedPaymentMethod">
-              <!-- GCash, PayPal, Maya -->
+
               <template v-if="['gcash', 'paypal', 'maya'].includes(selectedPaymentMethod.code?.toLowerCase() || '')">
-                <!-- Add Account Info display here -->
+
                 <div v-if="selectedPaymentMethod.account_details" class="payment-dest-info">
                   <div class="dest-header">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -650,7 +650,7 @@
                 </div>
               </template>
 
-              <!-- Bank Transfer -->
+
               <template v-else-if="selectedPaymentMethod.type === 'bank_transfer' || (selectedPaymentMethod.code?.toLowerCase() || '').includes('bank')">
                 <div class="form-group">
                   <label>Card Number (Last 4 digits) *</label>
@@ -698,7 +698,7 @@
                 </div>
               </template>
 
-              <!-- COD or other methods -->
+
               <template v-else>
                 <div class="info-message">
                   <p>No additional payment details required for {{ selectedPaymentMethod.name }}.</p>
@@ -731,7 +731,7 @@ import { useAuthStore } from '@/stores/auth'
 import { checkout, orders, addresses as addressesApi } from '@/services/clientApi'
 import { getProvinceNames, getCitiesByProvince, getPostalCode } from '@/data/philippineLocations'
 
-// TypeScript Interfaces
+
 interface PaymentMethodAccountDetails {
   account_number?: string
   account_name?: string
@@ -771,11 +771,72 @@ interface ShippingZone {
   max_delivery_days?: number
 }
 
+interface Address {
+  id: number
+  is_default_shipping?: boolean
+  recipient_name: string
+  phone: string
+  address_line_1: string
+  address_line_2?: string
+  city: string
+  province: string
+  postal_code?: string
+  label?: string
+}
+
+interface OrderPaymentDetailsCard {
+  last_four?: string
+  holder_name?: string
+  expiry?: string
+}
+
+interface OrderPaymentDetails {
+  sender_name?: string
+  sender_account?: string
+  reference_number?: string
+  card?: OrderPaymentDetailsCard
+}
+
+interface OrderPayment {
+  payment_method_name: string
+  transaction_id?: string
+  payment_details?: OrderPaymentDetails
+  amount: number
+  fee_amount?: number
+}
+
+interface OrderItem {
+  id: number
+  product_name: string
+  quantity: number
+  total: number
+}
+
+interface Order {
+  customer_name?: string
+  customer_email?: string
+  customer_phone?: string
+  shipping_name?: string
+  shipping_phone?: string
+  shipping_address_line_1?: string
+  shipping_address_line_2?: string
+  shipping_city?: string
+  shipping_province?: string
+  shipping_postal_code?: string
+  shipping_country?: string
+  latest_payment?: OrderPayment
+  items?: OrderItem[]
+  subtotal?: number
+  discount_amount?: number
+  shipping_amount?: number
+  total?: number
+}
+
 const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 
-// Form state
+
 const form = ref({
   shipping_name: '',
   shipping_phone: '',
@@ -798,18 +859,17 @@ const isLoadingPaymentMethods = ref(false)
 const checkoutError = ref('')
 const orderPlaced = ref(false)
 const orderNumber = ref('')
-const orderDetails = ref<any>(null)
+const orderDetails = ref<Order | null>(null)
 const shippingAmount = ref(0)
 const paymentFee = ref(0)
 
-// Address management
-const savedAddresses = ref<any[]>([])
+
+const savedAddresses = ref<Address[]>([])
 const selectedShippingAddressId = ref<number | null>(null)
 const selectedBillingAddressId = ref<number | null>(null)
-const defaultShippingAddress = computed(() => savedAddresses.value.find(a => a.is_default_shipping))
-const defaultBillingAddress = computed(() => savedAddresses.value.find(a => a.is_default_billing))
+const defaultShippingAddress = computed(() => savedAddresses.value.find((a) => a.is_default_shipping))
 
-// Payment confirmation
+
 const showPaymentConfirmation = ref(false)
 const paymentConfirmationData = ref({
   sender_name: '',
@@ -820,63 +880,66 @@ const paymentConfirmationData = ref({
   card_holder_name: '',
   card_expiry: '',
   card_cvv: '',
-  proof_image: '' // Base64 encoded image
+  proof_image: ''
 })
-const pendingOrderData = ref<any>(null)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const pendingOrderData = ref<Record<string, any>>({})
 const proofImageInput = ref<HTMLInputElement | null>(null)
 const proofImagePreview = ref<string>('')
 
-// Philippine locations
+
 const provinceNames = computed(() => getProvinceNames())
 const availableCities = computed(() => {
   if (!form.value.shipping_province) return []
   return getCitiesByProvince(form.value.shipping_province)
 })
 
-// Computed
+
 const cartItems = computed(() => cartStore.items)
 const subtotal = computed(() => {
-  const value = cartStore.subtotal
-  // Ensure proper number conversion - handle string values
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const value: any = cartStore.subtotal
+
   if (typeof value === 'string') {
     return parseFloat(value.replace(/[^0-9.-]/g, '')) || 0
   }
   return Number(value) || 0
 })
 const discount = computed(() => {
-  const value = cartStore.discount
-  // Ensure proper number conversion - handle string values
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const value: any = cartStore.discount
+
   if (typeof value === 'string') {
     return parseFloat(value.replace(/[^0-9.-]/g, '')) || 0
   }
   return Number(value) || 0
 })
 
-// Get selected payment method
+
 const selectedPaymentMethod = computed(() => {
   if (!form.value.payment_method_id) return null
   return paymentMethods.value.find(m => m.id === form.value.payment_method_id) || null
 })
 
-// Calculate payment fee based on selected method
+
 const calculatePaymentFee = (): number => {
   if (!selectedPaymentMethod.value) return 0
 
   const method = selectedPaymentMethod.value
-  // Ensure proper number conversion
+
   const sub = typeof subtotal.value === 'number' ? subtotal.value : parseFloat(String(subtotal.value)) || 0
   const disc = typeof discount.value === 'number' ? discount.value : parseFloat(String(discount.value)) || 0
   const shipping = typeof shippingAmount.value === 'number' ? shippingAmount.value : parseFloat(String(shippingAmount.value)) || 0
   const amountBeforeFee = sub - disc + shipping
 
-  // Check min/max amount constraints
+
   const minAmount = typeof method.min_amount === 'number' ? method.min_amount : parseFloat(String(method.min_amount)) || 0
   const maxAmount = typeof method.max_amount === 'number' ? method.max_amount : parseFloat(String(method.max_amount)) || 0
 
   if (method.min_amount && amountBeforeFee < minAmount) return 0
   if (method.max_amount && amountBeforeFee > maxAmount) return 0
 
-  // Calculate fee: fixed + percentage
+
   const feePercentage = typeof method.fee_percentage === 'number' ? method.fee_percentage : parseFloat(String(method.fee_percentage)) || 0
   const feeFixed = typeof method.fee_fixed === 'number' ? method.fee_fixed : parseFloat(String(method.fee_fixed)) || 0
 
@@ -884,7 +947,7 @@ const calculatePaymentFee = (): number => {
   return parseFloat((feeFixed + percentageFee).toFixed(2))
 }
 
-// Watch for payment method or amount changes to recalculate fee
+
 watch(
   [() => form.value.payment_method_id, subtotal, discount, shippingAmount],
   () => {
@@ -894,21 +957,21 @@ watch(
 )
 
 const total = computed(() => {
-  // Ensure all values are numbers, not strings
+
   const sub = typeof subtotal.value === 'number' ? subtotal.value : parseFloat(String(subtotal.value)) || 0
   const disc = typeof discount.value === 'number' ? discount.value : parseFloat(String(discount.value)) || 0
   const shipping = typeof shippingAmount.value === 'number' ? shippingAmount.value : parseFloat(String(shippingAmount.value)) || 0
   const fee = typeof paymentFee.value === 'number' ? paymentFee.value : parseFloat(String(paymentFee.value)) || 0
 
-  // Calculate total with proper numeric operations
+
   const baseTotal = sub - disc + shipping
   const finalTotal = baseTotal + fee
 
-  // Return as number with 2 decimal places
+
   return parseFloat(finalTotal.toFixed(2))
 })
 
-// Methods
+
 const formatPrice = (price: number) => {
   return price.toLocaleString('en-PH', { minimumFractionDigits: 2 })
 }
@@ -935,7 +998,7 @@ const selectPaymentMethod = (method: PaymentMethod) => {
     return
   }
 
-  // Check amount constraints
+
   const amountBeforeFee = subtotal.value - discount.value + shippingAmount.value
   if (method.min_amount && amountBeforeFee < method.min_amount) {
     checkoutError.value = `Minimum amount for ${method.name} is ₱${formatPrice(method.min_amount)}.`
@@ -947,23 +1010,23 @@ const selectPaymentMethod = (method: PaymentMethod) => {
   }
 
   form.value.payment_method_id = method.id
-  checkoutError.value = '' // Clear any previous errors
+  checkoutError.value = ''
 }
 
-// Province to Region mapping (Philippines)
+
 const provinceToRegionMap: Record<string, string> = {
-  // Metro Manila / NCR
+
   'Metro Manila': 'NCR',
   'NCR': 'NCR',
 
-  // Calabarzon (Region IV-A)
+
   'Cavite': 'Calabarzon',
   'Laguna': 'Calabarzon',
   'Batangas': 'Calabarzon',
   'Rizal': 'Calabarzon',
   'Quezon': 'Calabarzon',
 
-  // Central Luzon (Region III)
+
   'Bulacan': 'Central Luzon',
   'Pampanga': 'Central Luzon',
   'Nueva Ecija': 'Central Luzon',
@@ -972,20 +1035,20 @@ const provinceToRegionMap: Record<string, string> = {
   'Bataan': 'Central Luzon',
   'Aurora': 'Central Luzon',
 
-  // Ilocos Region (Region I)
+
   'Ilocos Norte': 'Ilocos Region',
   'Ilocos Sur': 'Ilocos Region',
   'La Union': 'Ilocos Region',
   'Pangasinan': 'Ilocos Region',
 
-  // Cagayan Valley (Region II)
+
   'Cagayan': 'Cagayan Valley',
   'Isabela': 'Cagayan Valley',
   'Nueva Vizcaya': 'Cagayan Valley',
   'Quirino': 'Cagayan Valley',
   'Batanes': 'Cagayan Valley',
 
-  // Bicol Region (Region V)
+
   'Albay': 'Bicol Region',
   'Camarines Norte': 'Bicol Region',
   'Camarines Sur': 'Bicol Region',
@@ -993,7 +1056,7 @@ const provinceToRegionMap: Record<string, string> = {
   'Masbate': 'Bicol Region',
   'Sorsogon': 'Bicol Region',
 
-  // Western Visayas (Region VI)
+
   'Aklan': 'Western Visayas',
   'Antique': 'Western Visayas',
   'Capiz': 'Western Visayas',
@@ -1001,13 +1064,13 @@ const provinceToRegionMap: Record<string, string> = {
   'Iloilo': 'Western Visayas',
   'Negros Occidental': 'Western Visayas',
 
-  // Central Visayas (Region VII)
+
   'Bohol': 'Central Visayas',
   'Cebu': 'Central Visayas',
   'Negros Oriental': 'Central Visayas',
   'Siquijor': 'Central Visayas',
 
-  // Eastern Visayas (Region VIII)
+
   'Biliran': 'Eastern Visayas',
   'Eastern Samar': 'Eastern Visayas',
   'Leyte': 'Eastern Visayas',
@@ -1015,38 +1078,38 @@ const provinceToRegionMap: Record<string, string> = {
   'Samar': 'Eastern Visayas',
   'Southern Leyte': 'Eastern Visayas',
 
-  // Zamboanga Peninsula (Region IX)
+
   'Zamboanga del Norte': 'Zamboanga Peninsula',
   'Zamboanga del Sur': 'Zamboanga Peninsula',
   'Zamboanga Sibugay': 'Zamboanga Peninsula',
 
-  // Northern Mindanao (Region X)
+
   'Bukidnon': 'Northern Mindanao',
   'Camiguin': 'Northern Mindanao',
   'Lanao del Norte': 'Northern Mindanao',
   'Misamis Occidental': 'Northern Mindanao',
   'Misamis Oriental': 'Northern Mindanao',
 
-  // Davao Region (Region XI)
+
   'Davao del Norte': 'Davao Region',
   'Davao del Sur': 'Davao Region',
   'Davao Occidental': 'Davao Region',
   'Davao Oriental': 'Davao Region',
 
-  // SOCCSKSARGEN (Region XII)
+
   'Cotabato': 'SOCCSKSARGEN',
   'Sarangani': 'SOCCSKSARGEN',
   'South Cotabato': 'SOCCSKSARGEN',
   'Sultan Kudarat': 'SOCCSKSARGEN',
 
-  // CARAGA (Region XIII)
+
   'Agusan del Norte': 'CARAGA',
   'Agusan del Sur': 'CARAGA',
   'Dinagat Islands': 'CARAGA',
   'Surigao del Norte': 'CARAGA',
   'Surigao del Sur': 'CARAGA',
 
-  // Cordillera Administrative Region (CAR)
+
   'Abra': 'CAR',
   'Apayao': 'CAR',
   'Benguet': 'CAR',
@@ -1054,14 +1117,14 @@ const provinceToRegionMap: Record<string, string> = {
   'Kalinga': 'CAR',
   'Mountain Province': 'CAR',
 
-  // MIMAROPA (Region IV-B)
+
   'Marinduque': 'MIMAROPA',
   'Occidental Mindoro': 'MIMAROPA',
   'Oriental Mindoro': 'MIMAROPA',
   'Palawan': 'MIMAROPA',
   'Romblon': 'MIMAROPA',
 
-  // BARMM (Bangsamoro Autonomous Region)
+
   'Basilan': 'BARMM',
   'Lanao del Sur': 'BARMM',
   'Maguindanao': 'BARMM',
@@ -1069,15 +1132,15 @@ const provinceToRegionMap: Record<string, string> = {
   'Tawi-Tawi': 'BARMM',
 }
 
-// Function to get region from province
+
 const getRegionFromProvince = (province: string): string | null => {
   if (!province) return null
 
-  // Direct lookup
+
   const region = provinceToRegionMap[province]
   if (region) return region
 
-  // Case-insensitive lookup
+
   const provinceLower = province.toLowerCase()
   for (const [key, value] of Object.entries(provinceToRegionMap)) {
     if (key.toLowerCase() === provinceLower) {
@@ -1088,15 +1151,15 @@ const getRegionFromProvince = (province: string): string | null => {
   return null
 }
 
-// Function to find matching shipping zone based on location
-const findMatchingShippingZone = (province: string, city?: string): ShippingZone | null => {
+
+const findMatchingShippingZone = (province: string): ShippingZone | null => {
   if (!province || shippingZones.value.length === 0) return null
 
-  // Get the region for the province
+
   const region = getRegionFromProvince(province)
 
   if (!region) {
-    // Fallback: try to find zone that matches province name directly
+
     for (const zone of shippingZones.value) {
       const regions = zone.regions || []
       if (Array.isArray(regions)) {
@@ -1109,22 +1172,22 @@ const findMatchingShippingZone = (province: string, city?: string): ShippingZone
         }
       }
     }
-    // If no match, return first available zone as fallback
-    return shippingZones.value.length > 0 ? shippingZones.value[0] : null
+
+    return shippingZones.value.length > 0 ? (shippingZones.value[0] as ShippingZone) : null
   }
 
-  // Find zone that matches the region
+
   for (const zone of shippingZones.value) {
     const zoneName = zone.name || ''
     const regions = zone.regions || []
 
-    // Check if zone name matches the region
+
     if (zoneName.toLowerCase().includes(region.toLowerCase()) ||
         region.toLowerCase().includes(zoneName.toLowerCase())) {
       return zone
     }
 
-    // Check if any region in the zone matches
+
     if (Array.isArray(regions)) {
       const regionMatch = regions.some((r: string) =>
         r.toLowerCase().includes(region.toLowerCase()) ||
@@ -1136,16 +1199,16 @@ const findMatchingShippingZone = (province: string, city?: string): ShippingZone
     }
   }
 
-  // If no exact match, return first available zone as fallback
-  return shippingZones.value.length > 0 ? shippingZones.value[0] : null
+
+  return shippingZones.value.length > 0 ? (shippingZones.value[0] as ShippingZone) : null
 }
 
 const onProvinceChange = () => {
-  // Reset city when province changes
+
   form.value.shipping_city = ''
   form.value.shipping_postal_code = ''
 
-  // Auto-select shipping zone based on province
+
   if (form.value.shipping_province) {
     const matchingZone = findMatchingShippingZone(form.value.shipping_province)
     if (matchingZone) {
@@ -1155,12 +1218,12 @@ const onProvinceChange = () => {
   }
 }
 
-// Format shipping address line 1
+
 const formatShippingAddressLine1 = (event?: Event) => {
   if (event) {
     const target = event.target as HTMLInputElement
     let value = target.value
-    // Capitalize first letter of each word, remove extra spaces
+
     value = value
       .trim()
       .replace(/\s+/g, ' ')
@@ -1180,12 +1243,12 @@ const formatShippingAddressLine1 = (event?: Event) => {
   }
 }
 
-// Format shipping address line 2
+
 const formatShippingAddressLine2 = (event?: Event) => {
   if (event) {
     const target = event.target as HTMLInputElement
     let value = target.value
-    // Capitalize first letter of each word, remove extra spaces
+
     value = value
       .trim()
       .replace(/\s+/g, ' ')
@@ -1205,18 +1268,18 @@ const formatShippingAddressLine2 = (event?: Event) => {
   }
 }
 
-// Watch for city changes to update shipping zone and postal code
+
 watch(
   () => form.value.shipping_city,
   (newCity) => {
     if (newCity && form.value.shipping_province) {
-      const matchingZone = findMatchingShippingZone(form.value.shipping_province, newCity)
+      const matchingZone = findMatchingShippingZone(form.value.shipping_province)
       if (matchingZone && matchingZone.id !== form.value.shipping_zone_id) {
         form.value.shipping_zone_id = matchingZone.id
         updateShipping()
       }
 
-      // Auto-fill postal code
+
       const postalCode = getPostalCode(form.value.shipping_province, newCity)
       if (postalCode) {
         form.value.shipping_postal_code = postalCode
@@ -1227,7 +1290,7 @@ watch(
   }
 )
 
-// Watch for province changes to update postal code
+
 watch(
   () => form.value.shipping_province,
   (newProvince) => {
@@ -1243,7 +1306,7 @@ watch(
 )
 
 const getPaymentIcon = (code: string): string | null => {
-  // Map payment method codes to image file paths
+
   const iconMap: Record<string, string> = {
     gcash: '/images/payment-methods/gcash.png',
     maya: '/images/payment-methods/maya.png',
@@ -1252,7 +1315,7 @@ const getPaymentIcon = (code: string): string | null => {
     bank_metrobank: '/images/payment-methods/metrobank.png',
     metrobank: '/images/payment-methods/metrobank.png',
     paypal: '/images/payment-methods/paypal.png',
-    // Keep SVG fallbacks for card and COD
+
     card: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHJ4PSI0IiBmaWxsPSIjMUYyOTM3Ii8+PHRleHQgeD0iMTYiIHk9IjIwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Q0FSRDwvdGV4dD48L3N2Zz4=',
     cod: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHJ4PSI0IiBmaWxsPSIjMDU5NjY5Ii8+PHRleHQgeD0iMTYiIHk9IjIwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Q09EPC90ZXh0Pjwvc3ZnPg==',
   }
@@ -1281,7 +1344,7 @@ const isPaymentMethodAvailable = (method: PaymentMethod): boolean => {
   return true
 }
 
-// Proof image upload handlers
+
 const triggerProofImageUpload = () => {
   proofImageInput.value?.click()
 }
@@ -1292,27 +1355,27 @@ const handleProofImageSelect = (event: Event) => {
 
   if (!file) return
 
-  // Validate file type
+
   if (!file.type.startsWith('image/')) {
     checkoutError.value = 'Please select a valid image file.'
     return
   }
 
-  // Validate file size (max 5MB)
-  const maxSize = 5 * 1024 * 1024 // 5MB in bytes
+
+  const maxSize = 5 * 1024 * 1024
   if (file.size > maxSize) {
     checkoutError.value = 'Image size must be less than 5MB. Please compress or select a smaller image.'
     return
   }
 
-  // Read file as base64
+
   const reader = new FileReader()
 
   reader.onload = (e) => {
     const result = e.target?.result as string
     paymentConfirmationData.value.proof_image = result
     proofImagePreview.value = result
-    checkoutError.value = '' // Clear any previous errors
+    checkoutError.value = ''
   }
 
   reader.onerror = () => {
@@ -1330,7 +1393,7 @@ const removeProofImage = () => {
   }
 }
 
-// Address management methods
+
 const loadAddresses = async () => {
   try {
     const response = await addressesApi.list()
@@ -1338,13 +1401,13 @@ const loadAddresses = async () => {
     if (response.data.success) {
       savedAddresses.value = response.data.data || []
 
-      // Auto-select default shipping address if available
+
       if (defaultShippingAddress.value && !selectedShippingAddressId.value) {
         selectedShippingAddressId.value = defaultShippingAddress.value.id
         onShippingAddressSelect()
       }
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to load addresses:', error)
   }
 }
@@ -1367,7 +1430,7 @@ const onShippingAddressSelect = () => {
       form.value.shipping_city = address.city
       form.value.shipping_province = address.province
 
-      // Auto-fill postal code if not provided in address
+
       if (address.postal_code) {
         form.value.shipping_postal_code = address.postal_code
       } else if (address.province && address.city) {
@@ -1377,9 +1440,9 @@ const onShippingAddressSelect = () => {
         }
       }
 
-      // Auto-select shipping zone based on address location
+
       if (address.province) {
-        const matchingZone = findMatchingShippingZone(address.province, address.city)
+        const matchingZone = findMatchingShippingZone(address.province)
         if (matchingZone) {
           form.value.shipping_zone_id = matchingZone.id
           updateShipping()
@@ -1402,7 +1465,7 @@ const loadCheckoutData = async () => {
 
     if (zonesRes.data.success) {
       const zones = zonesRes.data.data || []
-      // Remove duplicates based on zone name (keep first occurrence)
+
       const uniqueZones = zones.filter((zone: ShippingZone, index: number, self: ShippingZone[]) =>
         index === self.findIndex((z: ShippingZone) => z.name === zone.name)
       )
@@ -1416,18 +1479,18 @@ const loadCheckoutData = async () => {
       paymentMethods.value = methodsRes.data.data || []
       console.log('Loaded payment methods:', paymentMethods.value.length, paymentMethods.value)
 
-      // Log active payment methods
+
       const activeMethods = paymentMethods.value.filter(m => m.is_active)
       console.log('Active payment methods:', activeMethods.length, activeMethods)
 
-      // Auto-select first available payment method if none selected
+
       if (paymentMethods.value.length > 0 && !form.value.payment_method_id) {
         const firstAvailable = paymentMethods.value.find(m => isPaymentMethodAvailable(m))
         if (firstAvailable) {
           form.value.payment_method_id = firstAvailable.id
           console.log('Auto-selected payment method:', firstAvailable.name)
         } else {
-          // If no available method, still try to select first active one
+
           const firstActive = paymentMethods.value.find(m => m.is_active)
           if (firstActive) {
             form.value.payment_method_id = firstActive.id
@@ -1460,8 +1523,8 @@ const updateShipping = () => {
   }
 }
 
-const calculateShippingCost = (zone: any) => {
-  // Ensure proper number conversion
+const calculateShippingCost = (zone: ShippingZone) => {
+
   const sub = typeof subtotal.value === 'number' ? subtotal.value : parseFloat(String(subtotal.value)) || 0
   const freeThreshold = typeof zone.free_shipping_threshold === 'number'
     ? zone.free_shipping_threshold
@@ -1473,7 +1536,7 @@ const calculateShippingCost = (zone: any) => {
   shippingAmount.value = sub >= freeThreshold ? 0 : baseRate
 }
 
-// Watch cart subtotal to automatically recalculate shipping when cart changes
+
 watch(
   () => subtotal.value,
   () => {
@@ -1484,7 +1547,7 @@ watch(
   { immediate: false }
 )
 
-// Watch cart items to recalculate shipping when items change
+
 watch(
   () => cartItems.value.length,
   () => {
@@ -1495,15 +1558,15 @@ watch(
 )
 
 const handleCheckout = async () => {
-  // Step 1: Verify authentication
+
   if (!authStore.isAuthenticated) {
     sessionStorage.setItem('redirectAfterLogin', '/checkout')
     router.push({ name: 'home', query: { login: 'true' } })
     return
   }
 
-  // Step 2: Verify authentication - tokens are in memory, not in authStore
-  // Check if user is authenticated instead of checking for token property
+
+
   if (!authStore.isAuthenticated || !authStore.user) {
     checkoutError.value = 'Please log in to continue with checkout.'
     sessionStorage.setItem('redirectAfterLogin', '/checkout')
@@ -1513,7 +1576,7 @@ const handleCheckout = async () => {
 
   try {
     const authResult = await authStore.fetchUser()
-    // fetchUser always returns an object, so we can safely check it
+
     if (!authResult.success || !authStore.isAuthenticated) {
       checkoutError.value = authResult.expired
         ? 'Your session has expired. Please log in again.'
@@ -1534,7 +1597,7 @@ const handleCheckout = async () => {
     return
   }
 
-  // Step 3: Validate and refresh cart
+
   try {
     await cartStore.fetchCart()
   } catch (error) {
@@ -1543,14 +1606,14 @@ const handleCheckout = async () => {
     return
   }
 
-  // Step 4: Validate cart has items
+
   if (!cartStore.items || cartStore.items.length === 0) {
     checkoutError.value = 'Your cart is empty. Please add items before checkout.'
     return
   }
 
-  // Step 5: Validate form fields
-  // Only validate manual address fields if no saved address is selected
+
+
   if (!selectedShippingAddressId.value) {
     if (!form.value.shipping_name?.trim()) {
       checkoutError.value = 'Please enter recipient name.'
@@ -1582,7 +1645,7 @@ const handleCheckout = async () => {
       return
     }
   } else {
-    // Validate that selected address exists
+
     const selectedAddress = savedAddresses.value.find(a => a.id === selectedShippingAddressId.value)
     if (!selectedAddress) {
       checkoutError.value = 'Selected address not found. Please select another address.'
@@ -1600,27 +1663,27 @@ const handleCheckout = async () => {
     return
   }
 
-  // Step 6: Validate selected payment method is still available
+
   const selectedMethod = paymentMethods.value.find(m => m.id === form.value.payment_method_id)
   if (!selectedMethod || !isPaymentMethodAvailable(selectedMethod)) {
     checkoutError.value = 'The selected payment method is no longer available. Please select another method.'
     return
   }
 
-  // Step 7: Ensure shipping cost is calculated
+
   if (form.value.shipping_zone_id) {
     updateShipping()
   }
 
-  // Step 8: Prepare order data
-  const orderData: any = {
+
+  const orderData: Record<string, unknown> = {
     shipping_zone_id: form.value.shipping_zone_id,
     payment_method_id: form.value.payment_method_id,
     billing_same_as_shipping: form.value.billing_same_as_shipping,
     notes: form.value.notes?.trim() || null,
   }
 
-  // Add address data (either ID or full address)
+
   if (selectedShippingAddressId.value) {
     orderData.shipping_address_id = selectedShippingAddressId.value
   } else {
@@ -1637,10 +1700,10 @@ const handleCheckout = async () => {
     orderData.billing_address_id = selectedBillingAddressId.value
   }
 
-  // Store order data and show payment confirmation
+
   pendingOrderData.value = orderData
 
-  // Show payment confirmation modal
+
   showPaymentConfirmation.value = true
 }
 
@@ -1651,14 +1714,14 @@ const submitOrderWithConfirmation = async () => {
   checkoutError.value = ''
 
   try {
-    // Prepare payment confirmation data
-    const paymentConfirmation: any = {}
+
+    const paymentConfirmation: Record<string, string | null> = {}
 
     if (selectedPaymentMethod.value) {
       const method = selectedPaymentMethod.value
       const methodCode = (method.code || '').toLowerCase()
 
-      // For GCash, PayPal, Maya - require sender details
+
       if (['gcash', 'paypal', 'maya'].includes(methodCode)) {
         if (!paymentConfirmationData.value.sender_name?.trim()) {
           checkoutError.value = 'Please enter sender name.'
@@ -1674,14 +1737,14 @@ const submitOrderWithConfirmation = async () => {
         paymentConfirmation.sender_name = paymentConfirmationData.value.sender_name.trim()
         paymentConfirmation.sender_account = paymentConfirmationData.value.sender_account?.trim() || null
         paymentConfirmation.reference_number = paymentConfirmationData.value.reference_number.trim()
-        paymentConfirmation.payment_date = paymentConfirmationData.value.payment_date || new Date().toISOString().split('T')[0]
-        // Add proof image if uploaded
+        paymentConfirmation.payment_date = (paymentConfirmationData.value.payment_date || new Date().toISOString().split('T')[0]) as string
+
         if (paymentConfirmationData.value.proof_image) {
           paymentConfirmation.proof_image = paymentConfirmationData.value.proof_image
         }
       }
 
-      // For bank transfers - require card details
+
       if (method.type === 'bank_transfer' || methodCode.includes('bank')) {
         if (!paymentConfirmationData.value.card_number?.trim()) {
           checkoutError.value = 'Please enter card number.'
@@ -1702,7 +1765,7 @@ const submitOrderWithConfirmation = async () => {
         paymentConfirmation.card_number = paymentConfirmationData.value.card_number.trim()
         paymentConfirmation.card_holder_name = paymentConfirmationData.value.card_holder_name.trim()
         paymentConfirmation.card_expiry = paymentConfirmationData.value.card_expiry.trim()
-        // CVV is not stored for security, but we validate it
+
         if (!paymentConfirmationData.value.card_cvv?.trim()) {
           checkoutError.value = 'Please enter card CVV.'
           isSubmitting.value = false
@@ -1711,18 +1774,18 @@ const submitOrderWithConfirmation = async () => {
       }
     }
 
-    // Add payment confirmation to order data
+
     if (Object.keys(paymentConfirmation).length > 0) {
       pendingOrderData.value.payment_confirmation = paymentConfirmation
     }
 
-    const response = await orders.create(pendingOrderData.value)
+    const response = await orders.create(pendingOrderData.value as Parameters<typeof orders.create>[0])
 
     if (response.data.success) {
       orderNumber.value = response.data.data.order.order_number
       orderDetails.value = response.data.data.order
 
-      // Fetch full order details with payment info
+
       try {
         const orderResponse = await orders.get(orderNumber.value)
         if (orderResponse.data.success) {
@@ -1734,7 +1797,7 @@ const submitOrderWithConfirmation = async () => {
 
       orderPlaced.value = true
       showPaymentConfirmation.value = false
-      // Reset payment confirmation data
+
       paymentConfirmationData.value = {
         sender_name: '',
         sender_account: '',
@@ -1750,7 +1813,7 @@ const submitOrderWithConfirmation = async () => {
       if (proofImageInput.value) {
         proofImageInput.value.value = ''
       }
-      await cartStore.fetchCart() // Refresh cart
+      await cartStore.fetchCart()
     } else {
       checkoutError.value = response.data.message || 'Failed to place order'
     }
@@ -1769,7 +1832,7 @@ const submitOrderWithConfirmation = async () => {
       message?: string
     }
 
-    // Handle 401 Unauthorized
+
     if (apiError.response?.status === 401) {
       checkoutError.value = 'Your session has expired. Please log in again.'
       sessionStorage.setItem('redirectAfterLogin', '/checkout')
@@ -1779,7 +1842,7 @@ const submitOrderWithConfirmation = async () => {
       return
     }
 
-    // Handle 422 Validation errors
+
     if (apiError.response?.status === 422) {
       const errors = apiError.response.data?.errors
       if (errors) {
@@ -1791,23 +1854,23 @@ const submitOrderWithConfirmation = async () => {
       return
     }
 
-    // Handle 500 Internal Server Error
+
     if (apiError.response?.status === 500) {
       checkoutError.value = apiError.response.data?.message || 'A server error occurred. Please try again later or contact support if the problem persists.'
       return
     }
 
-    // Handle other errors
+
     checkoutError.value = apiError.response?.data?.message || apiError.message || 'Failed to place order. Please try again.'
   } finally {
     isSubmitting.value = false
   }
 }
 
-// Watch for modal close to reset payment confirmation data
+
 watch(showPaymentConfirmation, (isOpen) => {
   if (!isOpen) {
-    // Reset payment confirmation data when modal closes
+
     paymentConfirmationData.value = {
       sender_name: '',
       sender_account: '',
@@ -1826,21 +1889,21 @@ watch(showPaymentConfirmation, (isOpen) => {
   }
 })
 
-// Load user data if authenticated
+
 onMounted(async () => {
   try {
-    // Step 1: Check authentication - tokens are in memory, not in authStore
-    // The router guard already verified authentication, but we'll verify token is still valid
+
+
     if (!authStore.isAuthenticated || !authStore.user) {
       sessionStorage.setItem('redirectAfterLogin', '/checkout')
       router.push({ name: 'home', query: { login: 'true' } })
       return
     }
 
-    // Step 2: Verify token is still valid (refresh if needed)
+
     const authResult = await authStore.fetchUser()
 
-    // fetchUser always returns an object, so we can safely check it
+
     if (!authResult.success || !authStore.isAuthenticated) {
       checkoutError.value = authResult.expired
         ? 'Your session has expired. Please log in again.'
@@ -1852,11 +1915,11 @@ onMounted(async () => {
       return
     }
 
-    // Step 3: Load addresses and cart
+
     await loadAddresses()
     await cartStore.fetchCart()
 
-    // Step 4: Validate cart has items
+
     if (!cartStore.items || cartStore.items.length === 0) {
       checkoutError.value = 'Your cart is empty. Please add items before checkout.'
       setTimeout(() => {
@@ -1865,10 +1928,10 @@ onMounted(async () => {
       return
     }
 
-    // Step 5: Load checkout data (zones, payment methods)
+
     await loadCheckoutData()
 
-    // Step 6: Pre-fill user data
+
     if (authStore.user) {
       if (!form.value.shipping_name) {
         form.value.shipping_name = authStore.user.full_name
@@ -1878,9 +1941,9 @@ onMounted(async () => {
       }
     }
 
-    // Step 7: Auto-select first shipping zone if available
+
     if (shippingZones.value.length > 0 && cartItems.value.length > 0 && !form.value.shipping_zone_id) {
-      form.value.shipping_zone_id = shippingZones.value[0].id
+      form.value.shipping_zone_id = shippingZones.value[0]?.id || 0
       updateShipping()
     }
   } catch (error) {
@@ -1976,7 +2039,7 @@ onMounted(async () => {
   cursor: pointer;
   background-color: white;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%23666' d='M7 10L2 5h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
   padding-right: 3rem;
@@ -2171,7 +2234,7 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-.method-radio-wrapper input[type="radio"] {
+.method-radio-wrapper input[type='radio'] {
   position: absolute;
   opacity: 0;
   cursor: pointer;
@@ -2692,7 +2755,7 @@ onMounted(async () => {
     position: static;
   }
 }
-/* Address Selection Styles */
+
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -2734,7 +2797,7 @@ onMounted(async () => {
   box-shadow: 0 0 0 4px rgba(201, 160, 80, 0.1);
 }
 
-/* Payment Confirmation Modal Styles */
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -2985,7 +3048,7 @@ onMounted(async () => {
   cursor: not-allowed;
 }
 
-/* Transaction Summary Styles */
+
 .transaction-summary {
   text-align: left;
   margin-top: 2rem;
@@ -3180,7 +3243,7 @@ onMounted(async () => {
   background: #fef9e7;
 }
 
-/* Image Upload Styles */
+
 .image-upload-wrapper {
   display: flex;
   flex-direction: column;

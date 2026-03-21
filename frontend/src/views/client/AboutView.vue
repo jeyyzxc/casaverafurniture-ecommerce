@@ -1,6 +1,5 @@
 <template>
   <div class="about-page">
-    <!-- Hero Section -->
     <HeroSection
       title="CASA VÉRA"
       subtitle="The Art of Premium Living"
@@ -8,7 +7,6 @@
       size="large"
     />
 
-    <!-- Story Section -->
     <section class="story-section">
       <div class="section-container">
         <div class="story-grid">
@@ -43,7 +41,6 @@
       </div>
     </section>
 
-    <!-- Mission & Vision Section -->
     <section class="mission-section">
       <div class="section-container">
         <div class="section-header rise-up">
@@ -54,7 +51,6 @@
         <div class="mission-grid">
           <div class="mission-card">
             <div class="mission-icon">
-              <!-- Font Awesome Compass (Regular) -->
               <svg viewBox="0 0 512 512" fill="currentColor">
                 <path d="M464 256A208 208 0 1 0 48 256a208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm306.7-101.3L182.2 194.2 142.7 318.8l124.5-39.5 39.5-124.5zM256 272a16 16 0 1 0 0-32 16 16 0 1 0 0 32z"/>
               </svg>
@@ -70,7 +66,6 @@
           </div>
           <div class="mission-card">
             <div class="mission-icon">
-              <!-- Font Awesome Eye (Solid) -->
               <svg viewBox="0 0 576 512" fill="currentColor">
                 <path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64c-7.1 0-13.9-1.2-20.3-3.3c-5.5-1.8-11.9 1.6-11.7 7.4c.3 6.9 1.3 13.8 3.2 20.7c13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-11.1-41.5-47.8-69.4-88.6-71.1c-5.8-.2-9.2 6.1-7.4 11.7c2.1 6.4 3.3 13.2 3.3 20.3z"/>
               </svg>
@@ -88,7 +83,6 @@
       </div>
     </section>
 
-    <!-- Why Choose Us Section -->
     <section class="advantages-section">
       <div class="section-container">
         <div class="section-header rise-up">
@@ -105,7 +99,6 @@
       </div>
     </section>
 
-    <!-- Testimonials Section -->
     <section class="testimonials-section">
       <div class="section-container">
         <div class="section-header rise-up">
@@ -129,7 +122,6 @@
       </div>
     </section>
 
-    <!-- Team Section -->
     <section class="team-section">
       <div class="section-container">
         <div class="section-header rise-up">
@@ -138,9 +130,9 @@
           <p class="section-desc">The passionate team architecting the digital luxury of CASA VÉRA.</p>
         </div>
         <div class="team-grid">
-          <div 
-            class="team-card" 
-            v-for="(member, index) in team" 
+          <div
+            class="team-card"
+            v-for="(member, index) in team"
             :key="member.name"
             :class="{ 'lead-card': member.isLead, [`rise-up-delay-${Math.min(index + 1, 5)}`]: true }"
           >
@@ -155,7 +147,6 @@
       </div>
     </section>
 
-    <!-- CTA Section -->
     <section class="cta-section">
       <div class="section-container">
         <h2 class="cta-title rise-up">Ready to Elevate Your Space?</h2>
@@ -186,14 +177,12 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import HeroSection from '@/components/HeroSection.vue'
 
-// Team member images
 import regoyaImg from '@/assets/images/regoya.png'
 import tumolingImg from '@/assets/images/tumoling.png'
 import roncalesImg from '@/assets/images/roncales.png'
 import javierImg from '@/assets/images/javier.png'
 import sapuntoImg from '@/assets/images/sapunto.jpg'
 
-// Stats with counter animation
 const stats = ref([
   { value: 3, displayValue: 0, label: 'Years of Excellence', desc: 'Building trust through quality', suffix: '' },
   { value: 50, displayValue: 0, label: 'Happy Customers', desc: 'Across 80+ countries', suffix: 'K+' },
@@ -206,12 +195,12 @@ let hasAnimatedStats = false
 const animateStats = () => {
   if (hasAnimatedStats) return
   hasAnimatedStats = true
-  
+
   stats.value.forEach(stat => {
     const duration = 2000
     const increment = stat.value / (duration / 16)
     let current = 0
-    
+
     const updateCount = () => {
       current += increment
       if (current < stat.value) {
@@ -225,7 +214,6 @@ const animateStats = () => {
   })
 }
 
-// Advantages
 const advantages = ref([
   { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>', title: 'Premium Quality', desc: 'Meticulously crafted using the finest materials and techniques.' },
   { icon: '<svg viewBox="0 0 384 512" fill="currentColor"><path d="M384 312.7c-55.1 136.7-187.1 54-187.1 54-40.5 81.8-107.4 134.4-184.6 134.7-16.1 0-16.6-24.4 0-24.4 64.4-.3 120.5-42.7 157.2-110.1-41.1 15.9-118.6 27.9-161.6-82.2 109-44.9 159.1 11.2 178.3 45.5 9.9-24.4 17-50.9 21.6-79.7 0 0-139.7 21.9-149.5-98.1 119.1-47.9 152.6 76.7 152.6 76.7 1.6-18.7 2.5-37.9 2.5-57.7 0-24.1-2.5-46.8-7.2-67.5C201 6.4 196.6 2.6 192 2.9c-4.6-.3-9 3.5-14.8 25.8-4.7 20.7-7.2 43.4-7.2 67.5 0 19.8 .9 39 2.5 57.7 0 0 33.5-124.6 152.6-76.7-9.8 120-149.5 98.1-149.5 98.1 4.6 28.8 11.7 55.3 21.6 79.7 19.2-34.3 69.3-90.4 178.3-45.5-43 110.1-120.5 98.1-161.6 82.2 36.7 67.4 92.8 109.8 157.2 110.1 16.6 0 16.1 24.4 0 24.4-77.2-.3-144.1-52.9-184.6-134.7 0 0-132 82.7-187.1-54 115.9-99.2 159.1 14.9 162.4 23 3.4-8.1 46.5-122.2 162.4-23z"/></svg>', title: 'Sustainable Practice', desc: 'Partnering with eco-conscious suppliers and manufacturers.' },
@@ -235,14 +223,12 @@ const advantages = ref([
   { icon: '<svg viewBox="0 0 512 512" fill="currentColor"><path d="M256 48C141.1 48 48 141.1 48 256l0 40c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-40C0 114.6 114.6 0 256 0S512 114.6 512 256l0 144.1c0 46.9-38 84.9-84.9 84.9L352 485c0 14.9-12.1 27-27 27l-66 0c-14.9 0-27-12.1-27-27s12.1-27 27-27l66 0 0-64 75.1 0c17 0 30.9-13.9 30.9-30.9L432 256c0-97.2-78.8-176-176-176zM144 208l0 48c0 44.2 35.8 80 80 80l16 0c17.7 0 32-14.3 32-32l0-112c0-17.7-14.3-32-32-32l-48 0c-26.5 0-48 21.5-48 48zm224-48l-48 0c-17.7 0-32 14.3-32 32l0 112c0 17.7 14.3 32 32 32l16 0c44.2 0 80-35.8 80-80l0-48c0-26.5-21.5-48-48-48z"/></svg>', title: 'Expert Support 24/7', desc: 'Our dedicated team of specialists is always available.' }
 ])
 
-// Testimonials
 const testimonials = ref([
   { name: 'Sarah Mitchell', role: 'Interior Designer, New York', text: 'CASA VÉRA transformed my living space into a sanctuary. The quality is exceptional and the attention to detail is remarkable.' },
   { name: 'James Richardson', role: 'Homeowner, London', text: 'The customer service was outstanding. From selection to delivery, everything was smooth. My sofa is a masterpiece!' },
   { name: 'David Park', role: 'Real Estate Developer, Seoul', text: 'From browsing to delivery, the entire experience was luxurious. CASA VÉRA has set a new standard for online furniture shopping!' }
 ])
 
-// Team members
 const team = ref([
   { name: 'Elmer Roncales', role: 'UI/UX Developer', img: roncalesImg, desc: 'Designs clean, user-focused interfaces with attention to detail.', isLead: false },
   { name: 'Jonathan Javier', role: 'Full Stack Dev', img: javierImg, desc: 'Develops efficient systems that bring design and functionality together.', isLead: false },
@@ -251,11 +237,9 @@ const team = ref([
   { name: 'Rhoniell Sapunto', role: 'UI/UX Developer', img: sapuntoImg, desc: 'Crafts intuitive and refined digital experiences.', isLead: false }
 ])
 
-// Intersection Observer for stats animation
 let statsObserver: IntersectionObserver | null = null
 
 onMounted(() => {
-  // Stats animation observer
   const statsSection = document.querySelector('.story-stats')
   if (statsSection) {
     statsObserver = new IntersectionObserver((entries) => {
@@ -283,7 +267,7 @@ onUnmounted(() => {
   --white: #ffffff;
   --light: #f8f8f8;
   --gray: #666;
-  
+
   display: flex;
   flex-direction: column;
   min-height: 100vh;

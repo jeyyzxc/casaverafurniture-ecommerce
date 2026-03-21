@@ -19,11 +19,11 @@
               <option value="Office">Office</option>
               <option value="Others">Others</option>
             </select>
-            <input 
-              v-if="selectedLabelType === 'Others'" 
-              v-model="addressForm.label" 
-              type="text" 
-              required 
+            <input
+              v-if="selectedLabelType === 'Others'"
+              v-model="addressForm.label"
+              type="text"
+              required
               placeholder="Enter custom label"
               class="custom-label-input"
             />
@@ -41,10 +41,10 @@
 
           <div class="form-group">
             <label>Address Line 1 *</label>
-            <input 
-              v-model="addressForm.address_line_1" 
-              type="text" 
-              required 
+            <input
+              v-model="addressForm.address_line_1"
+              type="text"
+              required
               @input="formatAddressLine1"
               @blur="formatAddressLine1"
               placeholder="Street address, building name, house number"
@@ -53,9 +53,9 @@
 
           <div class="form-group">
             <label>Address Line 2</label>
-            <input 
-              v-model="addressForm.address_line_2" 
-              type="text" 
+            <input
+              v-model="addressForm.address_line_2"
+              type="text"
               @input="formatAddressLine2"
               @blur="formatAddressLine2"
               placeholder="Barangay, subdivision, village"
@@ -86,10 +86,10 @@
 
           <div class="form-group">
             <label>Postal Code *</label>
-            <input 
-              v-model="addressForm.postal_code" 
-              type="text" 
-              required 
+            <input
+              v-model="addressForm.postal_code"
+              type="text"
+              required
               maxlength="4"
               pattern="[0-9]{4}"
               placeholder="Auto-filled based on location"
@@ -152,11 +152,11 @@
                 </svg>
                 Change Avatar
               </button>
-              <input 
-                ref="avatarInput" 
-                type="file" 
-                accept="image/*" 
-                @change="handleAvatarChange" 
+              <input
+                ref="avatarInput"
+                type="file"
+                accept="image/*"
+                @change="handleAvatarChange"
                 class="avatar-input"
                 style="display: none;"
               >
@@ -176,13 +176,13 @@
                   </svg>
                   Personal Information
                 </h3>
-                
+
                 <div class="form-grid">
                   <div class="form-group">
                     <label>First Name <span class="required">*</span></label>
-                    <input 
-                      v-model="profileForm.first_name" 
-                      type="text" 
+                    <input
+                      v-model="profileForm.first_name"
+                      type="text"
                       required
                       placeholder="Enter your first name"
                       class="form-input"
@@ -191,12 +191,12 @@
                     >
                     <span v-if="errors.first_name" class="error-text">{{ errors.first_name }}</span>
                   </div>
-                  
+
                   <div class="form-group">
                     <label>Last Name <span class="required">*</span></label>
-                    <input 
-                      v-model="profileForm.last_name" 
-                      type="text" 
+                    <input
+                      v-model="profileForm.last_name"
+                      type="text"
                       required
                       placeholder="Enter your last name"
                       class="form-input"
@@ -205,12 +205,12 @@
                     >
                     <span v-if="errors.last_name" class="error-text">{{ errors.last_name }}</span>
                   </div>
-                  
+
                   <div class="form-group">
                     <label>Email Address <span class="required">*</span></label>
-                    <input 
-                      v-model="profileForm.email" 
-                      type="email" 
+                    <input
+                      v-model="profileForm.email"
+                      type="email"
                       required
                       placeholder="Enter your email"
                       class="form-input"
@@ -219,12 +219,12 @@
                     >
                     <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
                   </div>
-                  
+
                   <div class="form-group">
                     <label>Phone Number</label>
-                    <input 
-                      v-model="profileForm.phone" 
-                      type="tel" 
+                    <input
+                      v-model="profileForm.phone"
+                      type="tel"
                       placeholder="Enter your phone number"
                       class="form-input"
                     >
@@ -241,37 +241,37 @@
                   </svg>
                   Address Information
                 </h3>
-                
+
                 <div class="form-grid">
                   <div class="form-group full-width">
                     <label>Address Line 1</label>
-                    <input 
-                      v-model="profileForm.address_line_1" 
-                      type="text" 
+                    <input
+                      v-model="profileForm.address_line_1"
+                      type="text"
                       placeholder="Street address, building name, house number"
                       class="form-input"
                       @input="formatProfileAddressLine1"
                       @blur="formatProfileAddressLine1"
                     >
                   </div>
-                  
+
                   <div class="form-group full-width">
                     <label>Address Line 2</label>
-                    <input 
-                      v-model="profileForm.address_line_2" 
-                      type="text" 
+                    <input
+                      v-model="profileForm.address_line_2"
+                      type="text"
                       placeholder="Barangay, subdivision, village"
                       class="form-input"
                       @input="formatProfileAddressLine2"
                       @blur="formatProfileAddressLine2"
                     >
                   </div>
-                  
+
                   <div class="form-group">
                     <label>Province</label>
                     <div class="select-wrapper">
-                      <select 
-                        v-model="profileForm.province" 
+                      <select
+                        v-model="profileForm.province"
                         @change="onProvinceChange"
                         class="form-select"
                       >
@@ -282,12 +282,12 @@
                       </select>
                     </div>
                   </div>
-                  
+
                   <div class="form-group">
                     <label>City</label>
                     <div class="select-wrapper">
-                      <select 
-                        v-model="profileForm.city" 
+                      <select
+                        v-model="profileForm.city"
                         :disabled="!profileForm.province"
                         class="form-select"
                       >
@@ -298,12 +298,12 @@
                       </select>
                     </div>
                   </div>
-                  
+
                   <div class="form-group">
                     <label>Postal Code</label>
-                    <input 
-                      v-model="profileForm.postal_code" 
-                      type="text" 
+                    <input
+                      v-model="profileForm.postal_code"
+                      type="text"
                       maxlength="4"
                       pattern="[0-9]{4}"
                       placeholder="Auto-filled based on location"
@@ -373,17 +373,17 @@
                       </p>
                     </div>
                     <div class="address-footer">
-                      <button 
-                        type="button" 
-                        class="btn-set-default" 
+                      <button
+                        type="button"
+                        class="btn-set-default"
                         :class="{ active: address.is_default_shipping }"
                         @click="setDefaultShipping(address.id)"
                       >
                         Set as Default Shipping
                       </button>
-                      <button 
-                        type="button" 
-                        class="btn-set-default" 
+                      <button
+                        type="button"
+                        class="btn-set-default"
                         :class="{ active: address.is_default_billing }"
                         @click="setDefaultBilling(address.id)"
                       >
@@ -403,23 +403,23 @@
                   </svg>
                   Change Password
                 </h3>
-                
+
                 <div class="form-grid">
                   <div class="form-group">
                     <label>Current Password</label>
-                    <input 
-                      v-model="profileForm.current_password" 
-                      type="password" 
+                    <input
+                      v-model="profileForm.current_password"
+                      type="password"
                       placeholder="Enter current password"
                       class="form-input"
                     >
                   </div>
-                  
+
                   <div class="form-group">
                     <label>New Password</label>
-                    <input 
-                      v-model="profileForm.new_password" 
-                      type="password" 
+                    <input
+                      v-model="profileForm.new_password"
+                      type="password"
                       placeholder="Enter new password"
                       class="form-input"
                       @input="handlePasswordInput"
@@ -427,12 +427,12 @@
                     >
                     <span v-if="errors.password" class="error-text">{{ errors.password }}</span>
                   </div>
-                  
+
                   <div class="form-group">
                     <label>Confirm New Password</label>
-                    <input 
-                      v-model="profileForm.confirm_password" 
-                      type="password" 
+                    <input
+                      v-model="profileForm.confirm_password"
+                      type="password"
                       placeholder="Confirm new password"
                       class="form-input"
                       @blur="validateConfirmPassword"
@@ -470,7 +470,7 @@
                 <div class="stat-label">Total Orders</div>
               </div>
             </div>
-            
+
             <div class="stat-item">
               <div class="stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -483,7 +483,7 @@
                 <div class="stat-label">Member Since</div>
               </div>
             </div>
-            
+
             <div class="stat-item">
               <div class="stat-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -512,7 +512,7 @@
               </svg>
             </button>
           </div>
-          
+
           <div class="modal-body">
             <div class="warning-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -558,7 +558,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const { success, error: showError } = useNotification()
 
-// State
+
 const avatarInput = ref<HTMLInputElement | null>(null)
 const isSaving = ref(false)
 const autoSaveTimeout = ref<number | null>(null)
@@ -596,7 +596,7 @@ const accountStats = ref({
   totalSpent: 0
 })
 
-// Address management
+
 const savedAddresses = ref<any[]>([])
 const showAddressModal = ref(false)
 const editingAddress = ref<any | null>(null)
@@ -615,7 +615,7 @@ const addressForm = ref({
   is_default_billing: false
 })
 
-// Handle label type change
+
 const onLabelTypeChange = () => {
   if (selectedLabelType.value === 'Home' || selectedLabelType.value === 'Office') {
     addressForm.value.label = selectedLabelType.value
@@ -626,7 +626,7 @@ const onLabelTypeChange = () => {
   }
 }
 
-// Philippine locations
+
 const provinceNames = ref<string[]>(getProvinceNames())
 const availableCities = computed(() => {
   if (!profileForm.value.province) return []
@@ -634,7 +634,7 @@ const availableCities = computed(() => {
 })
 
 
-// Computed
+
 const userFullName = computed(() => {
   if (authStore.user) {
     return `${authStore.user.first_name || ''} ${authStore.user.last_name || ''}`.trim() || 'User'
@@ -651,7 +651,7 @@ const userInitials = computed(() => {
   return name.substring(0, 2).toUpperCase()
 })
 
-// Methods
+
 const formatPrice = (price: number) => {
   return price.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
@@ -664,16 +664,16 @@ const handleAvatarChange = (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
   if (file) {
-    // TODO: Implement avatar upload
+
     console.log('Avatar upload:', file)
   }
 }
 
-// Input validation handlers
+
 const handleFirstNameInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   let value = target.value
-  // Remove leading spaces and consecutive spaces
+
   value = value.replace(/^ +/, '').replace(/  +/g, ' ')
   profileForm.value.first_name = value
 }
@@ -695,7 +695,7 @@ const handleEmailInput = (event: Event) => {
 const handlePasswordInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   let value = target.value
-  // Only remove leading spaces for password
+
   value = value.replace(/^ +/, '')
   profileForm.value.new_password = value
 }
@@ -764,7 +764,7 @@ const onProvinceChange = () => {
   addressForm.value.postal_code = ''
 }
 
-// Format profile address line 1
+
 const formatProfileAddressLine1 = (event?: Event) => {
   if (event) {
     const target = event.target as HTMLInputElement
@@ -788,7 +788,7 @@ const formatProfileAddressLine1 = (event?: Event) => {
   }
 }
 
-// Format profile address line 2
+
 const formatProfileAddressLine2 = (event?: Event) => {
   if (event) {
     const target = event.target as HTMLInputElement
@@ -812,12 +812,12 @@ const formatProfileAddressLine2 = (event?: Event) => {
   }
 }
 
-// Format address line 1
+
 const formatAddressLine1 = (event?: Event) => {
   if (event) {
     const target = event.target as HTMLInputElement
     let value = target.value
-    // Capitalize first letter of each word, remove extra spaces
+
     value = value
       .trim()
       .replace(/\s+/g, ' ')
@@ -837,12 +837,12 @@ const formatAddressLine1 = (event?: Event) => {
   }
 }
 
-// Format address line 2
+
 const formatAddressLine2 = (event?: Event) => {
   if (event) {
     const target = event.target as HTMLInputElement
     let value = target.value
-    // Capitalize first letter of each word, remove extra spaces
+
     value = value
       .trim()
       .replace(/\s+/g, ' ')
@@ -862,7 +862,7 @@ const formatAddressLine2 = (event?: Event) => {
   }
 }
 
-// Auto-fill postal code when province and city are selected (address form)
+
 watch(
   () => [addressForm.value.province, addressForm.value.city],
   ([province, city]) => {
@@ -877,7 +877,7 @@ watch(
   }
 )
 
-// Auto-fill postal code when province and city are selected (profile form)
+
 watch(
   () => [profileForm.value.province, profileForm.value.city],
   ([province, city]) => {
@@ -891,30 +891,30 @@ watch(
 )
 
 const saveProfile = async (showNotification = true) => {
-  // Validate form
+
   validateFirstName()
   validateLastName()
   validateEmail()
-  
+
   if (profileForm.value.new_password) {
     validatePassword()
     validateConfirmPassword()
-    
+
     if (errors.value.password || errors.value.confirm_password) {
       return
     }
   }
-  
+
   if (errors.value.first_name || errors.value.last_name || errors.value.email) {
     return
   }
 
   isSaving.value = true
-  
+
   try {
-    // Build update data - only include fields that have values or are explicitly set
+
     const updateData: any = {}
-    
+
     if (profileForm.value.first_name) {
       updateData.first_name = profileForm.value.first_name.trim()
     }
@@ -943,7 +943,7 @@ const saveProfile = async (showNotification = true) => {
       updateData.postal_code = profileForm.value.postal_code ? profileForm.value.postal_code.trim() : null
     }
 
-    // Add password change if provided (use separate endpoint)
+
     if (profileForm.value.new_password && profileForm.value.current_password) {
       try {
         await auth.changePassword(
@@ -951,7 +951,7 @@ const saveProfile = async (showNotification = true) => {
           profileForm.value.new_password,
           profileForm.value.confirm_password
         )
-        // Clear password fields after successful change
+
         profileForm.value.current_password = ''
         profileForm.value.new_password = ''
         profileForm.value.confirm_password = ''
@@ -961,29 +961,29 @@ const saveProfile = async (showNotification = true) => {
       } catch (passwordError: any) {
         const passwordApiError = passwordError as { response?: { data?: { message?: string } } }
         showError('Password Change Failed', passwordApiError.response?.data?.message || 'Failed to change password. Please try again.')
-        return // Don't continue with profile update if password change failed
+        return
       }
     }
 
-      // Only update profile if there's data to update
+
     if (Object.keys(updateData).length > 0) {
       const response = await auth.updateProfile(updateData)
-      
+
       if (!response.data.success) {
         throw new Error(response.data.message || 'Failed to update profile')
       }
-      
-      // Update auth store with the response data directly (faster than refetching)
+
+
       if (response.data.data?.user) {
         authStore.user = response.data.data.user
-        // Update localStorage to persist the changes
+
         localStorage.setItem('user', JSON.stringify(response.data.data.user))
       }
-      
-      // Also refresh from backend to ensure we have the latest data
+
+
       await authStore.fetchUser()
-      
-      // Update form with fresh data from backend to ensure sync
+
+
       const freshUser = authStore.user
       if (freshUser) {
         profileForm.value.first_name = freshUser.first_name || ''
@@ -996,8 +996,8 @@ const saveProfile = async (showNotification = true) => {
         profileForm.value.city = freshUser.city || ''
         profileForm.value.postal_code = freshUser.postal_code || ''
       }
-      
-      // Update last saved data with fresh data from backend
+
+
       lastSavedData.value = JSON.stringify({
         first_name: profileForm.value.first_name,
         last_name: profileForm.value.last_name,
@@ -1012,23 +1012,23 @@ const saveProfile = async (showNotification = true) => {
         new_password: '',
         confirm_password: ''
       })
-      
-      // Reload account stats after profile update
+
+
       await loadAccountStats()
-      
+
       if (showNotification) {
         success('Profile Updated', 'Your profile information has been updated successfully.')
       }
     } else if (!profileForm.value.new_password) {
-      // No data to update and no password change
+
       if (showNotification) {
         showError('No Changes', 'No changes detected to save.')
       }
     }
   } catch (error: unknown) {
-    const apiError = error as { 
-      response?: { 
-        data?: { 
+    const apiError = error as {
+      response?: {
+        data?: {
           message?: string
           errors?: {
             email?: string[]
@@ -1036,16 +1036,16 @@ const saveProfile = async (showNotification = true) => {
             last_name?: string[]
             [key: string]: string[] | undefined
           }
-        } 
+        }
       }
-      message?: string 
+      message?: string
     }
-    
-    // Handle field-specific validation errors
+
+
     if (apiError.response?.data?.errors) {
       const validationErrors = apiError.response.data.errors
-      
-      // Set field-specific errors
+
+
       if (validationErrors.email) {
         errors.value.email = validationErrors.email[0]
       }
@@ -1055,15 +1055,15 @@ const saveProfile = async (showNotification = true) => {
       if (validationErrors.last_name) {
         errors.value.last_name = validationErrors.last_name[0]
       }
-      
-      // Show general error if there are field errors
+
+
       if (validationErrors.email || validationErrors.first_name || validationErrors.last_name) {
         showError('Validation Failed', 'Please check the form for errors and try again.')
       } else {
         showError('Update Failed', apiError.response?.data?.message || apiError.message || 'Failed to update profile. Please try again.')
       }
     } else {
-      // Show general error message
+
       showError('Update Failed', apiError.response?.data?.message || apiError.message || 'Failed to update profile. Please try again.')
     }
   } finally {
@@ -1071,7 +1071,7 @@ const saveProfile = async (showNotification = true) => {
   }
 }
 
-// Auto-save functionality - only for profile fields (not password)
+
 watch(() => ({
   first_name: profileForm.value.first_name,
   last_name: profileForm.value.last_name,
@@ -1083,22 +1083,22 @@ watch(() => ({
   city: profileForm.value.city,
   postal_code: profileForm.value.postal_code
 }), (newVal) => {
-  // Skip auto-save if password fields are being edited
+
   if (profileForm.value.current_password || profileForm.value.new_password || profileForm.value.confirm_password) {
     return
   }
 
-  // Skip if lastSavedData is not initialized (initial load)
+
   if (!lastSavedData.value) {
     return
   }
 
-  // Clear existing timeout
+
   if (autoSaveTimeout.value) {
     clearTimeout(autoSaveTimeout.value)
   }
 
-  // Check if data has actually changed
+
   const currentData = JSON.stringify(newVal)
   const savedProfileData = JSON.parse(lastSavedData.value)
   const savedData = JSON.stringify({
@@ -1112,14 +1112,14 @@ watch(() => ({
     city: savedProfileData.city,
     postal_code: savedProfileData.postal_code
   })
-  
+
   if (currentData === savedData) {
     return
   }
 
-  // Set new timeout for auto-save (2 seconds after user stops typing)
+
   autoSaveTimeout.value = window.setTimeout(() => {
-    saveProfile(false) // Save without showing notification for auto-save
+    saveProfile(false)
   }, 2000)
 }, { deep: true })
 
@@ -1127,11 +1127,11 @@ const cancelEdit = () => {
   router.push('/')
 }
 
-// Address management methods
+
 const loadAddresses = async () => {
   try {
     const response = await addressesApi.list()
-    
+
     if (response.data.success) {
       savedAddresses.value = response.data.data || []
     }
@@ -1162,20 +1162,20 @@ const openAddAddressModal = () => {
 const editAddress = (address: any) => {
   editingAddress.value = address
   const label = address.label || ''
-  
-  // Determine label type based on existing label
+
+
   if (label === 'Home' || label === 'Office') {
     selectedLabelType.value = label
     addressForm.value.label = label
   } else if (label) {
-    // If label exists but is not Home or Office, treat it as "Others"
+
     selectedLabelType.value = 'Others'
     addressForm.value.label = label
   } else {
     selectedLabelType.value = ''
     addressForm.value.label = ''
   }
-  
+
   addressForm.value = {
     ...addressForm.value,
     recipient_name: address.recipient_name || '',
@@ -1193,23 +1193,23 @@ const editAddress = (address: any) => {
 }
 
 const saveAddress = async () => {
-  // Validate label
+
   if (!selectedLabelType.value) {
     showError('Validation Failed', 'Please select a label type.')
     return
   }
-  
-  // If Others is selected, ensure custom label is provided
+
+
   if (selectedLabelType.value === 'Others' && !addressForm.value.label?.trim()) {
     showError('Validation Failed', 'Please enter a custom label.')
     return
   }
-  
-  // Ensure label is set correctly
+
+
   if (selectedLabelType.value !== 'Others') {
     addressForm.value.label = selectedLabelType.value
   }
-  
+
   try {
     if (editingAddress.value) {
       await addressesApi.update(editingAddress.value.id, addressForm.value)
@@ -1270,15 +1270,15 @@ const setDefaultBilling = async (addressId: number) => {
   }
 }
 
-// Load user data
+
 const loadUserData = async () => {
   if (!authStore.isAuthenticated) return
 
   try {
-    // Ensure we have fresh user data
+
     await authStore.fetchUser()
     const user = authStore.user
-    
+
     if (user) {
       profileForm.value = {
         first_name: user.first_name || '',
@@ -1294,8 +1294,8 @@ const loadUserData = async () => {
         new_password: '',
         confirm_password: ''
       }
-      
-      // Initialize last saved data to prevent auto-save on load
+
+
       lastSavedData.value = JSON.stringify({
         first_name: profileForm.value.first_name,
         last_name: profileForm.value.last_name,
@@ -1316,13 +1316,13 @@ const loadUserData = async () => {
   }
 }
 
-// Load account statistics from backend
+
 const loadAccountStats = async () => {
   if (!authStore.isAuthenticated) return
 
   try {
     const response = await auth.getAccountStats()
-    
+
     if (response.data.success) {
       const stats = response.data.data
       accountStats.value = {
@@ -1333,7 +1333,7 @@ const loadAccountStats = async () => {
     }
   } catch (error) {
     console.error('Failed to load account stats:', error)
-    // Fallback to user data if available
+
     const user = authStore.user
     if (user) {
       accountStats.value = {
@@ -1345,7 +1345,7 @@ const loadAccountStats = async () => {
   }
 }
 
-// Watch for modal close to reset label type
+
 watch(showAddressModal, (isOpen) => {
   if (!isOpen) {
     selectedLabelType.value = ''
@@ -1358,7 +1358,7 @@ onMounted(async () => {
     router.push({ name: 'home', query: { login: 'true' } })
     return
   }
-  
+
   await authStore.fetchUser()
   await loadUserData()
   await loadAccountStats()
@@ -1549,7 +1549,7 @@ onMounted(async () => {
 
 .form-select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%23666' d='M7 10L2 5h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
   padding-right: 3rem;
@@ -1676,7 +1676,7 @@ onMounted(async () => {
   .profile-content {
     grid-template-columns: 1fr;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
@@ -2033,11 +2033,11 @@ onMounted(async () => {
   .address-form .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .address-footer {
     flex-direction: column;
   }
-  
+
   .section-header {
     flex-direction: column;
     align-items: flex-start;

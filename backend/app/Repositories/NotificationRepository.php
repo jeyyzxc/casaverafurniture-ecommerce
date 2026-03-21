@@ -11,14 +11,11 @@ use Illuminate\Support\Facades\Log;
 
 class NotificationRepository
 {
-    /**
-     * Get user notifications with pagination
-     */
+    
     public function getUserNotifications(User $user, array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
         $query = $user->notifications()->orderBy('created_at', 'desc');
 
-        // Apply filters
         if (isset($filters['type'])) {
             $query->where('type', 'LIKE', '%' . $filters['type'] . '%');
         }
@@ -34,19 +31,15 @@ class NotificationRepository
         return $query->paginate($perPage);
     }
 
-    /**
-     * Get admin notifications with pagination
-     */
     public function getAdminNotifications(int $adminId, array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
         $query = AdminNotification::where(function($q) use ($adminId) {
             $q->where('admin_id', $adminId)
-              ->orWhereNull('admin_id'); // Global notifications
+              ->orWhereNull('admin_id'); 
         })
         ->where('is_dismissed', false)
         ->orderBy('created_at', 'desc');
 
-        // Apply filters
         if (isset($filters['type'])) {
             $query->where('type', $filters['type']);
         }
@@ -58,9 +51,6 @@ class NotificationRepository
         return $query->paginate($perPage);
     }
 
-    /**
-     * Get recent user notifications
-     */
     public function getRecentUserNotifications(User $user, int $limit = 10): Collection
     {
         return $user->notifications()
@@ -69,9 +59,6 @@ class NotificationRepository
             ->get();
     }
 
-    /**
-     * Get recent admin notifications
-     */
     public function getRecentAdminNotifications(int $adminId, int $limit = 10): Collection
     {
         return AdminNotification::where(function($q) use ($adminId) {
@@ -84,17 +71,11 @@ class NotificationRepository
         ->get();
     }
 
-    /**
-     * Get unread count for user
-     */
     public function getUserUnreadCount(User $user): int
     {
         return $user->unreadNotifications()->count();
     }
 
-    /**
-     * Get unread count for admin
-     */
     public function getAdminUnreadCount(int $adminId): int
     {
         return AdminNotification::where(function($q) use ($adminId) {
@@ -106,9 +87,6 @@ class NotificationRepository
         ->count();
     }
 
-    /**
-     * Mark user notification as read
-     */
     public function markUserNotificationAsRead(User $user, string $notificationId): bool
     {
         try {
@@ -130,9 +108,6 @@ class NotificationRepository
         }
     }
 
-    /**
-     * Mark admin notification as read
-     */
     public function markAdminNotificationAsRead(int $adminId, int $notificationId): bool
     {
         try {
@@ -159,9 +134,6 @@ class NotificationRepository
         }
     }
 
-    /**
-     * Mark all user notifications as read
-     */
     public function markAllUserNotificationsAsRead(User $user): int
     {
         try {
@@ -177,9 +149,6 @@ class NotificationRepository
         }
     }
 
-    /**
-     * Mark all admin notifications as read
-     */
     public function markAllAdminNotificationsAsRead(int $adminId): int
     {
         try {
@@ -204,9 +173,6 @@ class NotificationRepository
         }
     }
 
-    /**
-     * Delete user notification
-     */
     public function deleteUserNotification(User $user, string $notificationId): bool
     {
         try {
@@ -227,9 +193,6 @@ class NotificationRepository
         }
     }
 
-    /**
-     * Dismiss admin notification
-     */
     public function dismissAdminNotification(int $adminId, int $notificationId): bool
     {
         try {

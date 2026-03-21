@@ -18,7 +18,7 @@ export function useOrderCount() {
     try {
       const response = await ordersApi.list({ per_page: 1 })
       if (response.data.success) {
-        // Get total count from pagination meta if available
+        
         if (response.data.data.meta?.total !== undefined) {
           orderCount.value = response.data.data.meta.total
         } else if (response.data.data.total !== undefined) {
@@ -26,7 +26,7 @@ export function useOrderCount() {
         } else if (Array.isArray(response.data.data)) {
           orderCount.value = response.data.data.length
         } else if (response.data.data.data) {
-          // If paginated, get total from meta
+          
           orderCount.value = response.data.data.meta?.total || response.data.data.data.length
         } else {
           orderCount.value = 0

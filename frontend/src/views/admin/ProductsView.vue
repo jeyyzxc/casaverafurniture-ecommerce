@@ -1,6 +1,5 @@
 <template>
   <div class="admin-products-page">
-    <!-- Page Header -->
     <div class="page-header">
       <div>
         <h1 class="page-title">Product Management</h1>
@@ -25,7 +24,6 @@
       </div>
     </div>
 
-    <!-- Filters and Search -->
     <div class="filters-bar">
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -52,7 +50,6 @@
       <button class="btn-clear" @click="clearFilters">Clear Filters</button>
     </div>
 
-    <!-- Products Table -->
     <div class="table-card">
       <table class="data-table" v-if="paginatedProducts.length > 0">
         <thead>
@@ -148,7 +145,6 @@
       </div>
     </div>
 
-    <!-- Pagination -->
     <div class="pagination" v-if="totalPages > 1">
       <button
         class="page-btn"
@@ -172,13 +168,9 @@
       <span class="page-info">No products found</span>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════
-         ADD PRODUCT MODAL
-         ═══════════════════════════════════════════════════ -->
     <Teleport to="body">
       <div class="modal-overlay" :class="{ active: showAddModal }" @click.self="closeAddModal">
         <div class="modal-container add-modal">
-          <!-- Modal Header -->
           <div class="add-modal-header">
             <div class="add-header-left">
               <div class="add-icon-wrapper">
@@ -201,10 +193,8 @@
             </button>
           </div>
 
-          <!-- Modal Body -->
           <div class="add-modal-body">
             <form @submit.prevent="saveNewProduct" class="add-form">
-              <!-- Row 1: Product Info -->
               <div class="add-form-row">
                 <div class="add-form-card">
                   <div class="card-header">
@@ -286,7 +276,6 @@
                 </div>
               </div>
 
-              <!-- Row 2: Specifications & Settings -->
               <div class="add-form-row">
                 <div class="add-form-card">
                   <div class="card-header specs">
@@ -400,7 +389,6 @@
             </form>
           </div>
 
-          <!-- Modal Footer -->
           <div class="add-modal-footer">
             <button type="button" class="add-btn-cancel" @click="closeAddModal">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -420,9 +408,6 @@
       </div>
     </Teleport>
 
-    <!-- ═══════════════════════════════════════════════════
-         EDIT PRODUCT MODAL
-         ═══════════════════════════════════════════════════ -->
     <Teleport to="body">
       <div class="modal-overlay" :class="{ active: showEditModal }" @click.self="closeEditModal">
         <div class="modal-container modal-large">
@@ -449,7 +434,6 @@
 
           <div class="modal-body">
             <form @submit.prevent="saveEditProduct" class="product-form">
-              <!-- Basic Information -->
               <div class="form-section">
                 <h3 class="section-title">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -477,7 +461,6 @@
                 </div>
               </div>
 
-              <!-- Pricing -->
               <div class="form-section">
                 <h3 class="section-title">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -510,7 +493,6 @@
                 </div>
               </div>
 
-              <!-- Product Details -->
               <div class="form-section">
                 <h3 class="section-title">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -603,9 +585,6 @@
       </div>
     </Teleport>
 
-    <!-- ═══════════════════════════════════════════════════
-         VIEW PRODUCT MODAL
-         ═══════════════════════════════════════════════════ -->
     <Teleport to="body">
       <div class="modal-overlay" :class="{ active: showViewModal }" @click.self="closeViewModal">
         <div class="modal-container modal-view">
@@ -730,9 +709,6 @@
       </div>
     </Teleport>
 
-    <!-- ═══════════════════════════════════════════════════
-         DELETE CONFIRMATION MODAL
-         ═══════════════════════════════════════════════════ -->
     <Teleport to="body">
       <div class="modal-overlay" :class="{ active: showDeleteModal }" @click.self="closeDeleteModal">
         <div class="modal-container delete-modal">
@@ -777,9 +753,6 @@
       </div>
     </Teleport>
 
-    <!-- ═══════════════════════════════════════════════════
-         DELETE SUCCESS NOTIFICATION
-         ═══════════════════════════════════════════════════ -->
     <Teleport to="body">
       <div class="success-notification" :class="{ active: showDeleteSuccess }">
         <div class="success-content">
@@ -812,7 +785,7 @@ import { useNotification } from '@/composables/useNotification'
 const { success, error: showError } = useNotification()
 import { useRealtimeProducts } from '@/composables/useRealtimeProducts'
 
-// Product Type Definition
+
 interface Product {
   id: number
   name: string
@@ -882,16 +855,16 @@ interface ApiError {
   }
 }
 
-// ═══════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════
+
+
+
 const searchQuery = ref('')
 const selectedCategory = ref('')
 const selectedStatus = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 20
 
-// Modal States
+
 const showAddModal = ref(false)
 const showEditModal = ref(false)
 const showViewModal = ref(false)
@@ -901,12 +874,12 @@ const editingProductId = ref<number | null>(null)
 const deletingProduct = ref<Product | null>(null)
 const showDeleteSuccess = ref(false)
 
-// File Input Ref
+
 const imageFileInput = ref<HTMLInputElement | null>(null)
 const editImageFileInput = ref<HTMLInputElement | null>(null)
 const isUploadingImages = ref(false)
 
-// Add Product Form
+
 const addForm = ref({
   name: '',
   category: '',
@@ -927,7 +900,7 @@ const addForm = ref({
   isNew: true
 })
 
-// Edit Product Form
+
 const editForm = ref({
   name: '',
   category: '',
@@ -954,7 +927,7 @@ const isLoading = ref(false)
 const totalProductsCount = ref(0)
 const { startListening, stopListening } = useRealtimeProducts()
 
-// Load categories from API
+
 const loadCategories = async () => {
   try {
     const response = await categoriesApi.list({ is_visible: true })
@@ -966,7 +939,7 @@ const loadCategories = async () => {
   }
 }
 
-// Load products from API
+
 const loadProducts = async () => {
   isLoading.value = true
   try {
@@ -1026,17 +999,17 @@ const loadProducts = async () => {
   }
 }
 
-// ═══════════════════════════════════════════════════
-// COMPUTED
-// ═══════════════════════════════════════════════════
-// Products are already filtered by API, so we use them directly
+
+
+
+
 const filteredProducts = computed(() => products.value)
 
 const totalPages = computed(() => Math.ceil(totalProductsCount.value / itemsPerPage))
 
 const paginatedProducts = computed(() => products.value)
 
-// Watch for filter changes and reload products
+
 watch([searchQuery, selectedCategory, selectedStatus], () => {
   currentPage.value = 1
   loadProducts()
@@ -1046,9 +1019,9 @@ watch(currentPage, () => {
   loadProducts()
 })
 
-// ═══════════════════════════════════════════════════
-// METHODS
-// ═══════════════════════════════════════════════════
+
+
+
 const formatPrice = (price: number) => {
   return price.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
@@ -1060,9 +1033,9 @@ const clearFilters = () => {
   currentPage.value = 1
 }
 
-// Modal Functions
+
 const openAddModal = () => {
-  // Reset form
+
   addForm.value = {
     name: '',
     category: '',
@@ -1082,7 +1055,7 @@ const openAddModal = () => {
     isFeatured: false,
     isNew: true
   }
-  // Reset file input
+
   if (imageFileInput.value) {
     imageFileInput.value.value = ''
   }
@@ -1107,7 +1080,7 @@ const saveNewProduct = async () => {
   }
 
   try {
-    // Prepare images array for API
+
     const primaryIndex = addForm.value.primaryImageIndex ?? 0
     const imagesData = addForm.value.images.map((img, index) => ({
       image_path: img.path || img.url || '',
@@ -1140,7 +1113,7 @@ const saveNewProduct = async () => {
     if (response.data.success) {
       success('Product Created', `Product "${addForm.value.name}" has been created successfully.`)
 
-      // Clean up preview URLs
+
       addForm.value.images.forEach(img => {
         if (img.preview) {
           URL.revokeObjectURL(img.preview)
@@ -1211,7 +1184,7 @@ const editProduct = (id: number) => {
       isNew: product.isNew || false
     }
 
-    // Store a copy of original data to track changes
+
     originalFormData.value = JSON.parse(JSON.stringify(editForm.value))
 
     showEditModal.value = true
@@ -1237,12 +1210,12 @@ const saveEditProduct = async () => {
     const productData: Record<string, any> = {}
     const original = originalFormData.value
 
-    // Helper to check if a value has changed
+
     const hasChanged = (key: string, newValue: any) => {
       return JSON.stringify(newValue) !== JSON.stringify(original[key])
     }
 
-    // Only include fields that have changed
+
     if (hasChanged('name', editForm.value.name)) productData.name = editForm.value.name
 
     const categoryId = typeof editForm.value.category === 'string' ? parseInt(editForm.value.category) : editForm.value.category
@@ -1260,7 +1233,7 @@ const saveEditProduct = async () => {
     if (hasChanged('isFeatured', editForm.value.isFeatured)) productData.is_featured = editForm.value.isFeatured
     if (hasChanged('isNew', editForm.value.isNew)) productData.is_new = editForm.value.isNew
 
-    // Attributes change detection
+
     const currentAttributes = {
       dimensions: editForm.value.dimensions || '',
       weight: editForm.value.weight || '',
@@ -1278,7 +1251,7 @@ const saveEditProduct = async () => {
       productData.attributes = currentAttributes
     }
 
-    // Images change detection
+
     const currentImages = editForm.value.images.map((img, index) => ({
       id: img.id,
       image_path: img.path || (img.url && !img.url.startsWith('http') ? img.url : ''),
@@ -1295,7 +1268,7 @@ const saveEditProduct = async () => {
       productData.images = currentImages
     }
 
-    // If no changes, just close and return
+
     if (Object.keys(productData).length === 0) {
       closeEditModal()
       return
@@ -1320,7 +1293,7 @@ const openEditFromView = () => {
   }
 }
 
-// Image Upload Functions
+
 const triggerImagePicker = () => {
   if (showEditModal.value) {
     if (editImageFileInput.value) {
@@ -1342,12 +1315,12 @@ const handleImageFileSelect = async (event: Event) => {
   isUploadingImages.value = true
 
   try {
-    // Upload each file
+
     const uploadPromises = Array.from(files).map(async (file) => {
-      // Create preview
+
       const preview = URL.createObjectURL(file)
 
-      // Upload to server
+
       const response = await uploadApi.image(file, 'products')
 
       if (response.data.success) {
@@ -1364,7 +1337,7 @@ const handleImageFileSelect = async (event: Event) => {
 
     const uploadedImages = await Promise.all(uploadPromises)
 
-    // Add to appropriate form images array
+
     if (showEditModal.value) {
       editForm.value.images.push(...uploadedImages)
       if (editForm.value.primaryImageIndex === null || editForm.value.primaryImageIndex === undefined || editForm.value.primaryImageIndex < 0) {
@@ -1377,7 +1350,7 @@ const handleImageFileSelect = async (event: Event) => {
       }
     }
 
-    // Reset file inputs
+
     if (imageFileInput.value) {
       imageFileInput.value.value = ''
     }
@@ -1404,21 +1377,21 @@ const removeImage = (index: number) => {
 
   if (!image) return
 
-  // Revoke object URL if it exists
+
   if (image.preview) {
     URL.revokeObjectURL(image.preview)
   }
 
-  // Remove from array
+
   form.images.splice(index, 1)
 
-  // Adjust primary image index if needed
+
   const currentPrimary = form.primaryImageIndex ?? 0
   if (currentPrimary >= form.images.length) {
     form.primaryImageIndex = form.images.length > 0 ? 0 : 0
   }
 
-  // Optionally delete from server (only for new uploads, maybe don't delete existing ones yet)
+
   if (image.path && !image.id) {
     uploadApi.deleteFile(image.path).catch((err: unknown) => {
       console.error('Failed to delete image from server:', err)
@@ -1441,20 +1414,20 @@ const confirmDelete = async () => {
   try {
     await productsApi.delete(deletingProduct.value.id)
 
-    // Reset to page 1 if current page becomes empty
+
     if (paginatedProducts.value.length === 0 && currentPage.value > 1) {
       currentPage.value = Math.max(1, currentPage.value - 1)
     }
 
     closeDeleteModal()
 
-    // Show success notification
+
     showDeleteSuccess.value = true
     setTimeout(() => {
       showDeleteSuccess.value = false
     }, 4000)
 
-    // Reload products
+
     await loadProducts()
   } catch (error: unknown) {
     console.error('Failed to delete product:', error)
@@ -1472,10 +1445,10 @@ const closeDeleteModal = () => {
 const updateFeatured = async (id: number, isFeatured: boolean) => {
   try {
     await productsApi.update(id, { is_featured: isFeatured })
-    // Product will be updated via real-time listener
+
   } catch (error: unknown) {
     console.error('Failed to update featured status:', error)
-    // Revert the change on error
+
     const product = products.value.find(p => p.id === id)
     if (product) {
       product.isFeatured = !isFeatured
@@ -1488,7 +1461,7 @@ const updateFeatured = async (id: number, isFeatured: boolean) => {
 const goToPreviousPage = () => {
   if (currentPage.value > 1) {
     currentPage.value--
-    // Scroll to top of table
+
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
@@ -1496,13 +1469,13 @@ const goToPreviousPage = () => {
 const goToNextPage = () => {
   if (currentPage.value < totalPages.value) {
     currentPage.value++
-    // Scroll to top of table
+
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
 
 const exportProducts = () => {
-  // Generate CSV content
+
   const headers = ['ID', 'Name', 'Category', 'Price', 'Sale Price', 'Stock', 'Status', 'Featured']
   const rows = filteredProducts.value.map(p => [
     p.id,
@@ -1520,7 +1493,7 @@ const exportProducts = () => {
     ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
   ].join('\n')
 
-  // Create download link
+
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
   const url = URL.createObjectURL(blob)
@@ -1534,10 +1507,10 @@ const exportProducts = () => {
   console.log('Products exported successfully')
 }
 
-// ═══════════════════════════════════════════════════
-// LIFECYCLE
-// ═══════════════════════════════════════════════════
-// Real-time event handlers
+
+
+
+
 const handleProductCreated = () => loadProducts()
 const handleProductUpdated = () => loadProducts()
 const handleProductDeleted = () => loadProducts()
@@ -1555,7 +1528,7 @@ onMounted(async () => {
   await loadCategories()
   await loadProducts()
 
-  // Set up real-time listeners using window events
+
   startListening()
 
   window.addEventListener('realtime:product:created', handleProductCreated)
@@ -1980,7 +1953,6 @@ onUnmounted(() => {
   transform: scale(0.92);
 }
 
-/* View Button - Modern Blue */
 .action-btn.view {
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   color: #2563eb;
@@ -2008,7 +1980,6 @@ onUnmounted(() => {
   50% { transform: scale(1.25); }
 }
 
-/* Edit Button - Modern Gold/Amber */
 .action-btn.edit {
   background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
   color: #d97706;
@@ -2037,7 +2008,6 @@ onUnmounted(() => {
   75% { transform: scale(1.15) rotate(8deg); }
 }
 
-/* Delete Button - Modern Red */
 .action-btn.delete {
   background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
   color: #dc2626;
@@ -2066,7 +2036,6 @@ onUnmounted(() => {
   75% { transform: scale(1.15) translateX(2px); }
 }
 
-/* Tooltip styles */
 .action-btn[title] {
   position: relative;
 }
@@ -2181,9 +2150,6 @@ onUnmounted(() => {
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   ADD PRODUCT MODAL - REFACTORED
-   ═══════════════════════════════════════════════════ */
 .add-modal {
   max-width: 950px;
   width: 100%;
@@ -2513,7 +2479,6 @@ onUnmounted(() => {
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
 }
 
-/* Add Modal Responsive */
 @media (max-width: 900px) {
   .add-form-row {
     grid-template-columns: 1fr;
@@ -2544,9 +2509,6 @@ onUnmounted(() => {
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   MODAL STYLES
-   ═══════════════════════════════════════════════════ */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -2713,7 +2675,6 @@ onUnmounted(() => {
   gap: 1rem;
 }
 
-/* Form Styles */
 .product-form {
   display: flex;
   flex-direction: column;
@@ -2856,7 +2817,6 @@ onUnmounted(() => {
   box-shadow: 0 4px 12px rgba(201, 160, 80, 0.2);
 }
 
-/* Image Upload Section Styles */
 .image-upload-section {
   display: flex;
   flex-direction: column;
@@ -3067,7 +3027,6 @@ onUnmounted(() => {
   margin-top: 0.25rem;
 }
 
-/* Modal Buttons */
 .btn-cancel {
   padding: 0.875rem 1.75rem;
   border: 2px solid #d1d5db;
@@ -3143,7 +3102,6 @@ onUnmounted(() => {
   color: #7c2d12;
 }
 
-/* View Modal Styles */
 .view-body {
   padding: 0;
 }
@@ -3389,7 +3347,6 @@ onUnmounted(() => {
   margin: 0;
 }
 
-/* Modal Responsive */
 @media (max-width: 768px) {
   .modal-overlay {
     padding: 1rem;
@@ -3433,9 +3390,6 @@ onUnmounted(() => {
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   DELETE CONFIRMATION MODAL
-   ═══════════════════════════════════════════════════ */
 .delete-modal {
   max-width: 480px;
   width: 100%;
@@ -3623,9 +3577,6 @@ onUnmounted(() => {
   transform: translateY(0);
 }
 
-/* ═══════════════════════════════════════════════════
-   DELETE SUCCESS NOTIFICATION
-   ═══════════════════════════════════════════════════ */
 .success-notification {
   position: fixed;
   top: 2rem;
@@ -3740,7 +3691,6 @@ onUnmounted(() => {
   color: #374151;
 }
 
-/* Delete Modal Responsive */
 @media (max-width: 768px) {
   .delete-modal-content {
     padding: 2rem 1.5rem;

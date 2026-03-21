@@ -12,14 +12,11 @@ use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
-    /**
-     * List all categories
-     */
+    
     public function index(Request $request): JsonResponse
     {
         $query = Category::withCount('products');
 
-        // Filter by parent
         if ($request->has('parent_id')) {
             $parentId = $request->input('parent_id');
             if ($parentId === 'null' || $parentId === '') {
@@ -29,17 +26,14 @@ class CategoryController extends Controller
             }
         }
 
-        // Filter by visibility
         if ($request->has('is_visible')) {
             $query->where('is_visible', $request->boolean('is_visible'));
         }
 
-        // Search
         if ($search = $request->input('search')) {
             $query->where('name', 'like', "%{$search}%");
         }
 
-        // Hierarchical view
         if ($request->boolean('hierarchical')) {
             $categories = Category::whereNull('parent_id')
                 ->with(['children' => function ($q) {
@@ -63,9 +57,6 @@ class CategoryController extends Controller
         ]);
     }
 
-    /**
-     * Get single category
-     */
     public function show(Category $category): JsonResponse
     {
         $category->load(['parent', 'children']);
@@ -77,9 +68,6 @@ class CategoryController extends Controller
         ]);
     }
 
-    /**
-     * Create new category
-     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -98,7 +86,6 @@ class CategoryController extends Controller
             'meta_keywords' => ['nullable', 'string', 'max:255'],
         ]);
 
-        // Generate slug
         $validated['slug'] = Str::slug($validated['name']);
         $originalSlug = $validated['slug'];
         $counter = 1;
@@ -117,9 +104,6 @@ class CategoryController extends Controller
         ], 201);
     }
 
-    /**
-     * Update category
-     */
     public function update(Request $request, Category $category): JsonResponse
     {
         $validated = $request->validate([
@@ -138,7 +122,6 @@ class CategoryController extends Controller
             'meta_keywords' => ['nullable', 'string', 'max:255'],
         ]);
 
-        // Update slug if name changed
         if (isset($validated['name']) && $validated['name'] !== $category->name) {
             $validated['slug'] = Str::slug($validated['name']);
             $originalSlug = $validated['slug'];
@@ -159,12 +142,9 @@ class CategoryController extends Controller
         ]);
     }
 
-    /**
-     * Delete category
-     */
     public function destroy(Category $category): JsonResponse
     {
-        // Check if category has products
+        
         if ($category->products()->count() > 0) {
             return response()->json([
                 'success' => false,
@@ -172,7 +152,6 @@ class CategoryController extends Controller
             ], 422);
         }
 
-        // Check if category has children
         if ($category->children()->count() > 0) {
             return response()->json([
                 'success' => false,
@@ -190,9 +169,6 @@ class CategoryController extends Controller
         ]);
     }
 
-    /**
-     * Reorder categories
-     */
     public function reorder(Request $request): JsonResponse
     {
         $validated = $request->validate([

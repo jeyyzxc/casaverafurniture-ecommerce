@@ -1,8 +1,5 @@
 <template>
   <div class="home-page">
-    <!-- ═══════════════════════════════════════════════════
-         HERO SECTION
-         ═══════════════════════════════════════════════════ -->
     <HeroSection
       title="Timeless Elegance"
       subtitle="Discover furniture that blends modern sophistication with classic comfort. Elevate your living space with CASA VÉRA."
@@ -16,9 +13,6 @@
       </router-link>
     </HeroSection>
 
-    <!-- ═══════════════════════════════════════════════════
-         THE SPOTLIGHT SECTION
-         ═══════════════════════════════════════════════════ -->
     <section class="section spotlight-section">
       <div class="section-header rise-up">
         <span class="section-label">Exclusive Designs</span>
@@ -27,15 +21,15 @@
       </div>
 
       <div class="film-roll-container rise-up-delay-1">
-        <div 
-          class="film-track" 
+        <div
+          class="film-track"
           :class="{ 'no-transition': isResetting }"
           ref="filmTrack"
           :style="{ transform: `translateX(${filmPosition}px)` }"
           @transitionend="onFilmTransitionEnd"
         >
-          <div 
-            v-for="(item, index) in filmCards" 
+          <div
+            v-for="(item, index) in filmCards"
             :key="`film-${index}`"
             class="film-card"
             :class="{ active: index === currentFilmIndex }"
@@ -54,9 +48,6 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════
-         SIGNATURE COLLECTION SECTION
-         ═══════════════════════════════════════════════════ -->
     <section class="signature-section">
       <div class="signature-container">
         <header class="signature-header rise-up">
@@ -65,9 +56,9 @@
         </header>
 
         <div class="signature-grid">
-          <article 
-            v-for="(product, index) in signatureProducts" 
-            :key="product.id" 
+          <article
+            v-for="(product, index) in signatureProducts"
+            :key="product.id"
             class="signature-card"
             :class="`rise-up-delay-${Math.min(index + 1, 5)}`"
           >
@@ -77,7 +68,7 @@
                 <img :src="product.image || '/images/products/placeholder.png'" :alt="product.name" loading="lazy">
               </router-link>
               <div class="signature-actions">
-                <button 
+                <button
                   class="action-btn"
                   :disabled="isAddingToCart && addingProductId === product.id"
                   @click="addToCart(product)"
@@ -99,8 +90,8 @@
                     <circle cx="12" cy="12" r="3"/>
                   </svg>
                 </button>
-                <button 
-                  class="action-btn" 
+                <button
+                  class="action-btn"
                   :class="{ 'in-wishlist': isInWishlist(product.id) }"
                   :disabled="isToggling === product.id"
                   @click.stop="toggleWishlist(product.id)"
@@ -124,9 +115,6 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════
-         CURATED SPACES SECTION
-         ═══════════════════════════════════════════════════ -->
     <section class="section spaces-section">
       <div class="section-inner">
         <div class="section-header section-header--split rise-up">
@@ -143,14 +131,14 @@
         </div>
 
         <div class="spaces-grid">
-          <router-link 
-            v-for="(space, key) in spaces" 
+          <router-link
+            v-for="(space, key) in spaces"
             :key="key"
-            :to="space.link" 
+            :to="space.link"
             class="space-card"
             :class="[space.size, `rise-up-delay-${Object.keys(spaces).indexOf(key) + 1}`]"
           >
-            <div class="space-image" :style="{ backgroundImage: `url(${space.image})` }"></div>
+            <div class="space-image" :style="{ backgroundImage: `url('${space.image}')` }"></div>
             <div class="space-overlay">
               <div class="space-content">
                 <span class="space-label">{{ space.label }}</span>
@@ -168,9 +156,6 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════
-         QUICK VIEW MODAL
-         ═══════════════════════════════════════════════════ -->
     <Teleport to="body">
       <div class="quick-view-overlay" :class="{ active: quickViewOpen }" @click.self="closeQuickView">
         <div class="quick-view-card">
@@ -236,7 +221,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { Teleport } from 'vue'
 import HeroSection from '@/components/HeroSection.vue'
 import { useRealtimeHomepage } from '@/composables/useRealtimeHomepage'
 import { useRealtimeProducts } from '@/composables/useRealtimeProducts'
@@ -248,17 +232,17 @@ const cartStore = useCartStore()
 const { isInWishlist, toggleWishlist, isToggling, loadWishlist } = useWishlist()
 const { startListening: startProductListening, stopListening: stopProductListening } = useRealtimeProducts()
 
-// ═══════════════════════════════════════════════════
-// IMAGE IMPORTS
-// ═══════════════════════════════════════════════════
+
+
 import livingRoomImg from '@/assets/images/furni5.png'
 import diningImg from '@/assets/images/furni4.png'
 import bedroomImg from '@/assets/images/f4.png'
 import officeImg from '@/assets/images/f5.png'
 
-// ═══════════════════════════════════════════════════
-// PRODUCT INTERFACE
-// ═══════════════════════════════════════════════════
+
+
+
+
 interface Product {
   id: number
   name: string
@@ -278,13 +262,11 @@ interface Product {
   stock_status?: string
   low_stock_threshold?: number
   track_inventory?: boolean
-  description?: string
-  stock?: number
 }
 
-// ═══════════════════════════════════════════════════
-// FILM ROLL CAROUSEL (EXCLUSIVE DESIGNS)
-// ═══════════════════════════════════════════════════
+
+
+
 const spotlightItems = ref<Product[]>([])
 
 const cardWidth = 300
@@ -294,16 +276,16 @@ const slideStep = cardWidth + gap
 const filmCards = computed(() => {
   const items = spotlightItems.value
   if (items.length === 0) {
-    // Return empty array - carousel will be hidden until items load
+
     return []
   }
-  // Create enough copies for seamless infinite loop (at least 5 copies for smooth looping)
-  // This ensures we have enough items on both sides for seamless transitions
+
+
   return [...items, ...items, ...items, ...items, ...items, ...items]
 })
 
 const totalReal = computed(() => spotlightItems.value.length)
-const startIndex = computed(() => totalReal.value * 2) // Start in the third copy for better buffer
+const startIndex = computed(() => totalReal.value * 2)
 const currentFilmIndex = ref(0)
 const filmPosition = ref(0)
 const isFilmAnimating = ref(false)
@@ -314,23 +296,23 @@ let filmInterval: ReturnType<typeof setInterval> | null = null
 const centerOffset = -(cardWidth / 2)
 
 const moveToFilmIndex = (index: number, animate = true) => {
-  // Check if filmTrack ref is available and we have real items (not placeholders)
+
   if (!filmTrack.value || totalReal.value === 0 || spotlightItems.value.length === 0) {
     return
   }
-  
+
   if (!animate) {
     isResetting.value = true
   }
-  
+
   filmPosition.value = centerOffset - (index * slideStep)
   currentFilmIndex.value = index
   isFilmAnimating.value = animate
-  
+
   if (!animate) {
-    // Force reflow to ensure the transition is disabled
+
     void filmTrack.value.offsetWidth
-    // Re-enable transition after a brief moment using double RAF for better browser compatibility
+
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (filmTrack.value) {
@@ -343,27 +325,27 @@ const moveToFilmIndex = (index: number, animate = true) => {
 
 const onFilmTransitionEnd = () => {
   if (totalReal.value === 0 || spotlightItems.value.length === 0) return
-  
+
   isFilmAnimating.value = false
   const total = totalReal.value
-  
-  // When we reach near the end of the fourth copy, seamlessly reset to the start of the third copy
-  // This ensures we're always in the middle copies, giving us buffer on both sides
+
+
+
   if (currentFilmIndex.value >= total * 4) {
-    // Reset to equivalent position in the third copy (invisible jump)
+
     moveToFilmIndex(currentFilmIndex.value - total * 2, false)
   } else if (currentFilmIndex.value < total * 2) {
-    // If we somehow go backwards too far, reset to third copy
+
     moveToFilmIndex(currentFilmIndex.value + total * 2, false)
   }
 }
 
 const startFilmCarousel = () => {
-  // Ensure filmTrack ref is available and we have real items (not placeholders) before starting carousel
+
   if (!filmTrack.value || totalReal.value === 0 || spotlightItems.value.length === 0) {
-    // Retry immediately using requestAnimationFrame for faster initialization
+
     if (filmTrack.value && spotlightItems.value.length === 0) {
-      // Items are still loading, retry soon
+
       requestAnimationFrame(() => {
         if (filmTrack.value && spotlightItems.value.length > 0 && totalReal.value > 0) {
           startFilmCarousel()
@@ -372,16 +354,16 @@ const startFilmCarousel = () => {
     }
     return
   }
-  
-  // Clear any existing interval
+
+
   if (filmInterval) {
     clearInterval(filmInterval)
   }
-  
-  // Initialize to start position (third copy) immediately without delay
+
+
   moveToFilmIndex(startIndex.value, false)
-  
-  // Start the carousel loop immediately using requestAnimationFrame
+
+
   requestAnimationFrame(() => {
     filmInterval = setInterval(() => {
       if (!isFilmAnimating.value && !document.hidden && filmTrack.value && totalReal.value > 0 && spotlightItems.value.length > 0) {
@@ -393,14 +375,14 @@ const startFilmCarousel = () => {
   })
 }
 
-// ═══════════════════════════════════════════════════
-// SIGNATURE COLLECTION
-// ═══════════════════════════════════════════════════
+
+
+
 const signatureProducts = ref<Product[]>([])
 
-// ═══════════════════════════════════════════════════
-// CURATED SPACES
-// ═══════════════════════════════════════════════════
+
+
+
 const spaces = ref({
   living: { title: 'Living Room', label: 'Gather & Relax', image: livingRoomImg, link: '/products?cat=living', size: 'large' },
   dining: { title: 'Dining', label: 'Feast in Style', image: diningImg, link: '/products?cat=dining', size: '' },
@@ -408,17 +390,15 @@ const spaces = ref({
   office: { title: 'Office & Decor', label: 'Work & Inspire', image: officeImg, link: '/products?cat=office', size: 'large' },
 })
 
-// ═══════════════════════════════════════════════════
-// QUICK VIEW
-// ═══════════════════════════════════════════════════
+
+
+
 const quickViewOpen = ref(false)
 const quickViewProduct = ref<Product | null>(null)
-const isLoadingQuickView = ref(false)
 
 const openQuickView = async (product: Product) => {
-  // If product doesn't have description, fetch full details
+
   if (!product.description) {
-    isLoadingQuickView.value = true
     try {
       const response = await productsApi.get(product.slug)
       if (response.data.success && response.data.data?.product) {
@@ -437,13 +417,11 @@ const openQuickView = async (product: Product) => {
     } catch (error) {
       console.error('Failed to load product details:', error)
       quickViewProduct.value = product
-    } finally {
-      isLoadingQuickView.value = false
     }
   } else {
     quickViewProduct.value = product
   }
-  
+
   quickViewOpen.value = true
   document.body.style.overflow = 'hidden'
 }
@@ -451,24 +429,24 @@ const openQuickView = async (product: Product) => {
 const closeQuickView = () => {
   quickViewOpen.value = false
   document.body.style.overflow = ''
-  // Clear product after animation
+
   setTimeout(() => {
     quickViewProduct.value = null
   }, 300)
 }
 
-// ═══════════════════════════════════════════════════
-// CART FUNCTIONALITY
-// ═══════════════════════════════════════════════════
+
+
+
 const isAddingToCart = ref(false)
 const addingProductId = ref<number | null>(null)
 
 const addToCart = async (product: Product) => {
   if (isAddingToCart.value) return
-  
+
   isAddingToCart.value = true
   addingProductId.value = product.id
-  
+
   try {
     const result = await cartStore.addItem(product.id, 1)
     if (result.success) {
@@ -494,10 +472,10 @@ const addToCartFromModal = () => {
 
 const buyNowFromModal = async () => {
   if (!quickViewProduct.value) return
-  
+
   isAddingToCart.value = true
   addingProductId.value = quickViewProduct.value.id
-  
+
   try {
     const result = await cartStore.addItem(quickViewProduct.value.id, 1)
     if (result.success) {
@@ -517,9 +495,9 @@ const buyNowFromModal = async () => {
   }
 }
 
-// ═══════════════════════════════════════════════════
-// STOCK STATUS HELPERS
-// ═══════════════════════════════════════════════════
+
+
+
 const getStockQuantity = (product: Product): number => {
   return product.stock_quantity ?? product.stock ?? 0
 }
@@ -530,10 +508,10 @@ const getLowStockThreshold = (product: Product): number => {
 
 const isOutOfStock = (product: Product): boolean => {
   if (product.track_inventory === false) {
-    return false // If not tracking inventory, always available
+    return false
   }
   if (!product.track_inventory) {
-    return false // Default to in stock if tracking is not specified
+    return false
   }
   const stock = getStockQuantity(product)
   return stock <= 0 || product.stock_status === 'out_of_stock'
@@ -568,9 +546,9 @@ const getStockBadgeClass = (product: Product): string => {
   return 'stock-badge-in'
 }
 
-// ═══════════════════════════════════════════════════
-// UTILITIES
-// ═══════════════════════════════════════════════════
+
+
+
 const formatPrice = (price: number) => {
   return price.toLocaleString('en-PH', {
     minimumFractionDigits: 2,
@@ -578,9 +556,9 @@ const formatPrice = (price: number) => {
   })
 }
 
-// ═══════════════════════════════════════════════════
-// LOAD PRODUCTS
-// ═══════════════════════════════════════════════════
+
+
+
 const loadFeaturedProducts = async () => {
   try {
     const response = await productsApi.list({
@@ -589,13 +567,13 @@ const loadFeaturedProducts = async () => {
       sort_by: 'newest',
       sort_order: 'desc'
     })
-    
+
     if (response.data.success) {
       const responseData = response.data.data
-      const products: Array<Record<string, unknown>> = Array.isArray(responseData) 
-        ? responseData 
+      const products: Array<Record<string, unknown>> = Array.isArray(responseData)
+        ? responseData
         : (responseData?.data || [])
-      
+
       spotlightItems.value = products.map((p) => {
         const product = p as {
           id: number
@@ -614,7 +592,7 @@ const loadFeaturedProducts = async () => {
           low_stock_threshold?: number
           track_inventory?: boolean
         }
-        
+
         return {
           id: product.id,
           name: product.name,
@@ -640,84 +618,33 @@ const loadFeaturedProducts = async () => {
   }
 }
 
-const loadSignatureProducts = async () => {
-  try {
-    const response = await productsApi.list({
-      featured: true,
-      per_page: 5,
-      sort_by: 'newest',
-      sort_order: 'desc'
-    })
-    
-    if (response.data.success) {
-      const responseData = response.data.data
-      const products: Array<Record<string, unknown>> = Array.isArray(responseData) 
-        ? responseData 
-        : (responseData?.data || [])
-      
-      signatureProducts.value = products.map((p) => {
-        const product = p as {
-          id: number
-          name: string
-          slug: string
-          price: number | string
-          sale_price?: number | string | null
-          image?: string | null
-          category?: { id: number; name: string; slug: string } | null
-          is_new?: boolean
-          is_featured?: boolean
-          description?: string
-          stock_quantity?: number
-          stock?: number
-          stock_status?: string
-          low_stock_threshold?: number
-          track_inventory?: boolean
-        }
-        
-        return {
-          id: product.id,
-          name: product.name,
-          slug: product.slug,
-          category: product.category?.slug,
-          category_name: product.category?.name,
-          price: typeof product.price === 'string' ? parseFloat(product.price) : (typeof product.price === 'number' ? product.price : 0),
-          sale_price: product.sale_price ? (typeof product.sale_price === 'string' ? parseFloat(product.sale_price) : (typeof product.sale_price === 'number' ? product.sale_price : null)) : null,
-          image: product.image || '/images/products/placeholder.png',
-          is_new: product.is_new || false,
-          is_featured: product.is_featured || false,
-          description: product.description,
-          stock_quantity: product.stock_quantity,
-          stock: product.stock,
-          stock_status: product.stock_status,
-          low_stock_threshold: product.low_stock_threshold,
-          track_inventory: product.track_inventory,
-        } as Product
-      })
-    }
-  } catch (error) {
-    console.error('Failed to load signature products:', error)
-  }
+
+const updateSignatureProducts = () => {
+
+  signatureProducts.value = spotlightItems.value.slice(0, 5)
 }
 
-// ═══════════════════════════════════════════════════
-// WATCH FOR ITEMS CHANGES
-// ═══════════════════════════════════════════════════
+
+
+
 watch(spotlightItems, (newItems) => {
   if (newItems.length > 0) {
-    // Clear existing interval
+
+    updateSignatureProducts()
+
     if (filmInterval) {
       clearInterval(filmInterval)
     }
-    // Start carousel immediately - no delays
+
     nextTick().then(() => {
       startFilmCarousel()
     })
   }
 }, { immediate: false })
 
-// ═══════════════════════════════════════════════════
-// SCROLL ANIMATIONS
-// ═══════════════════════════════════════════════════
+
+
+
 let scrollObserver: IntersectionObserver | null = null
 
 const initScrollAnimations = () => {
@@ -735,27 +662,23 @@ const initScrollAnimations = () => {
   document.querySelectorAll('.section').forEach(el => scrollObserver?.observe(el))
 }
 
-// ═══════════════════════════════════════════════════
-// LIFECYCLE
-// ═══════════════════════════════════════════════════
-// Real-time homepage updates
+
+
+
+
 const { startListening, stopListening } = useRealtimeHomepage()
 
 const handleHomepageUpdate = (event: Event) => {
   const customEvent = event as CustomEvent
   const updateData = customEvent.detail
   console.log('Homepage updated:', updateData.type)
-  
-  // Reload homepage data when updates occur
+
+
   if (updateData.type === 'featured_products' || updateData.type === 'product') {
-    // Reload signature collection when featured products change
-    loadSignatureProducts()
-    // Also reload spotlight if it's a featured product update
-    if (updateData.type === 'featured_products') {
-      loadFeaturedProducts()
-    }
+
+    loadFeaturedProducts()
   } else if (updateData.type === 'banner' || updateData.type === 'section') {
-    // Handle other updates as needed
+
   }
 }
 
@@ -763,38 +686,35 @@ const handleProductUpdated = (event: Event) => {
   const customEvent = event as CustomEvent<{
     id: number
     is_featured?: boolean
-    [key: string]: any
+    [key: string]: unknown
   }>
   const productData = customEvent.detail
   if (!productData) return
-  
-  // If featured status changed, reload signature products
+
+
   const existingProduct = signatureProducts.value.find(p => p.id === productData.id)
   if (existingProduct && existingProduct.is_featured !== productData.is_featured) {
-    // Featured status changed, reload signature products
-    loadSignatureProducts()
+
+    loadFeaturedProducts()
   }
 }
 
 onMounted(async () => {
-  // Set up real-time listeners
+
   startListening()
   startProductListening()
   window.addEventListener('realtime:homepage:updated', handleHomepageUpdate)
   window.addEventListener('realtime:product:updated', handleProductUpdated)
-  
-  // Load wishlist if user is authenticated
+
+
   loadWishlist()
-  
-  // Start scroll animations immediately (don't wait for products)
+
+
   initScrollAnimations()
-  
-  // Load products in parallel - don't await, let them load in background
-  Promise.all([
-    loadFeaturedProducts(),
-    loadSignatureProducts()
-  ]).then(() => {
-    // When products load, start carousel immediately
+
+
+  loadFeaturedProducts().then(() => {
+
     if (spotlightItems.value.length > 0) {
       nextTick().then(() => {
         requestAnimationFrame(() => {
@@ -803,8 +723,8 @@ onMounted(async () => {
       })
     }
   })
-  
-  // Start carousel immediately if products are already loaded (from cache or previous load)
+
+
   if (spotlightItems.value.length > 0) {
     await nextTick()
     requestAnimationFrame(() => {
@@ -824,9 +744,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* ═══════════════════════════════════════════════════
-   CSS CUSTOM PROPERTIES
-   ═══════════════════════════════════════════════════ */
 .home-page {
   --gold: #c9a050;
   --gold-light: #FFD700;
@@ -842,7 +759,7 @@ onUnmounted(() => {
   --radius-md: 12px;
   --radius-lg: 20px;
   --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  
+
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -850,7 +767,7 @@ onUnmounted(() => {
   width: 100%;
 }
 
-/* Hide scrollbar but allow scrolling */
+
 .home-page::-webkit-scrollbar {
   display: none;
 }
@@ -860,9 +777,6 @@ onUnmounted(() => {
   scrollbar-width: none;
 }
 
-/* ═══════════════════════════════════════════════════
-   SVG ICONS
-   ═══════════════════════════════════════════════════ */
 .icon,
 .icon-arrow,
 .icon-arrow-sm {
@@ -892,9 +806,6 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
-/* ═══════════════════════════════════════════════════
-   LAYOUT UTILITIES
-   ═══════════════════════════════════════════════════ */
 .section {
   padding: 80px 0;
   opacity: 0;
@@ -961,9 +872,6 @@ onUnmounted(() => {
   border-radius: 2px;
 }
 
-/* ═══════════════════════════════════════════════════
-   1. HERO BUTTON (for slot content)
-   ═══════════════════════════════════════════════════ */
 .btn-hero {
   display: inline-flex;
   align-items: center;
@@ -1015,9 +923,6 @@ onUnmounted(() => {
   transform: translateX(4px);
 }
 
-/* ═══════════════════════════════════════════════════
-   2. SPOTLIGHT SECTION
-   ═══════════════════════════════════════════════════ */
 .spotlight-section {
   background: var(--light);
 }
@@ -1139,9 +1044,6 @@ onUnmounted(() => {
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
-/* ═══════════════════════════════════════════════════
-   3. SIGNATURE COLLECTION
-   ═══════════════════════════════════════════════════ */
 .signature-section {
   background: var(--white);
   padding: 70px 0;
@@ -1319,9 +1221,6 @@ onUnmounted(() => {
   color: #000000;
 }
 
-/* ═══════════════════════════════════════════════════
-   4. CURATED SPACES
-   ═══════════════════════════════════════════════════ */
 .spaces-section {
   background: var(--light);
 }
@@ -1463,9 +1362,6 @@ onUnmounted(() => {
   transform: translateX(5px);
 }
 
-/* ═══════════════════════════════════════════════════
-   5. RESPONSIVE DESIGN
-   ═══════════════════════════════════════════════════ */
 @media (max-width: 1400px) {
   .signature-container {
     padding: 0 1.5rem;
@@ -1629,9 +1525,6 @@ onUnmounted(() => {
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   6. QUICK VIEW MODAL
-   ═══════════════════════════════════════════════════ */
 .quick-view-overlay {
   position: fixed;
   inset: 0;

@@ -85,7 +85,7 @@ export const validatePhone = (phone: string): ValidationResult => {
     return { isValid: false, error: 'Phone number is required' }
   }
 
-  // Philippine phone number format: +63XXXXXXXXXX or 09XXXXXXXXX
+  
   const phoneRegex = /^(\+63|0)?[9]\d{9}$/
   const cleanedPhone = phone.replace(/\s|-/g, '')
 

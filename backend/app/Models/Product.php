@@ -65,7 +65,6 @@ class Product extends Model
         ];
     }
 
-    // Accessors
     public function getCurrentPriceAttribute(): float
     {
         if ($this->sale_price && $this->isOnSale()) {
@@ -91,7 +90,6 @@ class Product extends Model
         return true;
     }
 
-    // Relationships
     public function category()
     {
         return $this->belongsTo(Category::class);
@@ -146,7 +144,6 @@ class Product extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    // Scopes
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
@@ -171,7 +168,6 @@ class Product extends Model
             });
     }
 
-    // Stock management
     public function decrementStock(int $quantity): void
     {
         if ($this->track_inventory) {
@@ -200,13 +196,11 @@ class Product extends Model
             }
         } elseif ($this->stock_quantity <= $this->low_stock_threshold) {
             if ($this->stock_status !== 'low_stock') {
-                // We might want to track 'low_stock' status explicitly if the schema allows,
-                // but usually it's just a threshold check.
-                // For now, let's trigger notification if it just crossed the threshold.
+
                 $adminNotificationService->notifyLowStock($this, $this->stock_quantity);
                 $this->createStockAlert('low_stock');
             }
-            $this->update(['stock_status' => 'in_stock']); // Keep as in_stock for customer visibility but alert admin
+            $this->update(['stock_status' => 'in_stock']); 
         } else {
             if ($this->stock_status !== 'in_stock') {
                 $this->update(['stock_status' => 'in_stock']);
@@ -226,7 +220,6 @@ class Product extends Model
         );
     }
 
-    // Stock status helpers
     public function isLowStock(): bool
     {
         if (!$this->track_inventory) {
@@ -250,7 +243,7 @@ class Product extends Model
     public function isInStock(): bool
     {
         if (!$this->track_inventory) {
-            return true; // If not tracking, assume in stock
+            return true; 
         }
 
         return $this->stock_quantity > 0 && $this->stock_status === 'in_stock';

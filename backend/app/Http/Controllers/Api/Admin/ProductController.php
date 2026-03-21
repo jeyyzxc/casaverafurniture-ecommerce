@@ -22,14 +22,10 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
-    /**
-     * List all products with filters
-     */
     public function index(Request $request): JsonResponse
     {
         $query = Product::with(['category:id,name', 'primaryImage']);
 
-        // Search
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -38,38 +34,31 @@ class ProductController extends Controller
             });
         }
 
-        // Filter by category
         if ($categoryId = $request->input('category_id')) {
             $query->where('category_id', $categoryId);
         }
 
-        // Filter by status
         if ($status = $request->input('status')) {
             $query->where('status', $status);
         }
 
-        // Filter by stock status
         if ($stockStatus = $request->input('stock_status')) {
             $query->where('stock_status', $stockStatus);
         }
 
-        // Filter by featured
         if ($request->has('is_featured')) {
             $query->where('is_featured', $request->boolean('is_featured'));
         }
 
-        // Filter low stock
         if ($request->boolean('low_stock')) {
             $query->where('track_inventory', true)
                 ->whereColumn('stock_quantity', '<=', 'low_stock_threshold');
         }
 
-        // Sorting
         $sortBy = $request->input('sort_by', 'created_at');
         $sortOrder = $request->input('sort_order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
-        // Pagination
         $perPage = $request->input('per_page', 15);
         $products = $query->paginate($perPage);
 
@@ -79,9 +68,6 @@ class ProductController extends Controller
         ]);
     }
 
-    /**
-     * Get single product
-     */
     public function show(Product $product): JsonResponse
     {
         $product->load(['category', 'images', 'tags', 'collections']);
@@ -92,9 +78,6 @@ class ProductController extends Controller
         ]);
     }
 
-    /**
-     * Create new product
-     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -131,28 +114,22 @@ class ProductController extends Controller
             'tag_ids.*' => ['exists:tags,id'],
         ]);
 
-        // Generate slug
         $validated['slug'] = Str::slug($validated['name']);
 
-        // Ensure unique slug
         $originalSlug = $validated['slug'];
         $counter = 1;
         while (Product::where('slug', $validated['slug'])->exists()) {
             $validated['slug'] = $originalSlug . '-' . $counter++;
         }
 
-        // Set stock status
         $validated['stock_status'] = $validated['stock_quantity'] > 0 ? 'in_stock' : 'out_of_stock';
 
-        // Set published_at if active
         if ($validated['status'] === 'active') {
             $validated['published_at'] = now();
         }
 
-        // Create product
         $product = Product::create($validated);
 
-        // Add images
         if (!empty($validated['images'])) {
             foreach ($validated['images'] as $index => $imageData) {
                 ProductImage::create([
@@ -164,26 +141,21 @@ class ProductController extends Controller
             }
         }
 
-        // Sync tags
         if (!empty($validated['tag_ids'])) {
             $product->tags()->sync($validated['tag_ids']);
         }
 
-        // Update category product count
         if ($product->category_id) {
             Category::where('id', $product->category_id)->increment('product_count');
         }
 
-        // Log activity
         ActivityLog::log('create', 'products', "Created product: {$product->name}", $product);
 
         $product->load(['category', 'images', 'tags']);
 
-        // Broadcast product created event
         if ($product->status === 'active') {
             event(new ProductCreated($product));
 
-            // If featured, also update homepage
             if ($product->is_featured) {
                 event(new HomepageUpdated('featured_products', [
                     'product_id' => $product->id,
@@ -199,9 +171,6 @@ class ProductController extends Controller
         ], 201);
     }
 
-    /**
-     * Update product
-     */
     public function update(Request $request, Product $product): JsonResponse
     {
         $validated = $request->validate([
@@ -241,7 +210,6 @@ class ProductController extends Controller
 
         $oldCategoryId = $product->category_id;
 
-        // Update slug if name changed
         if (isset($validated['name']) && $validated['name'] !== $product->name) {
             $validated['slug'] = Str::slug($validated['name']);
             $originalSlug = $validated['slug'];
@@ -251,30 +219,24 @@ class ProductController extends Controller
             }
         }
 
-        // Update stock status if quantity changed
         if (isset($validated['stock_quantity'])) {
             $validated['stock_status'] = $validated['stock_quantity'] > 0 ? 'in_stock' : 'out_of_stock';
         }
 
-        // Set published_at if status changed to active
         if (isset($validated['status']) && $validated['status'] === 'active' && !$product->published_at) {
             $validated['published_at'] = now();
         }
 
-        // Store old values for logging and events
         $oldValues = $product->toArray();
         $oldStockQuantity = $product->stock_quantity;
 
         $product->update($validated);
         $product->refresh();
 
-        // Update images if provided
         if ($request->has('images')) {
             $images = $request->input('images');
 
-            // Only perform sync/delete if images is an array (even if empty)
             if (is_array($images)) {
-                // Delete old images not in new list
                 $newImageIds = collect($images)->pluck('id')->filter()->toArray();
                 $product->images()->whereNotIn('id', $newImageIds)->delete();
 
@@ -285,7 +247,6 @@ class ProductController extends Controller
                             'display_order' => $index,
                         ];
 
-                        // Only update image_path if it's provided and not empty
                         if (!empty($imageData['image_path'])) {
                             $updateData['image_path'] = $imageData['image_path'];
                         }
@@ -303,12 +264,10 @@ class ProductController extends Controller
             }
         }
 
-        // Sync tags
         if (isset($validated['tag_ids'])) {
             $product->tags()->sync($validated['tag_ids']);
         }
 
-        // Update category product counts
         if (isset($validated['category_id']) && $oldCategoryId !== $validated['category_id']) {
             if ($oldCategoryId) {
                 Category::where('id', $oldCategoryId)->decrement('product_count');
@@ -318,15 +277,12 @@ class ProductController extends Controller
             }
         }
 
-        // Log activity
         ActivityLog::log('update', 'products', "Updated product: {$product->name}", $product, $oldValues, $product->toArray());
 
         $product->load(['category', 'images', 'tags']);
 
-        // Broadcast product updated event
         event(new ProductUpdated($product));
 
-        // Broadcast stock change if quantity changed
         if (isset($validated['stock_quantity']) && $oldStockQuantity !== $product->stock_quantity) {
             $stockType = 'update';
             if ($product->isLowStock() && !($oldStockQuantity <= $product->low_stock_threshold)) {
@@ -340,7 +296,6 @@ class ProductController extends Controller
             event(new StockChanged($product, $oldStockQuantity, $product->stock_quantity, $stockType));
         }
 
-        // Broadcast homepage update if featured status changed
         if (isset($validated['is_featured']) && $oldValues['is_featured'] !== $product->is_featured) {
             event(new HomepageUpdated('featured_products', [
                 'product_id' => $product->id,
@@ -355,26 +310,19 @@ class ProductController extends Controller
         ]);
     }
 
-    /**
-     * Delete product
-     */
     public function destroy(Product $product): JsonResponse
     {
-        // Update category product count
         if ($product->category_id) {
             Category::where('id', $product->category_id)->decrement('product_count');
         }
 
-        // Store product info before deletion
         $productId = $product->id;
         $productSlug = $product->slug;
 
-        // Log activity
         ActivityLog::log('delete', 'products', "Deleted product: {$product->name}", $product);
 
         $product->delete();
 
-        // Broadcast product deleted event
         event(new ProductDeleted($productId, $productSlug));
 
         return response()->json([
@@ -383,9 +331,6 @@ class ProductController extends Controller
         ]);
     }
 
-    /**
-     * Bulk update products
-     */
     public function bulkUpdate(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -427,15 +372,12 @@ class ProductController extends Controller
         ]);
     }
 
-    /**
-     * Update product stock
-     */
     public function updateStock(Request $request, Product $product): JsonResponse
     {
         $validated = $request->validate([
             'quantity' => ['required', 'integer', 'min:1'],
             'type' => ['required', Rule::in(['set', 'add', 'subtract'])],
-            'reason' => ['nullable', 'string', 'max:500'], // Accept 'reason' from frontend, store as 'notes'
+            'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
         $oldQuantity = $product->stock_quantity;
@@ -452,18 +394,15 @@ class ProductController extends Controller
                 break;
         }
 
-        // Update product stock and log change within transaction
         DB::transaction(function () use ($product, $newQuantity, $oldQuantity, $validated) {
             $product->update([
                 'stock_quantity' => $newQuantity,
                 'stock_status' => $newQuantity > 0 ? 'in_stock' : 'out_of_stock',
             ]);
 
-            // Get admin info for logging
             $admin = Auth::user();
             $adminName = $admin ? ($admin->first_name . ' ' . $admin->last_name) : 'System';
 
-            // Log stock change to dedicated stock_logs table using Eloquent model
             StockLog::create([
                 'product_id' => $product->id,
                 'quantity_change' => $newQuantity - $oldQuantity,
@@ -473,13 +412,12 @@ class ProductController extends Controller
                 'reference_type' => 'adjustment',
                 'reference_id' => null,
                 'reference_number' => null,
-                'notes' => $validated['reason'] ?? 'Manual stock adjustment', // Store 'reason' as 'notes' in database
+                'notes' => $validated['reason'] ?? 'Manual stock adjustment',
                 'admin_id' => $admin ? $admin->id : null,
                 'admin_name' => $adminName,
             ]);
         });
 
-        // Determine stock change type
         $stockType = 'update';
         if ($product->isLowStock() && !($oldQuantity <= $product->low_stock_threshold)) {
             $stockType = 'low_stock';
@@ -489,7 +427,6 @@ class ProductController extends Controller
             $stockType = 'restocked';
         }
 
-        // Log activity
         ActivityLog::log(
             'stock_update',
             'products',
@@ -500,7 +437,6 @@ class ProductController extends Controller
             ['type' => $validated['type'], 'reason' => $validated['reason'] ?? null]
         );
 
-        // Broadcast stock changed event
         event(new StockChanged($product, $oldQuantity, $newQuantity, $stockType));
 
         return response()->json([
@@ -513,21 +449,16 @@ class ProductController extends Controller
         ]);
     }
 
-    /**
-     * Get stock history for a product
-     */
     public function getStockHistory(Product $product, Request $request): JsonResponse
     {
         try {
             $perPage = min($request->input('per_page', 50), 100);
 
-            // Use Eloquent model with relationships
             $logs = StockLog::where('product_id', $product->id)
                 ->with(['admin:id,first_name,last_name'])
                 ->orderBy('created_at', 'desc')
                 ->paginate($perPage);
 
-            // Transform logs for frontend
             $logs->getCollection()->transform(function ($log) {
                 return [
                     'id' => $log->id,
@@ -540,7 +471,7 @@ class ProductController extends Controller
                     'reference_id' => $log->reference_id,
                     'reference_number' => $log->reference_number,
                     'notes' => $log->notes,
-                    'reason' => $log->notes, // Alias for frontend compatibility
+                    'reason' => $log->notes,
                     'admin_id' => $log->admin_id,
                     'admin_name' => $log->admin_name ?? ($log->admin ? $log->admin->first_name . ' ' . $log->admin->last_name : 'System'),
                     'unit_cost' => $log->unit_cost,

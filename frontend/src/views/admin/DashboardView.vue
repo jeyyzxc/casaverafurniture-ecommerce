@@ -1,6 +1,5 @@
 <template>
   <div class="dashboard-page">
-    <!-- PAGE HEADER -->
     <header class="page-header">
       <div class="header-content">
         <div>
@@ -18,7 +17,6 @@
       </div>
     </header>
 
-    <!-- STATS CARDS -->
     <section class="stats-section">
       <div class="stats-grid">
         <StatCard
@@ -88,9 +86,7 @@
       </div>
     </section>
 
-    <!-- MAIN DASHBOARD CONTENT -->
     <div class="dashboard-grid">
-      <!-- Sales Overview -->
       <DashboardChart
         title="Sales Overview"
         :data="revenueByDay"
@@ -99,28 +95,24 @@
         class="span-3"
       />
 
-      <!-- Order Status Distribution -->
       <OrderStatusDistribution
         :distribution="orderStatus"
         @filter-status="navigateToOrders"
         class="span-2"
       />
 
-      <!-- Recent Orders -->
       <RecentOrdersTable
         :orders="recentOrders"
         @view-order="viewOrder"
         class="span-3"
       />
 
-      <!-- Best Selling Products -->
       <BestSellingProducts
         :products="bestSellingProducts"
         @view-product="navigateToProduct"
         class="span-2"
       />
 
-      <!-- Low Stock Alerts -->
       <LowStockAlerts
         :items="lowStockItems"
         class="span-5"
@@ -137,7 +129,6 @@ import { getAdminAccessToken } from '@/utils/tokenManager'
 import { dashboard } from '@/services/adminApi'
 import { useRealtimeAdmin } from '@/composables/useRealtimeAdmin'
 
-// Components
 import StatCard from '@/components/admin/dashboard/StatCard.vue'
 import DashboardChart from '@/components/admin/dashboard/DashboardChart.vue'
 import RecentOrdersTable from '@/components/admin/dashboard/RecentOrdersTable.vue'
@@ -145,12 +136,10 @@ import BestSellingProducts from '@/components/admin/dashboard/BestSellingProduct
 import OrderStatusDistribution from '@/components/admin/dashboard/OrderStatusDistribution.vue'
 import LowStockAlerts from '@/components/admin/dashboard/LowStockAlerts.vue'
 
-// COMPOSABLES
 const router = useRouter()
 const adminStore = useAdminAuthStore()
 const { startListening, stopListening } = useRealtimeAdmin()
 
-// STATE
 const selectedPeriod = ref<string>('month')
 const currentAdmin = computed(() => {
   if (adminStore.admin) {
@@ -236,14 +225,12 @@ const bestSellingProducts = ref<BestSellingProduct[]>([])
 const lowStockItems = ref<LowStockItem[]>([])
 const revenueByDay = ref<RevenueByDay[]>([])
 
-// Computed properties for display
 const totalRevenue = computed(() => stats.value.total_revenue)
 const totalOrders = computed(() => stats.value.total_orders)
 const totalProducts = computed(() => stats.value.total_products)
 const totalCustomers = computed(() => stats.value.total_customers)
 const newCustomersToday = computed(() => stats.value.new_customers)
 
-// METHODS
 const formatPrice = (price: number): string => {
   return price.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
@@ -287,7 +274,6 @@ const loadDashboardData = async () => {
     if (response.data.success) {
       const data = response.data.data
 
-      // Update stats
       stats.value = {
         total_orders: data.stats.total_orders || 0,
         total_revenue: parseFloat(data.stats.total_revenue || 0),
@@ -301,7 +287,6 @@ const loadDashboardData = async () => {
         pending_reviews: data.stats.pending_reviews || 0,
       }
 
-      // Update order status distribution
       if (data.orders_by_status) {
         orderStatus.value = {
           pending: data.orders_by_status.pending || 0,
@@ -312,7 +297,6 @@ const loadDashboardData = async () => {
         }
       }
 
-      // Update recent orders
       if (data.recent_orders) {
         recentOrders.value = data.recent_orders.map((order: { order_number: string; customer_name?: string; user?: { first_name?: string; last_name?: string }; total: string | number; status: string; created_at: string }) => ({
           id: order.order_number,
@@ -323,7 +307,6 @@ const loadDashboardData = async () => {
         }))
       }
 
-      // Update best selling products
       if (data.top_products) {
         bestSellingProducts.value = data.top_products.map((product: { id: number; name: string; primary_image?: string; order_count?: number; price: string | number }) => {
           return {
@@ -336,7 +319,6 @@ const loadDashboardData = async () => {
         })
       }
 
-      // Update low stock items
       if (data.stock_alerts) {
         lowStockItems.value = data.stock_alerts.map((alert: {
           product?: { id: number; name: string; stock_quantity: number; low_stock_threshold: number }
@@ -351,7 +333,6 @@ const loadDashboardData = async () => {
         }))
       }
 
-      // Update revenue by day
       if (data.revenue_by_day) {
         revenueByDay.value = data.revenue_by_day
       }
@@ -392,7 +373,6 @@ const navigateToProduct = (productId: number): void => {
   router.push(`/admin/products/${productId}`)
 }
 
-// LIFECYCLE
 const handleDashboardReload = () => {
   loadDashboardData()
 }

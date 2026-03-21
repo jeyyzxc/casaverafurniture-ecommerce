@@ -1,8 +1,4 @@
 <?php
-/**
- * Backend Verification Script
- * Tests database connection and basic functionality
- */
 
 require __DIR__ . '/vendor/autoload.php';
 
@@ -11,7 +7,6 @@ $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 echo "=== Backend Verification ===\n\n";
 
-// Test 1: Database Connection
 echo "1. Testing database connection...\n";
 try {
     DB::connection()->getPdo();
@@ -24,7 +19,6 @@ try {
     exit(1);
 }
 
-// Test 2: Database Tables
 echo "\n2. Checking database tables...\n";
 try {
     $tables = ['products', 'categories', 'admins', 'users', 'orders'];
@@ -38,7 +32,6 @@ try {
     exit(1);
 }
 
-// Test 3: API Routes
 echo "\n3. Checking API routes...\n";
 try {
     $routes = Route::getRoutes();
@@ -51,7 +44,6 @@ try {
     echo "   Error: " . $e->getMessage() . "\n";
 }
 
-// Test 4: Environment
 echo "\n4. Checking environment...\n";
 echo "   APP_ENV: " . config('app.env') . "\n";
 echo "   APP_DEBUG: " . (config('app.debug') ? 'true' : 'false') . "\n";

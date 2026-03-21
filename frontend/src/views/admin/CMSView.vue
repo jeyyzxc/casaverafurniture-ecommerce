@@ -24,13 +24,11 @@
       </div>
     </div>
 
-    <!-- Loading State -->
     <div v-if="isLoading" class="loading-container">
       <div class="spinner"></div>
       <p>Loading content...</p>
     </div>
 
-    <!-- Error State -->
     <div v-else-if="error" class="error-container">
       <div class="error-icon">⚠️</div>
       <h3>Failed to Load Content</h3>
@@ -38,9 +36,7 @@
       <button class="btn-primary" @click="loadContent">Try Again</button>
     </div>
 
-    <!-- Content -->
     <div v-else class="cms-content">
-      <!-- Homepage Sections -->
       <div class="content-section">
         <h2 class="section-title">Homepage Sections</h2>
         <div v-if="sections.length === 0" class="empty-state">
@@ -82,7 +78,6 @@
         </div>
       </div>
 
-      <!-- Banners -->
       <div class="content-section">
         <h2 class="section-title">Banners</h2>
         <div v-if="banners.length === 0" class="empty-state">
@@ -127,7 +122,6 @@
       </div>
     </div>
 
-    <!-- Add/Edit Section Modal -->
     <Teleport to="body">
       <div v-if="showAddSectionModal || editingSection" class="modal-overlay" @click="closeSectionModal">
         <div class="modal-container" @click.stop>
@@ -195,7 +189,6 @@
       </div>
     </Teleport>
 
-    <!-- Add/Edit Banner Modal -->
     <Teleport to="body">
       <div v-if="showAddBannerModal || editingBanner" class="modal-overlay" @click="closeBannerModal">
         <div class="modal-container" @click.stop>
@@ -337,7 +330,6 @@ const loadContent = async () => {
     if (sectionsResponse.data.success) {
       sections.value = sectionsResponse.data.data
     } else {
-      // If endpoint returns 404 or error, handle gracefully
       sections.value = []
       console.warn('Sections endpoint might be missing or empty')
     }
@@ -350,10 +342,8 @@ const loadContent = async () => {
     }
   } catch (err: any) {
     console.error('Failed to load content:', err)
-    // Don't block the UI, just show empty state if API fails (e.g. 404)
     sections.value = []
     banners.value = []
-    // Only show error if it's not a 404 (which means backend not implemented yet)
     if (err.response?.status !== 404) {
        error.value = err.response?.data?.message || err.message || 'Failed to load content.'
        showError('Failed to Load', error.value)

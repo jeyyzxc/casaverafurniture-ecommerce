@@ -6,11 +6,9 @@ $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 echo "=== Product Status Check ===\n\n";
 
-// Check total products
 $total = \DB::table('products')->count();
 echo "Total products in database: {$total}\n";
 
-// Check by status
 $statuses = \DB::table('products')
     ->select('status', \DB::raw('count(*) as count'))
     ->groupBy('status')
@@ -21,11 +19,9 @@ foreach ($statuses as $status) {
     echo "  - {$status->status}: {$status->count}\n";
 }
 
-// Check active products
 $active = \DB::table('products')->where('status', 'active')->count();
 echo "\nActive products (status='active'): {$active}\n";
 
-// Check published products (active + published_at condition)
 $published = \DB::table('products')
     ->where('status', 'active')
     ->where(function($q) {
@@ -35,7 +31,6 @@ $published = \DB::table('products')
     ->count();
 echo "Published products (active + published_at): {$published}\n";
 
-// Check published_at values
 $publishedAtStatus = \DB::table('products')
     ->select(\DB::raw('
         COUNT(*) as total,
@@ -51,7 +46,6 @@ echo "  - NULL published_at: {$publishedAtStatus->null_published}\n";
 echo "  - Published in past: {$publishedAtStatus->published_past}\n";
 echo "  - Published in future: {$publishedAtStatus->published_future}\n";
 
-// Sample products
 echo "\nSample products (first 5):\n";
 $samples = \DB::table('products')
     ->select('id', 'name', 'status', 'published_at')

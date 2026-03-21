@@ -13,18 +13,15 @@ use Illuminate\Http\JsonResponse;
 
 class HomeController extends Controller
 {
-    /**
-     * Get homepage data
-     */
+
     public function index(): JsonResponse
     {
-        // Get active banners
+
         $banners = Banner::active()
             ->where('position', 'hero')
             ->orderBy('display_order')
             ->get(['id', 'name', 'desktop_image', 'mobile_image', 'alt_text', 'title', 'subtitle', 'button_text', 'link_url']);
 
-        // Get main categories for menu
         $categories = Category::visible()
             ->mainCategories()
             ->inMenu()
@@ -34,7 +31,6 @@ class HomeController extends Controller
             ->orderBy('display_order')
             ->get(['id', 'name', 'slug', 'image', 'icon', 'color']);
 
-        // Get featured products
         $featuredProducts = Product::active()
             ->published()
             ->featured()
@@ -42,7 +38,6 @@ class HomeController extends Controller
             ->limit(8)
             ->get();
 
-        // Get new arrivals
         $newArrivals = Product::active()
             ->published()
             ->where('is_new', true)
@@ -51,7 +46,6 @@ class HomeController extends Controller
             ->limit(8)
             ->get();
 
-        // Get bestsellers
         $bestsellers = Product::active()
             ->published()
             ->where('is_bestseller', true)
@@ -60,12 +54,10 @@ class HomeController extends Controller
             ->limit(8)
             ->get();
 
-        // Get homepage sections
         $sections = HomepageSection::visible()
             ->ordered()
             ->get();
 
-        // Get public site settings
         $settings = SiteSetting::getPublicSettings();
 
         return response()->json([
@@ -82,9 +74,6 @@ class HomeController extends Controller
         ]);
     }
 
-    /**
-     * Get site settings (public)
-     */
     public function settings(): JsonResponse
     {
         return response()->json([
@@ -93,9 +82,6 @@ class HomeController extends Controller
         ]);
     }
 
-    /**
-     * Get categories for navigation
-     */
     public function categories(): JsonResponse
     {
         $categories = Category::visible()
@@ -116,9 +102,6 @@ class HomeController extends Controller
         ]);
     }
 
-    /**
-     * Format products for response
-     */
     private function formatProducts($products): array
     {
         return $products->map(function ($product) {
@@ -136,7 +119,7 @@ class HomeController extends Controller
                 'is_bestseller' => $product->is_bestseller,
                 'average_rating' => $product->average_rating,
                 'review_count' => $product->review_count,
-                'image' => $product->primaryImage?->image_path,
+                'image' => $product->primaryImage?->image_url,
                 'category' => $product->category ? [
                     'id' => $product->category->id,
                     'name' => $product->category->name,

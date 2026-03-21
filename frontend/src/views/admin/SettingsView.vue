@@ -20,7 +20,6 @@
     </div>
 
     <div class="settings-content">
-      <!-- STORE SETTINGS -->
       <div v-if="activeTab === 'store'" class="settings-section fade-in">
         <div class="section-header">
           <h3>Store Information</h3>
@@ -397,9 +396,9 @@ const tabs = [
   }
 ]
 
-// ==========================================
-// STORE SETTINGS
-// ==========================================
+
+
+
 const storeSettings = ref({
   name: 'CASA VÉRA',
   email: 'info@casavera.com',
@@ -431,9 +430,9 @@ const handleLogoUpload = async (event: Event) => {
   }
 }
 
-// ==========================================
-// PAYMENT SETTINGS
-// ==========================================
+
+
+
 const paymentMethods = ref<any[]>([])
 const isLoadingPaymentMethods = ref(false)
 const editingMethod = ref<any>(null)
@@ -462,7 +461,7 @@ const togglePaymentMethod = async (method: any) => {
       success('Updated', `${method.name} is now ${newState ? 'active' : 'inactive'}.`)
     }
   } catch (err) {
-    method.is_active = !method.is_active // Revert
+    method.is_active = !method.is_active 
     showError('Error', 'Failed to update payment method.')
   }
 }
@@ -471,12 +470,12 @@ const reorderPaymentMethod = async (index: number, direction: number) => {
   const newIndex = index + direction
   if (newIndex < 0 || newIndex >= paymentMethods.value.length) return
 
-  // Swap in local array
+  
   const temp = paymentMethods.value[index]
   paymentMethods.value[index] = paymentMethods.value[newIndex]
   paymentMethods.value[newIndex] = temp
 
-  // Update display_order for swapped items
+  
   const item1 = paymentMethods.value[index]
   const item2 = paymentMethods.value[newIndex]
 
@@ -487,7 +486,7 @@ const reorderPaymentMethod = async (index: number, direction: number) => {
     ])
   } catch (err) {
     showError('Error', 'Failed to save order.')
-    loadPaymentMethods() // Reload to reset
+    loadPaymentMethods() 
   }
 }
 
@@ -518,9 +517,9 @@ const savePaymentMethod = async () => {
   }
 }
 
-// ==========================================
-// SHIPPING SETTINGS
-// ==========================================
+
+
+
 const shippingSettings = ref({
   defaultFee: 150,
   freeThreshold: 5000
@@ -603,17 +602,17 @@ const deleteShippingMethod = async (method: any) => {
   }
 }
 
-// ==========================================
-// SYSTEM SETTINGS
-// ==========================================
+
+
+
 const systemSettings = ref({
   maintenanceMode: false,
   emailNotifications: true
 })
 
-// ==========================================
-// GLOBAL SAVE & LOAD
-// ==========================================
+
+
+
 const isSaving = ref(false)
 
 const saveSettings = async () => {
@@ -660,7 +659,7 @@ const loadAllSettings = async () => {
     if (response.data.success && response.data.data) {
       const data = response.data.data
 
-      // Store
+      
       if (data.store) {
         storeSettings.value = {
           name: data.store.store_name || '',
@@ -671,7 +670,7 @@ const loadAllSettings = async () => {
         }
       }
 
-      // Shipping
+      
       if (data.shipping) {
         shippingSettings.value = {
           defaultFee: Number(data.shipping.default_shipping_fee) || 0,
@@ -679,7 +678,7 @@ const loadAllSettings = async () => {
         }
       }
 
-      // System
+      
       if (data.system) {
         systemSettings.value = {
           maintenanceMode: data.system.maintenance_mode === 'true' || data.system.maintenance_mode === true,
@@ -692,7 +691,7 @@ const loadAllSettings = async () => {
   }
 }
 
-// Watchers & Lifecycle
+
 watch(activeTab, (newTab) => {
   if (newTab === 'payment' && paymentMethods.value.length === 0) loadPaymentMethods()
   if (newTab === 'shipping' && shippingMethods.value.length === 0) loadShippingMethods()
@@ -703,7 +702,7 @@ onMounted(() => {
   if (activeTab.value === 'payment') loadPaymentMethods()
 })
 
-// Helpers
+
 const formatPrice = (price: number | null | undefined) => {
   return (Number(price) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
@@ -714,7 +713,7 @@ const formatPaymentType = (type: string) => {
   }
   return types[type] || type
 }
-const loadStoreSettings = loadAllSettings // Alias for template
+const loadStoreSettings = loadAllSettings 
 </script>
 
 <style scoped>

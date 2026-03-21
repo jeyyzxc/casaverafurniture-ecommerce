@@ -16,7 +16,7 @@ export function parseNumber(value: unknown, defaultValue: number = 0): number {
   }
 
   if (typeof value === 'string') {
-    // Remove currency symbols, commas, and other non-numeric characters except decimal point and minus
+    
     const cleaned = value.replace(/[^0-9.-]/g, '')
     const parsed = parseFloat(cleaned)
     

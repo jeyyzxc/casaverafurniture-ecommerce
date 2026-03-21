@@ -10,28 +10,23 @@ use Illuminate\Support\Str;
 
 class FileUploadController extends Controller
 {
-    /**
-     * Upload image file
-     */
+    
     public function uploadImage(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'file' => ['required', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:5120'], // 5MB max
-            'folder' => ['nullable', 'string', 'max:100'], // e.g., 'products', 'categories', 'banners'
+            'file' => ['required', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:5120'], 
+            'folder' => ['nullable', 'string', 'max:100'], 
         ]);
 
         try {
             $file = $validated['file'];
             $folder = $validated['folder'] ?? 'uploads';
-            
-            // Generate unique filename
+
             $extension = $file->getClientOriginalExtension();
             $filename = Str::random(40) . '.' . $extension;
-            
-            // Store file in public storage
+
             $path = $file->storeAs($folder, $filename, 'public');
-            
-            // Get full URL
+
             $url = Storage::url($path);
             
             return response()->json([
@@ -58,9 +53,6 @@ class FileUploadController extends Controller
         }
     }
 
-    /**
-     * Delete uploaded file
-     */
     public function deleteFile(Request $request): JsonResponse
     {
         $validated = $request->validate([

@@ -9,21 +9,18 @@ use Carbon\Carbon;
 
 class AdminSeeder extends Seeder
 {
-    /**
-     * Seed default admin account.
-     */
+    
     public function run(): void
     {
         $now = Carbon::now();
         $superAdminRole = DB::table('roles')->where('slug', 'super-admin')->first();
 
-        // Create default Super Admin
         DB::table('admins')->insert([
             'first_name' => 'Casa Vera',
             'last_name' => 'Admin',
             'email' => 'admin@casavera.com',
             'email_verified_at' => $now,
-            'password' => Hash::make('password'), // Default password: password
+            'password' => Hash::make('password'), 
             'phone' => '0917-155-2913',
             'role_id' => $superAdminRole->id,
             'status' => 'active',
@@ -32,7 +29,6 @@ class AdminSeeder extends Seeder
             'updated_at' => $now,
         ]);
 
-        // Create additional test admin (for development)
         $adminRole = DB::table('roles')->where('slug', 'admin')->first();
 
         DB::table('admins')->insert([

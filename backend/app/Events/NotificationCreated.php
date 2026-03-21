@@ -17,9 +17,6 @@ class NotificationCreated implements ShouldBroadcast
         public array $notification
     ) {}
 
-    /**
-     * Get the channels the event should broadcast on.
-     */
     public function broadcastOn(): array
     {
         return [
@@ -27,9 +24,6 @@ class NotificationCreated implements ShouldBroadcast
         ];
     }
 
-    /**
-     * The event's broadcast name.
-     */
     public function broadcastAs(): string
     {
         return 'notification.created';

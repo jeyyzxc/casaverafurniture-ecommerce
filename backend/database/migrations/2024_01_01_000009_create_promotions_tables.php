@@ -6,90 +6,71 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     * 
-     * PROMOTIONS & DISCOUNTS TABLES
-     * Comprehensive promotion system with usage tracking
-     */
+    
     public function up(): void
     {
-        // Promotions Table
+        
         Schema::create('promotions', function (Blueprint $table) {
             $table->id();
-            
-            // Basic info
+
             $table->string('name', 200);
-            $table->string('code', 50)->unique(); // Coupon code
+            $table->string('code', 50)->unique(); 
             $table->text('description')->nullable();
-            
-            // Discount type and value
+
             $table->enum('discount_type', ['percentage', 'fixed', 'free_shipping', 'buy_x_get_y'])->default('percentage');
-            $table->decimal('discount_value', 12, 2); // Percentage or fixed amount
-            $table->decimal('max_discount_amount', 12, 2)->nullable(); // Cap for percentage discounts
-            
-            // For buy_x_get_y promotions
+            $table->decimal('discount_value', 12, 2); 
+            $table->decimal('max_discount_amount', 12, 2)->nullable(); 
+
             $table->unsignedInteger('buy_quantity')->nullable();
             $table->unsignedInteger('get_quantity')->nullable();
-            $table->decimal('get_discount_percentage', 5, 2)->nullable(); // Discount on the "get" items
-            
-            // Applicability
+            $table->decimal('get_discount_percentage', 5, 2)->nullable(); 
+
             $table->enum('applies_to', ['all', 'specific_products', 'specific_categories', 'specific_collections'])->default('all');
             $table->json('applicable_product_ids')->nullable();
             $table->json('applicable_category_ids')->nullable();
             $table->json('applicable_collection_ids')->nullable();
-            
-            // Conditions
+
             $table->decimal('min_order_amount', 12, 2)->nullable();
             $table->decimal('max_order_amount', 12, 2)->nullable();
             $table->unsignedInteger('min_quantity')->nullable();
-            
-            // Usage limits
-            $table->unsignedInteger('usage_limit')->nullable(); // Total times code can be used
-            $table->unsignedInteger('usage_limit_per_user')->nullable(); // Per customer limit
+
+            $table->unsignedInteger('usage_limit')->nullable(); 
+            $table->unsignedInteger('usage_limit_per_user')->nullable(); 
             $table->unsignedInteger('used_count')->default(0);
-            
-            // Validity period
+
             $table->timestamp('starts_at')->useCurrent();
             $table->timestamp('ends_at')->nullable();
-            
-            // Customer restrictions
+
             $table->boolean('first_order_only')->default(false);
-            $table->json('allowed_user_ids')->nullable(); // Specific users only
-            $table->json('allowed_user_emails')->nullable(); // Specific emails only
-            
-            // Status
+            $table->json('allowed_user_ids')->nullable(); 
+            $table->json('allowed_user_emails')->nullable(); 
+
             $table->boolean('is_active')->default(true);
-            $table->boolean('is_visible')->default(true); // Show in promotions list
-            
-            // Auto-apply (for cart-level discounts without code)
+            $table->boolean('is_visible')->default(true); 
+
             $table->boolean('auto_apply')->default(false);
-            $table->unsignedInteger('priority')->default(0); // For stacking rules
-            
-            // Combinability
+            $table->unsignedInteger('priority')->default(0); 
+
             $table->boolean('combinable_with_other_promotions')->default(false);
-            
-            // Metadata
+
             $table->foreignId('created_by_admin_id')->nullable()->constrained('admins')->onDelete('set null');
             
             $table->timestamps();
             $table->softDeletes();
-            
-            // Indexes
+
             $table->index(['code']);
             $table->index(['is_active', 'starts_at', 'ends_at']);
             $table->index(['discount_type']);
             $table->index(['auto_apply', 'is_active']);
         });
 
-        // Promotion Usage Tracking
         Schema::create('promotion_usages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('promotion_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
             
-            $table->decimal('discount_amount', 12, 2); // Actual discount given
+            $table->decimal('discount_amount', 12, 2); 
             $table->string('code_used', 50);
             
             $table->timestamps();
@@ -99,7 +80,6 @@ return new class extends Migration
             $table->index(['order_id']);
         });
 
-        // Flash Sales / Time-Limited Offers
         Schema::create('flash_sales', function (Blueprint $table) {
             $table->id();
             
@@ -107,15 +87,12 @@ return new class extends Migration
             $table->string('slug', 200)->unique();
             $table->text('description')->nullable();
             $table->string('banner_image')->nullable();
-            
-            // Timing
+
             $table->timestamp('starts_at')->useCurrent();
             $table->timestamp('ends_at')->useCurrent();
-            
-            // Discount settings
+
             $table->decimal('discount_percentage', 5, 2)->default(0);
-            
-            // Limits
+
             $table->unsignedInteger('max_units_per_product')->nullable();
             $table->unsignedInteger('max_units_per_user')->nullable();
             
@@ -127,7 +104,6 @@ return new class extends Migration
             $table->index(['is_active', 'starts_at', 'ends_at']);
         });
 
-        // Flash Sale Products
         Schema::create('flash_sale_products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('flash_sale_id')->constrained()->onDelete('cascade');
@@ -143,7 +119,6 @@ return new class extends Migration
             $table->unique(['flash_sale_id', 'product_id']);
         });
 
-        // Add foreign keys for tables created earlier that reference promotions
         Schema::table('carts', function (Blueprint $table) {
             $table->foreign('promotion_id')->references('id')->on('promotions')->onDelete('set null');
         });
@@ -153,12 +128,9 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        // Remove foreign keys before dropping tables
+        
         Schema::table('carts', function (Blueprint $table) {
             $table->dropForeign(['promotion_id']);
         });

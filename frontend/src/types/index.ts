@@ -2,9 +2,9 @@
  * Shared TypeScript types and interfaces for the client-side application
  */
 
-// ═══════════════════════════════════════════════════
-// PRODUCT TYPES
-// ═══════════════════════════════════════════════════
+
+
+
 export interface Product {
   id: number
   name: string
@@ -35,9 +35,9 @@ export interface ProductCategory {
   image?: string
 }
 
-// ═══════════════════════════════════════════════════
-// CART TYPES
-// ═══════════════════════════════════════════════════
+
+
+
 export interface CartItem {
   id: number
   product_id: number
@@ -58,9 +58,9 @@ export interface CartSummary {
   total: number
 }
 
-// ═══════════════════════════════════════════════════
-// ORDER TYPES
-// ═══════════════════════════════════════════════════
+
+
+
 export interface OrderItem {
   id: number
   product_id: number
@@ -110,9 +110,9 @@ export interface Payment {
   created_at: string
 }
 
-// ═══════════════════════════════════════════════════
-// ADDRESS TYPES
-// ═══════════════════════════════════════════════════
+
+
+
 export interface UserAddress {
   id: number
   label: 'Home' | 'Office' | 'Others'
@@ -144,9 +144,9 @@ export interface AddressFormData {
   is_default: boolean
 }
 
-// ═══════════════════════════════════════════════════
-// CHECKOUT TYPES
-// ═══════════════════════════════════════════════════
+
+
+
 export interface PaymentMethod {
   id: number
   name: string
@@ -200,9 +200,9 @@ export interface CheckoutFormData {
   notes?: string
 }
 
-// ═══════════════════════════════════════════════════
-// USER TYPES
-// ═══════════════════════════════════════════════════
+
+
+
 export interface User {
   id: number
   first_name: string
@@ -220,9 +220,9 @@ export interface AccountStats {
   totalSpent: number
 }
 
-// ═══════════════════════════════════════════════════
-// FILTER TYPES
-// ═══════════════════════════════════════════════════
+
+
+
 export interface ProductFilters {
   search?: string
   category?: string
@@ -244,9 +244,9 @@ export interface FilterState {
   sortBy: string
 }
 
-// ═══════════════════════════════════════════════════
-// API RESPONSE TYPES
-// ═══════════════════════════════════════════════════
+
+
+
 export interface ApiResponse<T> {
   success: boolean
   data: T

@@ -14,9 +14,7 @@ use Illuminate\Support\Str;
 
 class CartController extends Controller
 {
-    /**
-     * Get current cart
-     */
+
     public function index(Request $request): JsonResponse
     {
         $cart = $this->getOrCreateCart($request);
@@ -28,9 +26,6 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Add item to cart
-     */
     public function addItem(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -40,11 +35,10 @@ class CartController extends Controller
 
         $product = Product::active()->published()->findOrFail($validated['product_id']);
 
-        // Check stock
         if ($product->track_inventory && $product->stock_quantity < $validated['quantity']) {
             return response()->json([
                 'success' => false,
-                'message' => $product->stock_quantity > 0 
+                'message' => $product->stock_quantity > 0
                     ? "Only {$product->stock_quantity} items available in stock."
                     : 'This product is out of stock.',
             ], 422);
@@ -52,13 +46,11 @@ class CartController extends Controller
 
         $cart = $this->getOrCreateCart($request);
 
-        // Check if item already exists in cart
         $existingItem = $cart->items()->where('product_id', $product->id)->first();
 
         if ($existingItem) {
             $newQuantity = $existingItem->quantity + $validated['quantity'];
 
-            // Check stock for new quantity
             if ($product->track_inventory && $product->stock_quantity < $newQuantity) {
                 return response()->json([
                     'success' => false,
@@ -80,15 +72,13 @@ class CartController extends Controller
                 'subtotal' => $validated['quantity'] * $product->current_price,
                 'product_name' => $product->name,
                 'product_sku' => $product->sku,
-                'product_image' => $product->primaryImage?->image_path,
+                'product_image' => $product->primaryImage?->image_url,
             ]);
         }
 
-        // Recalculate cart
         $cart->recalculate();
         $cart->load(['items.product.primaryImage', 'promotion']);
 
-        // Broadcast cart updated event
         event(new CartUpdated($cart, 'add'));
 
         return response()->json([
@@ -98,9 +88,6 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Update cart item quantity
-     */
     public function updateItem(Request $request, CartItem $cartItem): JsonResponse
     {
         $validated = $request->validate([
@@ -109,7 +96,6 @@ class CartController extends Controller
 
         $cart = $this->getOrCreateCart($request);
 
-        // Verify item belongs to this cart
         if ($cartItem->cart_id !== $cart->id) {
             return response()->json([
                 'success' => false,
@@ -119,7 +105,6 @@ class CartController extends Controller
 
         $product = $cartItem->product;
 
-        // Check stock
         if ($product && $product->track_inventory && $product->stock_quantity < $validated['quantity']) {
             return response()->json([
                 'success' => false,
@@ -134,11 +119,9 @@ class CartController extends Controller
             'subtotal' => $validated['quantity'] * $price,
         ]);
 
-        // Recalculate cart
         $cart->recalculate();
         $cart->load(['items.product.primaryImage', 'promotion']);
 
-        // Broadcast cart updated event
         event(new CartUpdated($cart, 'update'));
 
         return response()->json([
@@ -148,14 +131,10 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Remove item from cart
-     */
     public function removeItem(Request $request, CartItem $cartItem): JsonResponse
     {
         $cart = $this->getOrCreateCart($request);
 
-        // Verify item belongs to this cart
         if ($cartItem->cart_id !== $cart->id) {
             return response()->json([
                 'success' => false,
@@ -165,11 +144,9 @@ class CartController extends Controller
 
         $cartItem->delete();
 
-        // Recalculate cart
         $cart->recalculate();
         $cart->load(['items.product.primaryImage', 'promotion']);
 
-        // Broadcast cart updated event
         event(new CartUpdated($cart, 'remove'));
 
         return response()->json([
@@ -179,9 +156,6 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Clear cart
-     */
     public function clear(Request $request): JsonResponse
     {
         $cart = $this->getOrCreateCart($request);
@@ -195,7 +169,6 @@ class CartController extends Controller
             'coupon_code' => null,
         ]);
 
-        // Broadcast cart updated event
         event(new CartUpdated($cart, 'clear'));
 
         return response()->json([
@@ -205,9 +178,6 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Apply coupon code
-     */
     public function applyCoupon(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -223,7 +193,6 @@ class CartController extends Controller
             ], 422);
         }
 
-        // Find promotion
         $promotion = Promotion::active()
             ->byCode($validated['code'])
             ->first();
@@ -235,7 +204,6 @@ class CartController extends Controller
             ], 422);
         }
 
-        // Check if promotion is valid
         if (!$promotion->isValid()) {
             return response()->json([
                 'success' => false,
@@ -243,7 +211,6 @@ class CartController extends Controller
             ], 422);
         }
 
-        // Check minimum order amount
         if ($promotion->min_order_amount && $cart->subtotal < $promotion->min_order_amount) {
             return response()->json([
                 'success' => false,
@@ -251,10 +218,8 @@ class CartController extends Controller
             ], 422);
         }
 
-        // Calculate discount
         $discountAmount = $promotion->calculateDiscount($cart->subtotal);
 
-        // Apply to cart
         $cart->update([
             'promotion_id' => $promotion->id,
             'coupon_code' => $promotion->code,
@@ -271,9 +236,6 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Remove coupon code
-     */
     public function removeCoupon(Request $request): JsonResponse
     {
         $cart = $this->getOrCreateCart($request);
@@ -294,9 +256,6 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Get or create cart for user/session
-     */
     private function getOrCreateCart(Request $request): Cart
     {
         $user = $request->user();
@@ -314,7 +273,6 @@ class CartController extends Controller
                 ]);
             }
 
-            // Merge guest cart if exists
             $sessionId = $request->header('X-Session-ID') ?? $request->input('session_id');
             if ($sessionId) {
                 $guestCart = Cart::where('session_id', $sessionId)
@@ -339,7 +297,6 @@ class CartController extends Controller
             return $cart;
         }
 
-        // Guest cart
         $sessionId = $request->header('X-Session-ID') ?? $request->input('session_id') ?? Str::uuid();
 
         $cart = Cart::where('session_id', $sessionId)
@@ -357,9 +314,6 @@ class CartController extends Controller
         return $cart;
     }
 
-    /**
-     * Format cart for response
-     */
     private function formatCart(Cart $cart): array
     {
         return [
@@ -382,7 +336,7 @@ class CartController extends Controller
                     'product_id' => $item->product_id,
                     'product_name' => $item->product_name,
                     'product_sku' => $item->product_sku,
-                    'product_image' => $item->product_image ?? $item->product?->primaryImage?->image_path,
+                    'product_image' => $item->product?->primaryImage?->image_url ?? $item->product_image,
                     'product_slug' => $item->product?->slug,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,
